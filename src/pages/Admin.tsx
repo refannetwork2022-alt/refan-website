@@ -7,11 +7,13 @@ import {
   Plus, Trash2, ArrowLeft, LogOut
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 type Tab = 'dashboard' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'donations';
 
 const Admin = () => {
   const { toast } = useToast();
+  const { signOut } = useAuth();
   const [tab, setTab] = useState<Tab>('dashboard');
   const [stories, setStories] = useState(store.getStories());
   const [blogs, setBlogs] = useState(store.getBlogs());
@@ -98,9 +100,12 @@ const Admin = () => {
             </button>
           ))}
         </nav>
-        <div className="p-4 border-t border-sidebar-border">
+        <div className="p-4 border-t border-sidebar-border space-y-1">
           <Button asChild variant="ghost" size="sm" className="w-full justify-start text-secondary-foreground/70">
             <Link to="/"><ArrowLeft className="h-4 w-4" /> Back to Site</Link>
+          </Button>
+          <Button variant="ghost" size="sm" className="w-full justify-start text-secondary-foreground/70" onClick={signOut}>
+            <LogOut className="h-4 w-4" /> Sign Out
           </Button>
         </div>
       </aside>
