@@ -1,17 +1,17 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Heart } from "lucide-react";
+import { Menu, X, Heart, UserPlus } from "lucide-react";
 
 const navLinks = [
   { label: "Home", path: "/" },
-  { label: "About", path: "/about" },
   { label: "Programs", path: "/programs" },
   { label: "Stories", path: "/stories" },
   { label: "Gallery", path: "/gallery" },
   { label: "Blog", path: "/blog" },
   { label: "Get Involved", path: "/get-involved" },
   { label: "Contact", path: "/contact" },
+  { label: "About", path: "/about" },
 ];
 
 const Navbar = () => {
@@ -19,21 +19,23 @@ const Navbar = () => {
   const location = useLocation();
 
   return (
-    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
+    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-border">
       <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 font-heading text-xl font-extrabold tracking-tight">
-          <span className="text-gradient-primary">Re</span>
-          <span className="text-secondary">FAN</span>
+        <Link to="/" className="flex items-center gap-2">
+          <img src="/logo.png" alt="ReFAN" className="h-12 w-12 rounded-md" />
+          <span className="font-heading text-xl font-extrabold tracking-tight">
+            <span className="text-primary">ReFA</span><span className="text-foreground">N</span>
+          </span>
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden lg:flex items-center gap-1">
+        <nav className="hidden lg:flex items-center gap-8">
           {navLinks.map((link) => (
             <Link
               key={link.path}
               to={link.path}
-              className={`px-3 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground ${
-                location.pathname === link.path ? "bg-accent text-accent-foreground font-semibold" : "text-muted-foreground"
+              className={`text-sm font-semibold transition-colors hover:text-primary ${
+                location.pathname === link.path ? "text-primary" : "text-foreground"
               }`}
             >
               {link.label}
@@ -41,12 +43,12 @@ const Navbar = () => {
           ))}
         </nav>
 
-        <div className="hidden lg:flex items-center gap-2">
-          <Button asChild variant="default" size="sm">
-            <Link to="/donate">
-              <Heart className="h-4 w-4" />
-              Donate
-            </Link>
+        <div className="hidden lg:flex items-center gap-3">
+          <Button asChild size="sm" variant="outline" className="btn-hover font-bold rounded-lg px-5">
+            <Link to="/register"><UserPlus className="h-4 w-4" /> Register</Link>
+          </Button>
+          <Button asChild size="sm" className="btn-hover bg-primary hover:bg-primary/90 text-white font-bold rounded-lg px-6 shadow-sm">
+            <Link to="/donate">Donate</Link>
           </Button>
         </div>
 
@@ -76,6 +78,12 @@ const Navbar = () => {
                 {link.label}
               </Link>
             ))}
+            <Button asChild variant="outline" className="mt-2">
+              <Link to="/register" onClick={() => setOpen(false)}>
+                <UserPlus className="h-4 w-4" />
+                Register
+              </Link>
+            </Button>
             <Button asChild variant="default" className="mt-2">
               <Link to="/donate" onClick={() => setOpen(false)}>
                 <Heart className="h-4 w-4" />

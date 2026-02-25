@@ -12,8 +12,12 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (!user || !isAdmin) {
-    return <Navigate to="/admin-login" replace />;
+  if (!user) {
+    return <Navigate to="/admin-login" replace state={{ reason: "unauthenticated" }} />;
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/admin-login" replace state={{ reason: "unauthorized" }} />;
   }
 
   return <>{children}</>;

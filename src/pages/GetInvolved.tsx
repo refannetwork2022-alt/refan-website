@@ -2,19 +2,26 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { Heart, Users, Handshake, ArrowRight } from "lucide-react";
+import { Heart, Users, Handshake, ArrowRight, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { store } from "@/lib/store";
+import CountrySearch from "@/components/CountrySearch";
 
 const ways = [
-  { icon: Heart, title: "Donate", desc: "Support our programs with a financial contribution.", link: "/donate", cta: "Donate Now" },
-  { icon: Users, title: "Volunteer", desc: "Join our team on the ground or remotely.", link: "#form", cta: "Sign Up" },
-  { icon: Handshake, title: "Sponsor", desc: "Partner with us to fund specific programs.", link: "#form", cta: "Become a Sponsor" },
+  { icon: Heart, title: "Donate", desc: "Help fund education, community resilience, and bereavement support for orphans and widows in Dzaleka.", link: "/donate", cta: "Donate Now" },
+  { icon: Users, title: "Volunteer", desc: "Support ReFAN on the ground in Dzaleka or remotely with skills like teaching, mentoring, or advocacy.", link: "#form", cta: "Sign Up" },
+  { icon: Handshake, title: "Sponsor", desc: "Partner with ReFAN to sponsor a child's education or fund a specific program in the camp.", link: "#form", cta: "Become a Sponsor" },
+  { icon: UserPlus, title: "Become a Member", desc: "Register as a ReFAN member. Join our community and be part of lasting change in Dzaleka.", link: "/register", cta: "Register Now" },
 ];
+
+const inputClass = "w-full px-4 py-3 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring outline-none";
 
 const GetInvolved = () => {
   const { toast } = useToast();
-  const [form, setForm] = useState({ name: '', email: '', phone: '', type: 'volunteer' as 'volunteer' | 'sponsor', message: '' });
+  const [form, setForm] = useState({
+    name: '', email: '', phone: '', country: '', countryOfOrigin: '', idNumber: '',
+    type: 'volunteer' as 'volunteer' | 'sponsor', message: '',
+  });
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -24,39 +31,52 @@ const GetInvolved = () => {
       return;
     }
     setSubmitting(true);
-    store.addVolunteer({ ...form, name: form.name.trim(), email: form.email.trim(), phone: form.phone.trim(), message: form.message.trim(), date: new Date().toISOString() });
+    store.addVolunteer({
+      ...form,
+      name: form.name.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim(),
+      country: form.country,
+      message: `${form.message.trim()}${form.countryOfOrigin ? `\n[Country of Origin: ${form.countryOfOrigin}]` : ''}${form.idNumber ? `\n[ID: ${form.idNumber}]` : ''}`,
+      date: new Date().toISOString(),
+    });
     setTimeout(() => {
       setSubmitting(false);
       toast({ title: "Registration submitted!", description: "Thank you for your interest. We'll be in touch soon." });
-      setForm({ name: '', email: '', phone: '', type: 'volunteer', message: '' });
+      setForm({ name: '', email: '', phone: '', country: '', countryOfOrigin: '', idNumber: '', type: 'volunteer', message: '' });
     }, 600);
   };
 
   return (
     <Layout>
-      <section className="bg-secondary py-20">
-        <div className="container">
-          <h1 className="font-heading text-4xl lg:text-5xl font-extrabold text-secondary-foreground mb-4">Get <span className="text-primary">Involved</span></h1>
-          <p className="text-lg text-secondary-foreground/70 max-w-2xl">There are many ways to support our mission. Find the one that's right for you.</p>
+      <section className="container pt-12 pb-8 text-center">
+        <h1 className="font-heading text-3xl lg:text-5xl font-extrabold italic mb-3">Join the <span className="text-primary">Movement</span></h1>
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">Together, we can create lasting change. Your support empowers communities and transforms lives. Choose your path to make an impact today.</p>
+        <div className="flex flex-wrap justify-center gap-4 mt-6">
+          <Button asChild className="btn-hover bg-primary hover:bg-primary/90 text-white font-bold rounded-full px-8">
+            <Link to="/about">View Our Impact</Link>
+          </Button>
+          <Button asChild variant="outline" className="btn-hover rounded-full px-8 font-bold">
+            <Link to="/stories">Read Stories</Link>
+          </Button>
         </div>
       </section>
 
-      {/* Ways to help */}
-      <section className="py-20">
-        <div className="container grid md:grid-cols-3 gap-8">
+      <section className="container py-12">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {ways.map((w) => (
-            <div key={w.title} className="bg-card rounded-xl p-8 shadow-card text-center hover:shadow-elevated transition-shadow">
-              <div className="mx-auto w-14 h-14 rounded-full bg-accent flex items-center justify-center mb-4">
-                <w.icon className="h-6 w-6 text-accent-foreground" />
+            <div key={w.title} className="bg-card rounded-xl p-8 border border-border text-center hover:border-primary/50 hover:shadow-card transition-all">
+              <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <w.icon className="h-6 w-6 text-primary" />
               </div>
               <h3 className="font-heading font-bold text-lg mb-2">{w.title}</h3>
               <p className="text-sm text-muted-foreground mb-4">{w.desc}</p>
               {w.link.startsWith('/') ? (
-                <Button asChild variant="outline" size="sm">
+                <Button asChild variant="outline" size="sm" className="btn-hover">
                   <Link to={w.link}>{w.cta} <ArrowRight className="h-4 w-4" /></Link>
                 </Button>
               ) : (
-                <Button variant="outline" size="sm" onClick={() => document.getElementById('registration-form')?.scrollIntoView({ behavior: 'smooth' })}>
+                <Button variant="outline" size="sm" className="btn-hover" onClick={() => document.getElementById('registration-form')?.scrollIntoView({ behavior: 'smooth' })}>
                   {w.cta} <ArrowRight className="h-4 w-4" />
                 </Button>
               )}
@@ -65,7 +85,6 @@ const GetInvolved = () => {
         </div>
       </section>
 
-      {/* Registration Form */}
       <section id="registration-form" className="py-20 bg-muted">
         <div className="container max-w-2xl">
           <h2 className="font-heading text-3xl font-extrabold text-center mb-10">Volunteer / Sponsor Registration</h2>
@@ -80,29 +99,65 @@ const GetInvolved = () => {
                     form.type === t ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'
                   }`}
                 >
-                  {t === 'volunteer' ? '🙋 Volunteer' : '🤝 Sponsor'}
+                  {t === 'volunteer' ? 'Volunteer' : 'Sponsor'}
                 </button>
               ))}
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Full Name *</label>
-              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full px-4 py-3 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring outline-none" required maxLength={100} />
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Full Name *</label>
+                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} required maxLength={100} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Email *</label>
+                <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={inputClass} required maxLength={255} />
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Email *</label>
-              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full px-4 py-3 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring outline-none" required maxLength={255} />
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Phone</label>
+                <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inputClass} maxLength={20} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">
+                  {form.type === 'sponsor' ? 'Country *' : 'Country of Residence *'}
+                </label>
+                <CountrySearch
+                  value={form.country}
+                  onChange={(val) => setForm({ ...form, country: val })}
+                  placeholder="Type to search country..."
+                  required
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Phone</label>
-              <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full px-4 py-3 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring outline-none" maxLength={20} />
-            </div>
+
+            {/* Only show Country of Origin + ID for volunteers */}
+            {form.type === 'volunteer' && (
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Country of Origin</label>
+                  <CountrySearch
+                    value={form.countryOfOrigin}
+                    onChange={(val) => setForm({ ...form, countryOfOrigin: val })}
+                    placeholder="Type to search country..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">ID Number</label>
+                  <input value={form.idNumber} onChange={(e) => setForm({ ...form, idNumber: e.target.value })} className={inputClass} maxLength={50} placeholder="Your national or refugee ID" />
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium mb-1.5">Tell us about yourself</label>
-              <textarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} rows={4} className="w-full px-4 py-3 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring outline-none resize-none" maxLength={1000} />
+              <textarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} rows={4} className={inputClass + " resize-none"} maxLength={1000} />
             </div>
-            <Button type="submit" variant="hero" size="lg" className="w-full" disabled={submitting}>
-              {submitting ? 'Submitting...' : 'Submit Registration'}
-            </Button>
+            <div className="flex justify-center">
+              <Button type="submit" size="lg" className="btn-hover bg-primary hover:bg-primary/90 text-white font-bold rounded-lg px-12" disabled={submitting}>
+                {submitting ? 'Submitting...' : 'Submit Registration'}
+              </Button>
+            </div>
           </form>
         </div>
       </section>

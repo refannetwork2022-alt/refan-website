@@ -4,50 +4,65 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Text copy protection */
+body {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+/* Allow selection in admin inputs */
+input, textarea, [contenteditable] {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 220 26% 14%;
+    --foreground: 222 20% 14%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 26% 14%;
+    --card-foreground: 222 20% 14%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 26% 14%;
+    --popover-foreground: 222 20% 14%;
 
-    --primary: 24 95% 53%;
+    --primary: 28 85% 45%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 224 64% 33%;
+    --secondary: 217 60% 22%;
     --secondary-foreground: 0 0% 100%;
 
     --muted: 220 14% 96%;
     --muted-foreground: 220 9% 46%;
 
     --accent: 36 100% 95%;
-    --accent-foreground: 24 95% 40%;
+    --accent-foreground: 28 85% 38%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 24 95% 53%;
+    --ring: 28 85% 45%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 224 64% 33%;
+    --sidebar-background: 217 60% 22%;
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 24 95% 53%;
+    --sidebar-primary: 28 85% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 224 64% 28%;
+    --sidebar-accent: 217 60% 28%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 224 64% 40%;
-    --sidebar-ring: 24 95% 53%;
+    --sidebar-border: 217 50% 32%;
+    --sidebar-ring: 28 85% 45%;
 
-    --hero-gradient: linear-gradient(135deg, hsl(24, 95%, 53%) 0%, hsl(36, 100%, 60%) 100%);
-    --cta-gradient: linear-gradient(135deg, hsl(224, 64%, 33%) 0%, hsl(224, 64%, 45%) 100%);
-    --overlay-gradient: linear-gradient(180deg, hsla(220, 26%, 14%, 0.7) 0%, hsla(220, 26%, 14%, 0.4) 100%);
+    --hero-gradient: linear-gradient(135deg, hsl(28, 85%, 45%) 0%, hsl(32, 90%, 52%) 100%);
+    --cta-gradient: linear-gradient(135deg, hsl(217, 60%, 22%) 0%, hsl(217, 55%, 30%) 100%);
+    --overlay-gradient: linear-gradient(to right, rgba(0, 0, 0, 0.8) 20%, rgba(0, 0, 0, 0.2) 100%);
 
     --shadow-soft: 0 2px 15px -3px hsla(220, 26%, 14%, 0.08);
     --shadow-card: 0 4px 25px -5px hsla(220, 26%, 14%, 0.1);
@@ -64,19 +79,19 @@
     --card-foreground: 0 0% 95%;
     --popover: 220 26% 12%;
     --popover-foreground: 0 0% 95%;
-    --primary: 24 95% 53%;
+    --primary: 28 85% 45%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 224 64% 45%;
+    --secondary: 217 55% 25%;
     --secondary-foreground: 0 0% 100%;
     --muted: 220 20% 18%;
     --muted-foreground: 220 9% 65%;
-    --accent: 24 60% 15%;
-    --accent-foreground: 24 95% 70%;
+    --accent: 28 60% 15%;
+    --accent-foreground: 28 85% 65%;
     --destructive: 0 62% 30%;
     --destructive-foreground: 0 0% 100%;
     --border: 220 20% 22%;
     --input: 220 20% 22%;
-    --ring: 24 95% 53%;
+    --ring: 28 85% 45%;
   }
 }
 
@@ -136,6 +151,25 @@
   .animate-scale-in {
     animation: scaleIn 0.4s ease-out forwards;
   }
+}
+
+/* Button hover polish */
+.btn-hover {
+  @apply transition-all duration-200;
+}
+.btn-hover:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px -4px hsla(28, 85%, 45%, 0.35);
+}
+
+/* Lightbox overlay */
+.lightbox-overlay {
+  @apply fixed inset-0 z-[100] bg-black/85 flex items-center justify-center p-4;
+  animation: fadeIn 0.2s ease-out;
+}
+.lightbox-overlay img {
+  @apply max-w-full max-h-[90vh] rounded-xl shadow-2xl;
+  animation: scaleIn 0.3s ease-out;
 }
 
 @keyframes fadeUp {

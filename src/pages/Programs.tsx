@@ -1,67 +1,45 @@
 import Layout from "@/components/layout/Layout";
-import { BookOpen, Stethoscope, Users, Droplets, Leaf, Home } from "lucide-react";
+import { BookOpen, Users, Heart } from "lucide-react";
 import educationImg from "@/assets/programs-education.jpg";
 import healthImg from "@/assets/programs-health.jpg";
 import livelihoodImg from "@/assets/programs-livelihood.jpg";
 
 const programs = [
   {
-    title: "Education & Scholarships",
-    desc: "We provide scholarships, build classrooms, supply learning materials, and train teachers to ensure quality education reaches every child.",
+    title: "Education Support",
+    desc: "We provide education support to all orphaned children in Dzaleka Refugee Camp — from school fees and learning materials to mentorship and after-school programs. Every child deserves the chance to learn, grow, and dream of a brighter future regardless of their circumstances.",
     icon: BookOpen,
     image: educationImg,
-    stats: "5,000+ students supported",
+    stats: "100+ orphans supported",
   },
   {
-    title: "Healthcare & Wellness",
-    desc: "Mobile clinics, health camps, maternal care programs, and vaccination drives bring essential healthcare to remote communities.",
-    icon: Stethoscope,
-    image: healthImg,
-    stats: "20+ health outreaches",
-  },
-  {
-    title: "Livelihood & Empowerment",
-    desc: "Skills training, microfinance support, and women's cooperatives help families build sustainable incomes and break the cycle of poverty.",
+    title: "Community Resilience",
+    desc: "Our community resilience program empowers widows and orphan youths through peer support groups, skills training, and income-generating activities. We help them rebuild their lives with dignity, creating networks of mutual support that strengthen the entire camp community.",
     icon: Users,
-    image: livelihoodImg,
-    stats: "1,200+ families empowered",
-  },
-  {
-    title: "Clean Water & Sanitation",
-    desc: "Borehole drilling, water treatment, and hygiene education programs to provide safe drinking water to underserved communities.",
-    icon: Droplets,
-    image: educationImg,
-    stats: "15 boreholes completed",
-  },
-  {
-    title: "Environmental Sustainability",
-    desc: "Tree planting drives, waste management training, and renewable energy projects for greener communities.",
-    icon: Leaf,
-    image: livelihoodImg,
-    stats: "10,000+ trees planted",
-  },
-  {
-    title: "Shelter & Infrastructure",
-    desc: "Building homes, community centers, and essential infrastructure for displaced families and vulnerable populations.",
-    icon: Home,
     image: healthImg,
-    stats: "50+ structures built",
+    stats: "50+ widows empowered",
+  },
+  {
+    title: "Bereavement Support",
+    desc: "Losing a parent or spouse in a refugee camp can be devastating. Our bereavement support program walks alongside grieving families with compassionate care, counseling, and practical assistance — turning grief into resilience and ensuring no one mourns alone.",
+    icon: Heart,
+    image: livelihoodImg,
+    stats: "Ongoing community care",
   },
 ];
 
 const Programs = () => {
   return (
     <Layout>
-      <section className="bg-secondary py-20">
-        <div className="container">
-          <h1 className="font-heading text-4xl lg:text-5xl font-extrabold text-secondary-foreground mb-4">Our <span className="text-primary">Programs</span></h1>
-          <p className="text-lg text-secondary-foreground/70 max-w-2xl">
-            Comprehensive, community-led programs designed to address the most pressing needs and build lasting resilience.
-          </p>
-        </div>
+      <section className="container pt-12 pb-8">
+        <p className="text-sm text-muted-foreground mb-2">Home &gt; Programs</p>
+        <h1 className="font-heading text-3xl lg:text-5xl font-extrabold mb-3">Our <span className="text-primary">Programs</span></h1>
+        <p className="text-lg text-muted-foreground max-w-2xl">
+          Holistic Continuity of Care — refugee-led programs designed to support orphaned children and widows from grief to growth.
+        </p>
       </section>
 
-      <section className="py-20">
+      <section className="container py-12">
         <div className="container space-y-16">
           {programs.map((prog, i) => (
             <div key={prog.title} className={`grid lg:grid-cols-2 gap-10 items-center ${i % 2 === 1 ? 'lg:flex-row-reverse' : ''}`}>

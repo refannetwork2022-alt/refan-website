@@ -1,29 +1,41 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { lovable } from "@/integrations/lovable/index";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LogIn, UserPlus } from "lucide-react";
+import { LogIn, ArrowLeft } from "lucide-react";
+import { store } from "@/lib/store";
+
+const PASSWORD_KEY = "refan_admin_password";
 
 const AdminLogin = () => {
   const { signIn, user, isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectReason = (location.state as { reason?: string })?.reason;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotAnswer, setForgotAnswer] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [forgotError, setForgotError] = useState("");
+  const [forgotSuccess, setForgotSuccess] = useState(false);
 
-  // Redirect when user is authenticated and admin check completes
+  useEffect(() => {
+    if (redirectReason === "unauthenticated") {
+      setError("Please sign in to access the admin area.");
+    } else if (redirectReason === "unauthorized") {
+      setError("Not authorized. Only admin emails can access this area.");
+    }
+  }, [redirectReason]);
+
   useEffect(() => {
     if (authLoading) return;
     if (user && isAdmin) {
       navigate("/admin", { replace: true });
-    } else if (user && !isAdmin) {
-      setError("Not authorized. Only whitelisted admin emails can access this area.");
-      supabase.auth.signOut();
     }
   }, [user, isAdmin, authLoading, navigate]);
 
@@ -32,43 +44,35 @@ const AdminLogin = () => {
     setError("");
     setLoading(true);
 
-    if (mode === "signup") {
-      const { error } = await supabase.auth.signUp({ email, password });
-      setLoading(false);
-      if (error) {
-        setError(error.message);
-        return;
-      }
-      // After signup, sign in automatically
-      const { error: signInErr } = await signIn(email, password);
-      if (signInErr) {
-        setError(signInErr);
-      }
-      // useEffect handles redirect
-    } else {
-      const { error } = await signIn(email, password);
-      setLoading(false);
-      if (error) {
-        setError(error);
-      }
-      // useEffect handles redirect
+    const { error } = await signIn(email, password);
+    setLoading(false);
+    if (error) {
+      setError(error);
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setError("");
-    const { error } = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/admin-login",
-    });
-    if (error) {
-      setError(error.message || "Google sign-in failed");
+  const handleResetPassword = () => {
+    setForgotError("");
+    if (!store.validateSecurityAnswer(forgotAnswer)) {
+      setForgotError("Incorrect answer.");
+      return;
     }
+    if (newPassword.length < 6) {
+      setForgotError("Password must be at least 6 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setForgotError("Passwords don't match.");
+      return;
+    }
+    localStorage.setItem(PASSWORD_KEY, newPassword);
+    setForgotSuccess(true);
   };
 
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading…</p>
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     );
   }
@@ -76,93 +80,101 @@ const AdminLogin = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted px-4">
       <div className="w-full max-w-md bg-card rounded-2xl shadow-soft p-8">
-        <div className="text-center mb-8">
-          <h1 className="font-heading text-2xl font-extrabold">
-            <span className="text-primary">Re</span>FAN Admin
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {mode === "signin" ? "Sign in to manage your site" : "Create your admin account"}
-          </p>
-        </div>
+        {!showForgot ? (
+          <>
+            <div className="text-center mb-8">
+              <h1 className="font-heading text-2xl font-extrabold">
+                <span className="text-primary">ReFA</span><span className="text-secondary">N</span> Admin
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Sign in to manage your site
+              </p>
+            </div>
 
-        <Button
-          variant="outline"
-          className="w-full mb-6"
-          onClick={handleGoogleSignIn}
-          type="button"
-        >
-          <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
-            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-          </svg>
-          Continue with Google
-        </Button>
-
-        <div className="relative mb-6">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">Or</span>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="text-sm font-medium mb-1 block">Email</label>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@example.com"
-              required
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium mb-1 block">Password</label>
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
-          </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button type="submit" className="w-full" disabled={loading}>
-            {mode === "signin" ? (
-              <>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Email</label>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@example.com"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Password</label>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              <Button type="submit" className="w-full" disabled={loading}>
                 <LogIn className="h-4 w-4 mr-2" />
-                {loading ? "Signing in…" : "Sign In"}
-              </>
-            ) : (
-              <>
-                <UserPlus className="h-4 w-4 mr-2" />
-                {loading ? "Creating account…" : "Create Account"}
-              </>
-            )}
-          </Button>
-        </form>
+                {loading ? "Signing in..." : "Sign In"}
+              </Button>
+            </form>
 
-        <p className="text-center text-sm text-muted-foreground mt-4">
-          {mode === "signin" ? (
-            <>
-              No account?{" "}
-              <button type="button" className="text-primary underline underline-offset-2" onClick={() => { setMode("signup"); setError(""); }}>
-                Sign up
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => setShowForgot(true)}
+                className="text-sm text-primary hover:underline"
+              >
+                Forgot Password?
               </button>
-            </>
-          ) : (
-            <>
-              Already have an account?{" "}
-              <button type="button" className="text-primary underline underline-offset-2" onClick={() => { setMode("signin"); setError(""); }}>
-                Sign in
-              </button>
-            </>
-          )}
-        </p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="text-center mb-6">
+              <h1 className="font-heading text-2xl font-extrabold">Reset Password</h1>
+            </div>
+
+            {forgotSuccess ? (
+              <div className="text-center space-y-4">
+                <p className="text-green-600 font-medium">Password has been reset successfully!</p>
+                <Button onClick={() => { setShowForgot(false); setForgotSuccess(false); setForgotAnswer(''); setNewPassword(''); setConfirmPassword(''); }} className="w-full">
+                  <LogIn className="h-4 w-4 mr-2" /> Back to Login
+                </Button>
+              </div>
+            ) : store.hasSecurityQuestion() ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Security Question</label>
+                  <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">{store.getSecurityQuestion()}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Your Answer</label>
+                  <Input value={forgotAnswer} onChange={(e) => setForgotAnswer(e.target.value)} placeholder="Enter your answer" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">New Password</label>
+                  <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Min 6 characters" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Confirm Password</label>
+                  <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Repeat password" />
+                </div>
+                {forgotError && <p className="text-sm text-destructive">{forgotError}</p>}
+                <Button onClick={handleResetPassword} className="w-full">Reset Password</Button>
+                <button onClick={() => setShowForgot(false)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mx-auto">
+                  <ArrowLeft className="h-3 w-3" /> Back to login
+                </button>
+              </div>
+            ) : (
+              <div className="text-center space-y-4">
+                <p className="text-muted-foreground text-sm">No security question has been configured. Please contact the system administrator to reset your password.</p>
+                <button onClick={() => setShowForgot(false)} className="flex items-center gap-1 text-sm text-primary hover:underline mx-auto">
+                  <ArrowLeft className="h-3 w-3" /> Back to login
+                </button>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

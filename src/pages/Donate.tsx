@@ -1,104 +1,126 @@
 import { useState } from "react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { Heart, Shield, CreditCard } from "lucide-react";
+import { Heart, Shield, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { store } from "@/lib/store";
 
-const amounts = [10, 25, 50, 100, 250, 500];
+const currencies = [
+  { code: "MWK", label: "MWK (Malawi Kwacha)" },
+  { code: "USD", label: "USD (US Dollar)" },
+  { code: "GBP", label: "GBP (British Pound)" },
+  { code: "EUR", label: "EUR (Euro)" },
+  { code: "KES", label: "KES (Kenyan Shilling)" },
+  { code: "ZAR", label: "ZAR (South African Rand)" },
+  { code: "BIF", label: "BIF (Burundian Franc)" },
+  { code: "CDF", label: "CDF (Congolese Franc)" },
+  { code: "RWF", label: "RWF (Rwandan Franc)" },
+  { code: "TZS", label: "TZS (Tanzanian Shilling)" },
+  { code: "UGX", label: "UGX (Ugandan Shilling)" },
+  { code: "AUD", label: "AUD (Australian Dollar)" },
+  { code: "CAD", label: "CAD (Canadian Dollar)" },
+  { code: "CHF", label: "CHF (Swiss Franc)" },
+  { code: "INR", label: "INR (Indian Rupee)" },
+  { code: "NGN", label: "NGN (Nigerian Naira)" },
+];
+
+const inputClass = "w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground focus:ring-2 focus:ring-ring outline-none";
 
 const Donate = () => {
   const { toast } = useToast();
-  const [selected, setSelected] = useState(50);
-  const [custom, setCustom] = useState("");
+  const [currency, setCurrency] = useState("MWK");
+  const [amount, setAmount] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const amount = custom ? Number(custom) : selected;
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim() || amount <= 0) {
+    if (!name.trim() || !email.trim() || !amount || Number(amount) <= 0) {
       toast({ title: "Please fill all required fields", variant: "destructive" });
       return;
     }
     setSubmitting(true);
-    store.addDonation({ name: name.trim(), email: email.trim(), amount, message: message.trim(), date: new Date().toISOString() });
+    store.addDonation({
+      name: name.trim(),
+      email: email.trim(),
+      amount: Number(amount),
+      currency,
+      message: message.trim(),
+      date: new Date().toISOString(),
+    });
     setTimeout(() => {
       setSubmitting(false);
-      toast({ title: "Thank you for your generous donation!", description: `Your $${amount} donation has been recorded. We'll send a confirmation to ${email}.` });
-      setName(""); setEmail(""); setMessage(""); setCustom("");
+      toast({
+        title: "Thank you for your donation request!",
+        description: "Our admin will contact you with payment instructions.",
+      });
+      setName(""); setEmail(""); setMessage(""); setAmount("");
     }, 800);
   };
 
   return (
     <Layout>
-      <section className="bg-gradient-primary py-20">
-        <div className="container text-center">
-          <Heart className="h-12 w-12 text-primary-foreground mx-auto mb-4" />
-          <h1 className="font-heading text-4xl lg:text-5xl font-extrabold text-primary-foreground mb-4">Make a Donation</h1>
-          <p className="text-lg text-primary-foreground/80 max-w-xl mx-auto">
-            Your generosity transforms lives. Every dollar goes directly to programs that empower communities.
-          </p>
-        </div>
+      <section className="container pt-12 pb-8 text-center">
+        <Heart className="h-12 w-12 text-primary mx-auto mb-4" />
+        <h1 className="font-heading text-3xl lg:text-5xl font-extrabold mb-3">Make a <span className="text-primary">Donation</span></h1>
+        <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+          Your generosity transforms the lives of orphaned children and widows in Dzaleka Refugee Camp. Every contribution goes directly to education, community resilience, and bereavement support.
+        </p>
       </section>
 
-      <section className="py-20">
+      <section className="container py-12">
         <div className="container max-w-2xl">
-          <form onSubmit={handleSubmit} className="bg-card rounded-2xl p-8 lg:p-10 shadow-elevated space-y-8">
-            {/* Amount Selection */}
+          <form onSubmit={handleSubmit} className="bg-card rounded-2xl p-8 lg:p-10 shadow-elevated space-y-6">
+            {/* Currency + Amount */}
             <div>
-              <label className="block font-heading font-bold mb-4">Select Amount (USD)</label>
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                {amounts.map((a) => (
-                  <button
-                    key={a}
-                    type="button"
-                    onClick={() => { setSelected(a); setCustom(""); }}
-                    className={`py-3 rounded-lg font-bold text-lg transition-all ${
-                      selected === a && !custom ? 'bg-primary text-primary-foreground shadow-soft' : 'bg-muted text-foreground hover:bg-accent'
-                    }`}
-                  >
-                    ${a}
-                  </button>
-                ))}
+              <label className="block font-heading font-bold mb-3">Select Your Currency & Amount</label>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className={inputClass}
+                >
+                  {currencies.map((c) => (
+                    <option key={c.code} value={c.code}>{c.label}</option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  placeholder="Enter amount"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className={inputClass}
+                  min={1}
+                  required
+                />
               </div>
-              <input
-                type="number"
-                placeholder="Or enter custom amount"
-                value={custom}
-                onChange={(e) => setCustom(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-input bg-background text-foreground focus:ring-2 focus:ring-ring outline-none"
-                min={1}
-              />
             </div>
 
-            {/* Details */}
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1.5">Full Name *</label>
-                <input value={name} onChange={(e) => setName(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring outline-none" required maxLength={100} />
+                <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} required maxLength={100} />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Email *</label>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring outline-none" required maxLength={255} />
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} required maxLength={255} />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Message (optional)</label>
-                <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={3} className="w-full px-4 py-3 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring outline-none resize-none" maxLength={500} />
+                <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={4} className={inputClass + " resize-none"} maxLength={500} placeholder="Write a message to our admin (optional)" />
               </div>
             </div>
 
-            <Button type="submit" variant="hero" size="lg" className="w-full" disabled={submitting}>
-              <CreditCard className="h-5 w-5" />
-              {submitting ? 'Processing...' : `Donate $${amount}`}
+            <Button type="submit" size="lg" className="w-full bg-primary hover:bg-primary/90 text-white font-bold rounded-lg" disabled={submitting}>
+              <Send className="h-5 w-5" />
+              {submitting ? 'Sending...' : `Send Donation Request (${currency} ${amount || '0'})`}
             </Button>
 
             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <Shield className="h-4 w-4" />
-              <span>Secure & encrypted. Your data is safe with us.</span>
+              <span>Your donation request will be sent to our admin who will provide payment instructions.</span>
             </div>
           </form>
         </div>

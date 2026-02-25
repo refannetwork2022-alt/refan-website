@@ -1,65 +1,226 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
-import { store, type Story } from "@/lib/store";
-import { Calendar, Tag } from "lucide-react";
+import { store, Story, Announcement } from "@/lib/store";
+import { Calendar, X, ChevronRight, Share2, Facebook, Twitter, Link2, Heart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 const Stories = () => {
+  const { toast } = useToast();
   const [filter, setFilter] = useState<'all' | 'story' | 'announcement'>('all');
+  const [selectedStory, setSelectedStory] = useState<Story | null>(null);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
   const stories = store.getStories();
-  const filtered = filter === 'all' ? stories : stories.filter(s => s.category === filter);
+  const announcements = store.getAnnouncements();
+  const filteredStories = filter === 'all' || filter === 'story' ? stories : [];
+  const filteredAnnouncements = filter === 'all' || filter === 'announcement' ? announcements : [];
+
+  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const copyLink = () => { navigator.clipboard.writeText(shareUrl); toast({ title: "Link copied!" }); };
+
+  const hasContent = filteredStories.length > 0 || filteredAnnouncements.length > 0;
 
   return (
     <Layout>
-      <section className="bg-secondary py-20">
-        <div className="container">
-          <h1 className="font-heading text-4xl lg:text-5xl font-extrabold text-secondary-foreground mb-4">Stories & <span className="text-primary">Announcements</span></h1>
-          <p className="text-lg text-secondary-foreground/70 max-w-2xl">Real impact stories from the communities we serve.</p>
-        </div>
+      <section className="container pt-12 pb-8">
+        <h1 className="font-heading text-3xl lg:text-5xl font-extrabold mb-3">
+          <span className="text-secondary">Stories</span> & <span className="text-primary">Announcements</span>
+        </h1>
+        <p className="text-lg text-muted-foreground max-w-2xl">Real impact stories from the communities we serve in Dzaleka.</p>
       </section>
 
-      <section className="py-16">
-        <div className="container">
-          <div className="flex gap-2 mb-10">
-            {(['all', 'story', 'announcement'] as const).map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  filter === f ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'
-                }`}
-              >
-                {f === 'all' ? 'All' : f === 'story' ? 'Stories' : 'Announcements'}
-              </button>
-            ))}
+      <section className="container py-8 pb-20">
+        <div className="flex gap-2 mb-10">
+          {(['all', 'story', 'announcement'] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
+                filter === f
+                  ? f === 'story' ? 'bg-secondary text-white shadow-md' : f === 'announcement' ? 'bg-primary text-white shadow-md' : 'bg-secondary text-white shadow-md'
+                  : 'bg-muted text-muted-foreground hover:bg-accent hover:shadow-sm'
+              }`}
+            >
+              {f === 'all' ? 'All' : f === 'story' ? 'Stories' : 'Announcements'}
+            </button>
+          ))}
+        </div>
+
+        {!hasContent ? (
+          <p className="text-center text-muted-foreground py-20">No stories yet. Check back soon!</p>
+        ) : (
+          <div className="space-y-12">
+            {/* Announcements section - same style as homepage */}
+            {filteredAnnouncements.length > 0 && (
+              <div>
+                {filter === 'all' && (
+                  <h2 className="font-heading text-2xl font-extrabold mb-6">
+                    Latest <span className="text-primary">Announcements</span>
+                  </h2>
+                )}
+                <div className="grid md:grid-cols-2 gap-6">
+                  {filteredAnnouncements.map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => setSelectedAnnouncement(item)}
+                      className="bg-card rounded-2xl border border-border overflow-hidden flex flex-row group hover:shadow-elevated transition-all cursor-pointer"
+                    >
+                      {item.image && (
+                        <div className="w-48 md:w-56 shrink-0 overflow-hidden">
+                          <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        </div>
+                      )}
+                      <div className="p-5 flex flex-col flex-1 min-w-0">
+                        <span className="inline-block w-fit px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-2">Announcement</span>
+                        <h3 className="font-heading text-sm font-bold mb-2 group-hover:text-primary transition-colors leading-snug">{item.title}</h3>
+                        <p className="text-xs text-muted-foreground leading-relaxed flex-1">{item.content.length > 150 ? item.content.slice(0, 150) + '...' : item.content}</p>
+                        <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
+                          <span className="text-primary text-xs font-semibold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            Read more <ChevronRight className="h-3 w-3" />
+                          </span>
+                          <span className="text-xs text-muted-foreground font-medium">Donations ({item.donationCount})</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Stories section */}
+            {filteredStories.length > 0 && (
+              <div>
+                {filter === 'all' && (
+                  <h2 className="font-heading text-2xl font-extrabold mb-6">
+                    Impact <span className="text-secondary">Stories</span>
+                  </h2>
+                )}
+                <div className="grid md:grid-cols-2 gap-6">
+                  {filteredStories.map((story) => (
+                    <div
+                      key={story.id}
+                      onClick={() => setSelectedStory(story)}
+                      className="bg-card rounded-2xl border border-border overflow-hidden flex flex-row group hover:shadow-elevated transition-all cursor-pointer"
+                    >
+                      {story.image && (
+                        <div className="w-48 md:w-56 shrink-0 overflow-hidden">
+                          <img src={story.image} alt={story.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        </div>
+                      )}
+                      <div className="p-5 flex flex-col flex-1 min-w-0">
+                        <span className="inline-block w-fit px-2.5 py-0.5 rounded-full bg-secondary/10 text-secondary text-xs font-semibold mb-2">Story</span>
+                        <h3 className="font-heading text-sm font-bold mb-2 group-hover:text-primary transition-colors leading-snug">{story.title}</h3>
+                        <p className="text-xs text-muted-foreground leading-relaxed flex-1">{story.excerpt.length > 150 ? story.excerpt.slice(0, 150) + '...' : story.excerpt}</p>
+                        <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Calendar className="h-3.5 w-3.5" />
+                            {new Date(story.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </div>
+                          <span className="text-primary text-xs font-semibold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            Read more <ChevronRight className="h-3 w-3" />
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-
-          {filtered.length === 0 ? (
-            <p className="text-center text-muted-foreground py-20">No stories yet. Check back soon!</p>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filtered.map((story) => (
-                <article key={story.id} className="bg-card rounded-xl overflow-hidden shadow-card hover:shadow-elevated transition-shadow">
-                  <div className="p-6">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                        story.category === 'story' ? 'bg-accent text-accent-foreground' : 'bg-primary/10 text-primary'
-                      }`}>
-                        {story.category === 'story' ? 'Story' : 'Announcement'}
-                      </span>
-                    </div>
-                    <h3 className="font-heading text-lg font-bold mb-2">{story.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-4">{story.excerpt}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Calendar className="h-3.5 w-3.5" />
-                      {new Date(story.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </div>
+        )}
       </section>
+
+      {/* Story popup modal */}
+      {selectedStory && (
+        <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4" onClick={() => setSelectedStory(null)}>
+          <div
+            className="bg-card rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={`h-2 rounded-t-2xl ${selectedStory.category === 'story' ? 'bg-secondary' : 'bg-primary'}`} />
+            {selectedStory.image && (
+              <div className="w-full h-64 md:h-80 overflow-hidden">
+                <img src={selectedStory.image} alt={selectedStory.title} className="w-full h-full object-cover" />
+              </div>
+            )}
+            <div className="sticky top-0 bg-card border-b border-border px-8 py-6 flex items-start justify-between">
+              <div>
+                <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold mb-2 ${
+                  selectedStory.category === 'story' ? 'bg-secondary/10 text-secondary' : 'bg-primary/10 text-primary'
+                }`}>
+                  {selectedStory.category === 'story' ? 'Story' : 'Announcement'}
+                </span>
+                <h2 className="font-heading text-2xl lg:text-3xl font-bold">{selectedStory.title}</h2>
+                <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
+                  <Calendar className="h-3.5 w-3.5" />
+                  {new Date(selectedStory.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </p>
+              </div>
+              <button onClick={() => setSelectedStory(null)} className="p-2 rounded-lg hover:bg-muted transition-colors shrink-0">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="px-8 py-6">
+              <div className="h-1 w-16 rounded-full bg-gradient-to-r from-primary to-secondary mb-6" />
+              <p className="text-foreground/80 text-lg leading-relaxed whitespace-pre-wrap">{selectedStory.content}</p>
+            </div>
+            <div className="px-8 pb-6 flex items-center justify-between border-t border-border pt-4">
+              <Button onClick={() => setSelectedStory(null)} variant="outline" className="btn-hover">Close</Button>
+              <div className="flex items-center gap-1">
+                <Share2 className="h-4 w-4 text-muted-foreground mr-1" />
+                <button onClick={copyLink} className="p-2 rounded-lg hover:bg-muted transition-colors" title="Copy link"><Link2 className="h-4 w-4" /></button>
+                <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg hover:bg-muted transition-colors text-[#1877F2]"><Facebook className="h-4 w-4" /></a>
+                <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(selectedStory.title)}&url=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg hover:bg-muted transition-colors text-[#1DA1F2]"><Twitter className="h-4 w-4" /></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Announcement popup modal */}
+      {selectedAnnouncement && (
+        <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4" onClick={() => setSelectedAnnouncement(null)}>
+          <div
+            className="bg-card rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="h-2 rounded-t-2xl bg-gradient-to-r from-primary to-secondary" />
+            {selectedAnnouncement.image && (
+              <div className="w-full h-64 md:h-80 overflow-hidden">
+                <img src={selectedAnnouncement.image} alt={selectedAnnouncement.title} className="w-full h-full object-cover" />
+              </div>
+            )}
+            <div className="sticky top-0 bg-card border-b border-border px-8 py-6 flex items-start justify-between">
+              <div>
+                <span className="inline-block px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold mb-2">Announcement</span>
+                <h2 className="font-heading text-2xl lg:text-3xl font-bold">{selectedAnnouncement.title}</h2>
+              </div>
+              <button onClick={() => setSelectedAnnouncement(null)} className="p-2 rounded-lg hover:bg-muted transition-colors shrink-0">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="px-8 py-6">
+              <div className="h-1 w-16 rounded-full bg-gradient-to-r from-primary to-secondary mb-6" />
+              <p className="text-foreground/80 text-lg leading-relaxed whitespace-pre-wrap">{selectedAnnouncement.content}</p>
+            </div>
+            <div className="px-8 pb-6 flex items-center justify-between border-t border-border pt-4">
+              <div className="flex items-center gap-3">
+                <Button onClick={() => setSelectedAnnouncement(null)} variant="outline" className="btn-hover">Close</Button>
+                <Button asChild className="bg-primary hover:bg-primary/90 text-white font-bold">
+                  <Link to="/donate"><Heart className="h-4 w-4" /> Donate</Link>
+                </Button>
+              </div>
+              <div className="flex items-center gap-1">
+                <Share2 className="h-4 w-4 text-muted-foreground mr-1" />
+                <button onClick={copyLink} className="p-2 rounded-lg hover:bg-muted transition-colors" title="Copy link"><Link2 className="h-4 w-4" /></button>
+                <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg hover:bg-muted transition-colors text-[#1877F2]"><Facebook className="h-4 w-4" /></a>
+                <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(selectedAnnouncement.title)}&url=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg hover:bg-muted transition-colors text-[#1DA1F2]"><Twitter className="h-4 w-4" /></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };

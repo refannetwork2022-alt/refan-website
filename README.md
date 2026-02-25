@@ -1,73 +1,95 @@
-# Welcome to your Lovable project
+# ReFAN Website
 
-## Project info
+Vite + React + TypeScript single-page application built with shadcn/ui and Tailwind CSS. Uses Supabase for authentication, database, and storage.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Prerequisites
 
-## How can I edit this code?
+- [Node.js](https://nodejs.org/) v18+ and npm
 
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Local development
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Clone and enter the project
 git clone <YOUR_GIT_URL>
+cd trusty-hearth-build
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Install dependencies
+npm install
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the dev server (http://localhost:8080)
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Production build
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```sh
+# Build for production (output in dist/)
+npm run build
 
-**Use GitHub Codespaces**
+# Preview the production build locally (http://localhost:4173)
+npm run preview
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### All scripts
 
-## What technologies are used for this project?
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start dev server with HMR |
+| `npm run build` | Production build → `dist/` |
+| `npm run preview` | Serve the production build locally |
+| `npm run lint` | Run ESLint |
+| `npm run test` | Run tests (Vitest) |
 
-This project is built with:
+## Environment variables
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+If Supabase is enabled, create a `.env` file in the project root:
 
-## How can I deploy this project?
+```
+VITE_SUPABASE_URL=https://<your-project>.supabase.co
+VITE_SUPABASE_ANON_KEY=<your-anon-key>
+```
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+These values come from your Supabase project dashboard under **Settings → API**.
 
-## Can I connect a custom domain to my Lovable project?
+## Routing
 
-Yes, you can!
+The app uses **HashRouter** (React Router v6). All URLs include a `#` fragment — for example `/#/about`, `/#/programs`, `/#/admin`.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+This means the server always serves `index.html` regardless of the URL path. Routing is handled entirely client-side by React Router, so **page refresh and direct URL access work on any hosting platform** without server-side rewrite rules.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+### Deploy
+
+Because HashRouter is hosting-independent, no special server configuration is needed. Upload the contents of `dist/` to any static file host (Vercel, Netlify, GitHub Pages, S3, etc.) and it works out of the box.
+
+### Routes
+
+| URL | Page |
+|-----|------|
+| `/#/` | Home |
+| `/#/about` | About |
+| `/#/programs` | Programs |
+| `/#/stories` | Stories |
+| `/#/gallery` | Gallery |
+| `/#/blog` | Blog |
+| `/#/donate` | Donate |
+| `/#/get-involved` | Get Involved |
+| `/#/contact` | Contact |
+| `/#/admin-login` | Admin Login |
+| `/#/admin` | Admin Dashboard (protected) |
+
+## Project rules
+
+- **Do not redesign the UI** unless explicitly requested.
+- **Routing must not break on refresh or direct URL access.**
+- Keep navbar links consistent with route definitions in `App.tsx`.
+- Admin routes must remain protected (email whitelist via Supabase).
+
+## Tech stack
+
+- **Vite** — build tool
+- **React 18** + **TypeScript**
+- **Tailwind CSS** + **shadcn/ui** — styling & components
+- **React Router v6** (HashRouter) — client-side routing
+- **Supabase** — auth, database, storage
+- **Tanstack React Query** — data fetching
+- **Recharts** — charts
