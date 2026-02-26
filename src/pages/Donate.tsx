@@ -35,14 +35,14 @@ const Donate = () => {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !amount || Number(amount) <= 0) {
       toast({ title: "Please fill all required fields", variant: "destructive" });
       return;
     }
     setSubmitting(true);
-    store.addDonation({
+    await store.addDonation({
       name: name.trim(),
       email: email.trim(),
       amount: Number(amount),
@@ -50,14 +50,12 @@ const Donate = () => {
       message: message.trim(),
       date: new Date().toISOString(),
     });
-    setTimeout(() => {
-      setSubmitting(false);
-      toast({
-        title: "Thank you for your donation request!",
-        description: "Our admin will contact you with payment instructions.",
-      });
-      setName(""); setEmail(""); setMessage(""); setAmount("");
-    }, 800);
+    setSubmitting(false);
+    toast({
+      title: "Thank you for your donation request!",
+      description: "Our admin will contact you with payment instructions.",
+    });
+    setName(""); setEmail(""); setMessage(""); setAmount("");
   };
 
   return (

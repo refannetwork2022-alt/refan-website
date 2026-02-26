@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { store, BlogPost } from "@/lib/store";
 import { Calendar, User, X, ChevronRight, Share2, Facebook, Twitter, Link2 } from "lucide-react";
@@ -7,8 +7,12 @@ import { useToast } from "@/hooks/use-toast";
 
 const Blog = () => {
   const { toast } = useToast();
-  const posts = store.getBlogs();
+  const [posts, setPosts] = useState<BlogPost[]>([]);
   const [selected, setSelected] = useState<BlogPost | null>(null);
+
+  useEffect(() => {
+    store.getBlogs().then(setPosts);
+  }, []);
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const copyLink = () => { navigator.clipboard.writeText(shareUrl); toast({ title: "Link copied!" }); };

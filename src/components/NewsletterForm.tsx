@@ -47,7 +47,7 @@ const NewsletterForm = () => {
       const data = await res.json();
 
       if (data.success) {
-        store.addSubscriber(trimmed.toLowerCase());
+        await store.addSubscriber(trimmed.toLowerCase());
         setStatus("success");
         setEmail("");
         setOptIn(false);

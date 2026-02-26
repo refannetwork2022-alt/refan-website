@@ -11,8 +11,12 @@ import aboutTeam from "@/assets/about-team.jpg";
 const fallbackImages = [educationImg, healthImg, livelihoodImg, heroBg, aboutTeam];
 
 const Gallery = () => {
-  const items = store.getGallery();
+  const [items, setItems] = useState<GalleryItem[]>([]);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+
+  useEffect(() => {
+    store.getGallery().then(setItems);
+  }, []);
 
   const getImageUrl = (item: GalleryItem, idx: number) => item.url || fallbackImages[idx % fallbackImages.length];
   const handleImgError = (e: React.SyntheticEvent<HTMLImageElement>, idx: number) => {

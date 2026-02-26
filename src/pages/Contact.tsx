@@ -36,7 +36,7 @@ const Contact = () => {
       const data = await res.json();
 
       if (data.success) {
-        store.addMessage({
+        await store.addMessage({
           name: form.name.trim(),
           email: form.email.trim(),
           subject: form.subject.trim() || "No subject",

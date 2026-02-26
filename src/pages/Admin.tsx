@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { store, type Story, type BlogPost, type GalleryItem, type NewsletterSubscriber, type ContactMessage, type Announcement, type Member } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
@@ -42,15 +42,27 @@ const Admin = () => {
   const { toast } = useToast();
   const { signOut, changePassword } = useAuth();
   const [tab, setTab] = useState<Tab>('dashboard');
-  const [announcements, setAnnouncements] = useState(store.getAnnouncements());
-  const [stories, setStories] = useState(store.getStories());
-  const [blogs, setBlogs] = useState(store.getBlogs());
-  const [gallery, setGallery] = useState(store.getGallery());
-  const volunteers = store.getVolunteers();
-  const donations = store.getDonations();
-  const [subscribers, setSubscribers] = useState(store.getSubscribers());
-  const [messages, setMessages] = useState(store.getMessages());
-  const [members, setMembers] = useState(store.getMembers());
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [stories, setStories] = useState<Story[]>([]);
+  const [blogs, setBlogs] = useState<BlogPost[]>([]);
+  const [gallery, setGallery] = useState<GalleryItem[]>([]);
+  const [volunteers, setVolunteers] = useState<any[]>([]);
+  const [donations, setDonations] = useState<any[]>([]);
+  const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
+  const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const [a, s, b, g, v, d, sub, msg, mem] = await Promise.all([
+        store.getAnnouncements(), store.getStories(), store.getBlogs(), store.getGallery(),
+        store.getVolunteers(), store.getDonations(), store.getSubscribers(), store.getMessages(), store.getMembers(),
+      ]);
+      setAnnouncements(a); setStories(s); setBlogs(b); setGallery(g);
+      setVolunteers(v); setDonations(d); setSubscribers(sub); setMessages(msg); setMembers(mem);
+    };
+    loadData();
+  }, []);
   const [selectedSubs, setSelectedSubs] = useState<Set<string>>(new Set());
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
@@ -87,69 +99,69 @@ const Admin = () => {
     reader.readAsDataURL(file);
   };
 
-  const addAnnouncement = () => {
+  const addAnnouncement = async () => {
     if (!announcementForm.title.trim()) return;
-    store.addAnnouncement({ ...announcementForm, donationCount: 0 });
-    setAnnouncements(store.getAnnouncements());
+    await store.addAnnouncement({ ...announcementForm, donationCount: 0 });
+    setAnnouncements(await store.getAnnouncements());
     setAnnouncementForm({ title: '', content: '', image: '' });
     toast({ title: "Announcement added!" });
   };
 
-  const deleteAnnouncement = (id: string) => {
-    store.deleteAnnouncement(id);
-    setAnnouncements(store.getAnnouncements());
+  const deleteAnnouncement = async (id: string) => {
+    await store.deleteAnnouncement(id);
+    setAnnouncements(await store.getAnnouncements());
     toast({ title: "Announcement deleted" });
   };
 
-  const addStory = () => {
+  const addStory = async () => {
     if (!storyForm.title.trim()) return;
-    store.addStory({ ...storyForm, date: new Date().toISOString() });
-    setStories(store.getStories());
+    await store.addStory({ ...storyForm, date: new Date().toISOString() });
+    setStories(await store.getStories());
     setStoryForm({ title: '', excerpt: '', content: '', category: 'story' });
     toast({ title: "Story added!" });
   };
 
-  const deleteStory = (id: string) => {
-    store.deleteStory(id);
-    setStories(store.getStories());
+  const deleteStory = async (id: string) => {
+    await store.deleteStory(id);
+    setStories(await store.getStories());
     toast({ title: "Story deleted" });
   };
 
-  const addBlog = () => {
+  const addBlog = async () => {
     if (!blogForm.title.trim()) return;
-    store.addBlog({ ...blogForm, tags: blogForm.tags.split(',').map(t => t.trim()).filter(Boolean), date: new Date().toISOString() });
-    setBlogs(store.getBlogs());
+    await store.addBlog({ ...blogForm, tags: blogForm.tags.split(',').map(t => t.trim()).filter(Boolean), date: new Date().toISOString() });
+    setBlogs(await store.getBlogs());
     setBlogForm({ title: '', excerpt: '', content: '', author: 'ReFAN Team', tags: '' });
     toast({ title: "Blog post added!" });
   };
 
-  const deleteBlog = (id: string) => {
-    store.deleteBlog(id);
-    setBlogs(store.getBlogs());
+  const deleteBlog = async (id: string) => {
+    await store.deleteBlog(id);
+    setBlogs(await store.getBlogs());
     toast({ title: "Blog post deleted" });
   };
 
-  const addGalleryItem = () => {
+  const addGalleryItem = async () => {
     if (!galleryForm.title.trim()) return;
-    store.addGalleryItem({ ...galleryForm, date: new Date().toISOString() });
-    setGallery(store.getGallery());
+    await store.addGalleryItem({ ...galleryForm, date: new Date().toISOString() });
+    setGallery(await store.getGallery());
     setGalleryForm({ title: '', url: '', type: 'photo' });
     toast({ title: "Gallery item added!" });
   };
 
-  const deleteGalleryItem = (id: string) => {
-    store.deleteGalleryItem(id);
-    setGallery(store.getGallery());
+  const deleteGalleryItem = async (id: string) => {
+    await store.deleteGalleryItem(id);
+    setGallery(await store.getGallery());
     toast({ title: "Gallery item deleted" });
   };
 
-  const addMember = () => {
+  const addMember = async () => {
     if (!memberForm.surname.trim() || !memberForm.firstName.trim()) {
       toast({ title: "Surname and First Name are required", variant: "destructive" });
       return;
     }
     const dob = memberForm.dobYear ? `${memberForm.dobYear}-${(memberForm.dobMonth || '1').padStart(2, '0')}-${(memberForm.dobDay || '1').padStart(2, '0')}` : '';
-    store.addMember({
+    await store.addMember({
       surname: memberForm.surname.trim(), firstName: memberForm.firstName.trim(),
       otherName: memberForm.otherName.trim(), countryOfOrigin: memberForm.countryOfOrigin,
       countryOfResidence: memberForm.countryOfResidence, unhcrId: memberForm.unhcrId.trim(),
@@ -161,15 +173,15 @@ const Admin = () => {
       registrationDate: new Date().toISOString(), expiryDate: memberForm.expiryDate,
       branchName: memberForm.branchName.trim(), username: memberForm.username.trim(),
     });
-    setMembers(store.getMembers());
+    setMembers(await store.getMembers());
     setMemberForm(emptyMemberForm);
     setShowMemberForm(false);
     toast({ title: "Member registered!" });
   };
 
-  const deleteMember = (id: string) => {
-    store.deleteMember(id);
-    setMembers(store.getMembers());
+  const deleteMember = async (id: string) => {
+    await store.deleteMember(id);
+    setMembers(await store.getMembers());
     toast({ title: "Member removed" });
   };
 
@@ -690,9 +702,9 @@ const Admin = () => {
                         <p className="text-sm text-muted-foreground">{m.message}</p>
                         <p className="text-xs text-muted-foreground mt-2">{new Date(m.date).toLocaleString()}</p>
                       </div>
-                      <Button variant="ghost" size="icon" onClick={() => {
-                        store.deleteMessage(m.id);
-                        setMessages(store.getMessages());
+                      <Button variant="ghost" size="icon" onClick={async () => {
+                        await store.deleteMessage(m.id);
+                        setMessages(await store.getMessages());
                         toast({ title: "Message deleted" });
                       }}>
                         <Trash2 className="h-4 w-4 text-destructive" />
@@ -759,9 +771,9 @@ const Admin = () => {
                         <span className="text-sm font-medium">{s.email}</span>
                         <span className="text-xs text-muted-foreground">{new Date(s.date).toLocaleDateString()}</span>
                       </label>
-                      <Button variant="ghost" size="icon" onClick={() => {
-                        store.deleteSubscriber(s.id);
-                        setSubscribers(store.getSubscribers());
+                      <Button variant="ghost" size="icon" onClick={async () => {
+                        await store.deleteSubscriber(s.id);
+                        setSubscribers(await store.getSubscribers());
                         const next = new Set(selectedSubs);
                         next.delete(s.id);
                         setSelectedSubs(next);
@@ -819,12 +831,12 @@ const Admin = () => {
               <input type="password" value={pwForm.confirm} onChange={(e) => setPwForm({ ...pwForm, confirm: e.target.value })} className={inputClass} />
             </div>
             <div className="flex gap-3 pt-2">
-              <Button variant="default" size="sm" onClick={() => {
+              <Button variant="default" size="sm" onClick={async () => {
                 if (pwForm.newPw !== pwForm.confirm) {
                   toast({ title: "Passwords don't match", variant: "destructive" });
                   return;
                 }
-                const result = changePassword(pwForm.current, pwForm.newPw);
+                const result = await changePassword(pwForm.current, pwForm.newPw);
                 if (result.error) {
                   toast({ title: result.error, variant: "destructive" });
                 } else {

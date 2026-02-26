@@ -4,9 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LogIn, ArrowLeft } from "lucide-react";
-import { store } from "@/lib/store";
-
-const PASSWORD_KEY = "refan_admin_password";
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminLogin = () => {
   const { signIn, user, isAdmin, loading: authLoading } = useAuth();
@@ -18,9 +16,7 @@ const AdminLogin = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
-  const [forgotAnswer, setForgotAnswer] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [resetEmail, setResetEmail] = useState("");
   const [forgotError, setForgotError] = useState("");
   const [forgotSuccess, setForgotSuccess] = useState(false);
 
@@ -51,22 +47,20 @@ const AdminLogin = () => {
     }
   };
 
-  const handleResetPassword = () => {
+  const handleResetPassword = async () => {
     setForgotError("");
-    if (!store.validateSecurityAnswer(forgotAnswer)) {
-      setForgotError("Incorrect answer.");
+    if (!resetEmail.trim()) {
+      setForgotError("Please enter your email address.");
       return;
     }
-    if (newPassword.length < 6) {
-      setForgotError("Password must be at least 6 characters.");
-      return;
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
+      redirectTo: `${window.location.origin}/admin-login`,
+    });
+    if (error) {
+      setForgotError(error.message);
+    } else {
+      setForgotSuccess(true);
     }
-    if (newPassword !== confirmPassword) {
-      setForgotError("Passwords don't match.");
-      return;
-    }
-    localStorage.setItem(PASSWORD_KEY, newPassword);
-    setForgotSuccess(true);
   };
 
   if (authLoading) {
@@ -136,39 +130,22 @@ const AdminLogin = () => {
 
             {forgotSuccess ? (
               <div className="text-center space-y-4">
-                <p className="text-green-600 font-medium">Password has been reset successfully!</p>
-                <Button onClick={() => { setShowForgot(false); setForgotSuccess(false); setForgotAnswer(''); setNewPassword(''); setConfirmPassword(''); }} className="w-full">
+                <p className="text-green-600 font-medium">Password reset email sent! Check your inbox.</p>
+                <p className="text-sm text-muted-foreground">If you don't see it, check your spam folder.</p>
+                <Button onClick={() => { setShowForgot(false); setForgotSuccess(false); setResetEmail(''); }} className="w-full">
                   <LogIn className="h-4 w-4 mr-2" /> Back to Login
                 </Button>
               </div>
-            ) : store.hasSecurityQuestion() ? (
+            ) : (
               <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">Enter your admin email and we'll send you a password reset link.</p>
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Security Question</label>
-                  <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">{store.getSecurityQuestion()}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Your Answer</label>
-                  <Input value={forgotAnswer} onChange={(e) => setForgotAnswer(e.target.value)} placeholder="Enter your answer" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">New Password</label>
-                  <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Min 6 characters" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Confirm Password</label>
-                  <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Repeat password" />
+                  <label className="text-sm font-medium mb-1 block">Email Address</label>
+                  <Input type="email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} placeholder="your@email.com" />
                 </div>
                 {forgotError && <p className="text-sm text-destructive">{forgotError}</p>}
-                <Button onClick={handleResetPassword} className="w-full">Reset Password</Button>
+                <Button onClick={handleResetPassword} className="w-full">Send Reset Link</Button>
                 <button onClick={() => setShowForgot(false)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mx-auto">
-                  <ArrowLeft className="h-3 w-3" /> Back to login
-                </button>
-              </div>
-            ) : (
-              <div className="text-center space-y-4">
-                <p className="text-muted-foreground text-sm">No security question has been configured. Please contact the system administrator to reset your password.</p>
-                <button onClick={() => setShowForgot(false)} className="flex items-center gap-1 text-sm text-primary hover:underline mx-auto">
                   <ArrowLeft className="h-3 w-3" /> Back to login
                 </button>
               </div>

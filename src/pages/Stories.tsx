@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { store, Story, Announcement } from "@/lib/store";
@@ -11,8 +11,14 @@ const Stories = () => {
   const [filter, setFilter] = useState<'all' | 'story' | 'announcement'>('all');
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
-  const stories = store.getStories();
-  const announcements = store.getAnnouncements();
+  const [stories, setStories] = useState<Story[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+
+  useEffect(() => {
+    store.getStories().then(setStories);
+    store.getAnnouncements().then(setAnnouncements);
+  }, []);
+
   const filteredStories = filter === 'all' || filter === 'story' ? stories : [];
   const filteredAnnouncements = filter === 'all' || filter === 'announcement' ? announcements : [];
 

@@ -97,8 +97,13 @@ const Index = () => {
   const [statsInView, setStatsInView] = useState(false);
   const statsRef = useRef<HTMLDivElement>(null);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const copyLink = () => { navigator.clipboard.writeText(shareUrl); toast({ title: "Link copied!" }); };
+
+  useEffect(() => {
+    store.getAnnouncements().then(setAnnouncements);
+  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -165,7 +170,7 @@ const Index = () => {
           </Button>
         </div>
         <div className="grid md:grid-cols-2 gap-6">
-          {store.getAnnouncements().slice(0, 4).map((item) => (
+          {announcements.slice(0, 4).map((item) => (
             <div key={item.id} onClick={() => setSelectedAnnouncement(item)} className="bg-card rounded-2xl border border-border overflow-hidden flex flex-row group hover:shadow-elevated transition-all cursor-pointer">
               {item.image && (
                 <div className="w-48 md:w-56 shrink-0 overflow-hidden">

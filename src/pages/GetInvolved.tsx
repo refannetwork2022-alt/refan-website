@@ -24,14 +24,14 @@ const GetInvolved = () => {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.email.trim()) {
       toast({ title: "Please fill required fields", variant: "destructive" });
       return;
     }
     setSubmitting(true);
-    store.addVolunteer({
+    await store.addVolunteer({
       ...form,
       name: form.name.trim(),
       email: form.email.trim(),
@@ -40,11 +40,9 @@ const GetInvolved = () => {
       message: `${form.message.trim()}${form.countryOfOrigin ? `\n[Country of Origin: ${form.countryOfOrigin}]` : ''}${form.idNumber ? `\n[ID: ${form.idNumber}]` : ''}`,
       date: new Date().toISOString(),
     });
-    setTimeout(() => {
-      setSubmitting(false);
-      toast({ title: "Registration submitted!", description: "Thank you for your interest. We'll be in touch soon." });
-      setForm({ name: '', email: '', phone: '', country: '', countryOfOrigin: '', idNumber: '', type: 'volunteer', message: '' });
-    }, 600);
+    setSubmitting(false);
+    toast({ title: "Registration submitted!", description: "Thank you for your interest. We'll be in touch soon." });
+    setForm({ name: '', email: '', phone: '', country: '', countryOfOrigin: '', idNumber: '', type: 'volunteer', message: '' });
   };
 
   return (

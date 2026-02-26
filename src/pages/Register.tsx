@@ -70,7 +70,7 @@ const Register = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.surname.trim() || !form.firstName.trim() || !form.countryOfOrigin || !form.countryOfResidence || !form.gender || !form.maritalStatus || !form.dobYear) {
       toast({ title: "Please fill all required fields", variant: "destructive" });
@@ -78,7 +78,7 @@ const Register = () => {
     }
     setSubmitting(true);
     const dob = `${form.dobYear}-${form.dobMonth.padStart(2, '0')}-${form.dobDay.padStart(2, '0')}`;
-    const member = store.addMember({
+    const member = await store.addMember({
       surname: form.surname.trim(),
       firstName: form.firstName.trim(),
       otherName: form.otherName.trim(),
@@ -100,11 +100,13 @@ const Register = () => {
       branchName: form.branchName.trim(),
       username: form.username.trim(),
     });
-    setTimeout(() => {
-      setSubmitting(false);
+    setSubmitting(false);
+    if (member) {
       setRegNumber(member.regNumber);
       setSuccess(true);
-    }, 800);
+    } else {
+      toast({ title: "Registration failed. Please try again.", variant: "destructive" });
+    }
   };
 
   if (success) {

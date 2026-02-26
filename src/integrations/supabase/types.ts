@@ -51,6 +51,54 @@ export type Database = {
         }
         Relationships: []
       }
+      stories: {
+        Row: { id: string; title: string; excerpt: string; content: string; image_url: string | null; category: string; date: string; created_at: string }
+        Insert: { id?: string; title: string; excerpt?: string; content?: string; image_url?: string | null; category?: string; date?: string; created_at?: string }
+        Update: { id?: string; title?: string; excerpt?: string; content?: string; image_url?: string | null; category?: string; date?: string; created_at?: string }
+        Relationships: []
+      }
+      blog_posts: {
+        Row: { id: string; title: string; excerpt: string; content: string; image_url: string | null; author: string; tags: string[]; date: string; created_at: string }
+        Insert: { id?: string; title: string; excerpt?: string; content?: string; image_url?: string | null; author?: string; tags?: string[]; date?: string; created_at?: string }
+        Update: { id?: string; title?: string; excerpt?: string; content?: string; image_url?: string | null; author?: string; tags?: string[]; date?: string; created_at?: string }
+        Relationships: []
+      }
+      gallery_items: {
+        Row: { id: string; title: string; url: string; type: string; date: string; created_at: string }
+        Insert: { id?: string; title: string; url?: string; type?: string; date?: string; created_at?: string }
+        Update: { id?: string; title?: string; url?: string; type?: string; date?: string; created_at?: string }
+        Relationships: []
+      }
+      volunteer_submissions: {
+        Row: { id: string; name: string; email: string; phone: string; type: string; message: string; country: string; date: string; created_at: string }
+        Insert: { id?: string; name: string; email: string; phone?: string; type?: string; message?: string; country?: string; date?: string; created_at?: string }
+        Update: { id?: string; name?: string; email?: string; phone?: string; type?: string; message?: string; country?: string; date?: string; created_at?: string }
+        Relationships: []
+      }
+      donation_submissions: {
+        Row: { id: string; name: string; email: string; amount: number; message: string; currency: string; date: string; created_at: string }
+        Insert: { id?: string; name: string; email: string; amount: number; message?: string; currency?: string; date?: string; created_at?: string }
+        Update: { id?: string; name?: string; email?: string; amount?: number; message?: string; currency?: string; date?: string; created_at?: string }
+        Relationships: []
+      }
+      announcements: {
+        Row: { id: string; title: string; content: string; image_url: string | null; donation_count: number; created_at: string }
+        Insert: { id?: string; title: string; content?: string; image_url?: string | null; donation_count?: number; created_at?: string }
+        Update: { id?: string; title?: string; content?: string; image_url?: string | null; donation_count?: number; created_at?: string }
+        Relationships: []
+      }
+      contact_messages: {
+        Row: { id: string; name: string; email: string; subject: string; message: string; created_at: string }
+        Insert: { id?: string; name: string; email: string; subject?: string; message?: string; created_at?: string }
+        Update: { id?: string; name?: string; email?: string; subject?: string; message?: string; created_at?: string }
+        Relationships: []
+      }
+      members: {
+        Row: { id: string; reg_number: string; surname: string; first_name: string; other_name: string; country_of_origin: string; country_of_residence: string; unhcr_id: string; phone: string; phone_code: string; gender: string; marital_status: string; date_of_birth: string; family_size: number; photo: string; document: string; payment_currency: string; payment_amount: number; registration_date: string; expiry_date: string; branch_name: string; username: string; created_at: string }
+        Insert: { id?: string; reg_number: string; surname: string; first_name: string; other_name?: string; country_of_origin?: string; country_of_residence?: string; unhcr_id?: string; phone?: string; phone_code?: string; gender?: string; marital_status?: string; date_of_birth?: string; family_size?: number; photo?: string; document?: string; payment_currency?: string; payment_amount?: number; registration_date?: string; expiry_date?: string; branch_name?: string; username?: string; created_at?: string }
+        Update: { id?: string; reg_number?: string; surname?: string; first_name?: string; other_name?: string; country_of_origin?: string; country_of_residence?: string; unhcr_id?: string; phone?: string; phone_code?: string; gender?: string; marital_status?: string; date_of_birth?: string; family_size?: number; photo?: string; document?: string; payment_currency?: string; payment_amount?: number; registration_date?: string; expiry_date?: string; branch_name?: string; username?: string; created_at?: string }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
