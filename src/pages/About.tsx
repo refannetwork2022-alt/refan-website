@@ -105,9 +105,9 @@ const About = () => {
           {/* Goreth */}
           <div className="flex flex-col items-center text-center">
             <div className="w-64 h-64 rounded-2xl overflow-hidden mb-6 shadow-elevated border-4 border-white">
-              <img src="/founder-goreth.jpg" alt="Président Lydia Igirajeza" className="w-full h-full object-cover" />
+              <img src="/founder-goreth.jpg" alt="Président Goreth Niyibigira" className="w-full h-full object-cover" />
             </div>
-            <h3 className="font-heading text-2xl font-bold">Lydia Igirajeza</h3>
+            <h3 className="font-heading text-2xl font-bold">Goreth Niyibigira</h3>
             <p className="text-primary font-bold mb-4 uppercase tracking-widest text-xs">Président</p>
             <p className="text-muted-foreground text-sm italic">"Our goal isn't just to provide aid, but to build resilient systems that thrive independently."</p>
             <div className="flex gap-4 mt-6">
@@ -117,9 +117,9 @@ const About = () => {
           {/* Wagstan */}
           <div className="flex flex-col items-center text-center">
             <div className="w-64 h-64 rounded-2xl overflow-hidden mb-6 shadow-elevated border-4 border-white">
-              <img src="/founder-wagstan.jpg" alt="Général Secretary Goreth Niyibigira" className="w-full h-full object-cover" />
+              <img src="/founder-wagstan.jpg" alt="Général Secretary Lydia Igirajeza" className="w-full h-full object-cover" />
             </div>
-            <h3 className="font-heading text-2xl font-bold">Goreth Niyibigira</h3>
+            <h3 className="font-heading text-2xl font-bold">Lydia Igirajeza</h3>
             <p className="text-primary font-bold mb-4 uppercase tracking-widest text-xs">Général Secretary</p>
             <p className="text-muted-foreground text-sm italic">"Strategic partnership is the engine that drives transformation and scale."</p>
             <div className="flex gap-4 mt-6">
