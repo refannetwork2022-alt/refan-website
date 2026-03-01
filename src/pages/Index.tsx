@@ -157,13 +157,13 @@ const Index = () => {
             <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/60" />
           </div>
           {/* Tagline - full width horizontal across the top */}
-          <div className="relative z-10 w-full text-center pt-8 lg:pt-10 px-4">
-            <h2 className="font-heading text-2xl sm:text-4xl lg:text-7xl font-extrabold text-white tracking-wider uppercase">
+          <div className="relative z-10 w-full text-center pt-6 sm:pt-8 lg:pt-10 px-4">
+            <h2 className="font-heading text-xl sm:text-4xl lg:text-7xl font-extrabold text-white tracking-wider uppercase leading-tight">
               Holistic Continuity of Care
             </h2>
           </div>
           {/* Main content - pinned to left */}
-          <div className="absolute z-10 top-28 sm:top-32 lg:top-36 left-6 lg:left-10 max-w-xl flex flex-col gap-3">
+          <div className="absolute z-10 top-[7rem] sm:top-36 lg:top-40 left-6 lg:left-10 max-w-xl flex flex-col gap-3">
             <span className="inline-flex items-center gap-2 w-fit px-3 py-1 rounded-full bg-primary/20 backdrop-blur-md text-primary font-bold text-xs uppercase tracking-widest border border-primary/30">
               Refugee-Led Initiative
             </span>
