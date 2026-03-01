@@ -47,7 +47,7 @@ const Register = () => {
   const [regNumber, setRegNumber] = useState('');
 
   const [form, setForm] = useState({
-    surname: '', firstName: '', otherName: '',
+    surname: '', firstName: '', otherName: '', email: '',
     countryOfOrigin: '', countryOfResidence: '',
     unhcrId: '', phone: '', phoneCode: '+265',
     gender: '', maritalStatus: '',
@@ -70,59 +70,152 @@ const Register = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.surname.trim() || !form.firstName.trim() || !form.countryOfOrigin || !form.countryOfResidence || !form.gender || !form.maritalStatus || !form.dobYear) {
-      toast({ title: "Please fill all required fields", variant: "destructive" });
+  const [memberData, setMemberData] = useState<any>(null);
+
+  const compressImage = (base64: string, maxWidth = 400): Promise<string> => {
+    return new Promise((resolve) => {
+      if (!base64) { resolve(''); return; }
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = window.document.createElement('canvas');
+        const scale = Math.min(1, maxWidth / img.width);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.6));
+      };
+      img.onerror = () => resolve('');
+      img.src = base64;
+    });
+  };
+
+  const handleSubmit = async () => {
+    // Prevent double-click / multiple submissions
+    if (submitting) return;
+
+    if (!form.surname.trim() || !form.firstName.trim()) {
+      toast({ title: "Please enter Surname and First Name", variant: "destructive" });
       return;
     }
     setSubmitting(true);
-    const dob = `${form.dobYear}-${form.dobMonth.padStart(2, '0')}-${form.dobDay.padStart(2, '0')}`;
-    const member = await store.addMember({
-      surname: form.surname.trim(),
-      firstName: form.firstName.trim(),
-      otherName: form.otherName.trim(),
-      countryOfOrigin: form.countryOfOrigin,
-      countryOfResidence: form.countryOfResidence,
-      unhcrId: form.unhcrId.trim(),
-      phone: form.phone.trim(),
-      phoneCode: form.phoneCode,
-      gender: form.gender,
-      maritalStatus: form.maritalStatus,
-      dateOfBirth: dob,
-      familySize: Number(form.familySize) || 0,
-      photo: form.photo,
-      document: form.document,
-      paymentCurrency: form.paymentCurrency,
-      paymentAmount: Number(form.paymentAmount) || 0,
-      registrationDate: new Date().toISOString(),
-      expiryDate: '',
-      branchName: form.branchName.trim(),
-      username: form.username.trim(),
-    });
-    setSubmitting(false);
-    if (member) {
-      setRegNumber(member.regNumber);
-      setSuccess(true);
-    } else {
-      toast({ title: "Registration failed. Please try again.", variant: "destructive" });
+
+    try {
+      const dob = form.dobYear ? `${form.dobYear}-${(form.dobMonth || '1').padStart(2, '0')}-${(form.dobDay || '1').padStart(2, '0')}` : '';
+
+      // Compress images to avoid Firestore 1MB document limit
+      const compressedPhoto = await compressImage(form.photo);
+      const compressedDoc = await compressImage(form.document, 600);
+
+      const member = await store.addMember({
+        surname: form.surname.trim(),
+        firstName: form.firstName.trim(),
+        otherName: form.otherName.trim(),
+        email: form.email.trim(),
+        countryOfOrigin: form.countryOfOrigin,
+        countryOfResidence: form.countryOfResidence,
+        unhcrId: form.unhcrId.trim(),
+        phone: form.phone.trim(),
+        phoneCode: form.phoneCode,
+        gender: form.gender,
+        maritalStatus: form.maritalStatus,
+        dateOfBirth: dob,
+        familySize: Number(form.familySize) || 0,
+        photo: compressedPhoto,
+        document: compressedDoc,
+        paymentCurrency: form.paymentCurrency,
+        paymentAmount: Number(form.paymentAmount) || 0,
+        registrationDate: new Date().toISOString(),
+        expiryDate: '',
+        branchName: form.branchName.trim(),
+        username: form.username.trim(),
+      });
+      setSubmitting(false);
+      if (member) {
+        setRegNumber(member.regNumber);
+        setMemberData({
+          name: `${form.surname} ${form.firstName} ${form.otherName}`.trim(),
+          email: form.email,
+          phone: form.phoneCode + ' ' + form.phone,
+          gender: form.gender,
+          countryOfOrigin: form.countryOfOrigin,
+          countryOfResidence: form.countryOfResidence,
+          dob: dob ? `${form.dobDay}/${form.dobMonth}/${form.dobYear}` : '',
+          branch: form.branchName,
+          photo: compressedPhoto,
+        });
+        setSuccess(true);
+        toast({ title: "Member registered successfully!" });
+      } else {
+        toast({ title: "Registration failed. Please try again.", variant: "destructive" });
+      }
+    } catch (err: any) {
+      console.error("Registration error:", err);
+      setSubmitting(false);
+      toast({ title: "An error occurred. Please try again.", variant: "destructive" });
     }
   };
 
-  if (success) {
+  if (success && memberData) {
     return (
       <Layout>
-        <section className="container py-20 text-center max-w-xl mx-auto">
-          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-6" />
-          <h1 className="font-heading text-3xl font-extrabold mb-4">Registration Successful!</h1>
-          <div className="bg-card rounded-2xl p-8 shadow-elevated text-left space-y-4">
-            <p className="text-lg"><strong>Registration Number:</strong> <span className="text-primary font-bold text-xl">{regNumber}</span></p>
-            <p className="text-muted-foreground">Please keep this number for your records.</p>
+        <section className="container py-20 max-w-xl mx-auto">
+          <div className="text-center mb-8">
+            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+            <h1 className="font-heading text-3xl font-extrabold mb-2">Registration Successful!</h1>
+            <p className="text-muted-foreground">Welcome to the ReFAN family.</p>
+          </div>
+          <div className="bg-card rounded-2xl p-8 shadow-elevated space-y-5">
+            {/* Member photo & reg number */}
+            <div className="flex items-center gap-4 pb-4 border-b border-border">
+              {memberData.photo ? (
+                <img src={memberData.photo} alt="Member" className="w-20 h-20 rounded-full object-cover border-2 border-primary" />
+              ) : (
+                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+                  <UserPlus className="h-8 w-8 text-primary" />
+                </div>
+              )}
+              <div>
+                <p className="font-heading text-xl font-bold">{memberData.name}</p>
+                <p className="text-primary font-bold text-2xl">{regNumber}</p>
+                <p className="text-xs text-muted-foreground">Member Registration Number</p>
+              </div>
+            </div>
+
+            {/* Member details */}
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              {memberData.email && (
+                <>
+                  <p className="text-muted-foreground">Email</p>
+                  <p className="font-medium">{memberData.email}</p>
+                </>
+              )}
+              {memberData.phone.trim() && (
+                <>
+                  <p className="text-muted-foreground">Phone</p>
+                  <p className="font-medium">{memberData.phone}</p>
+                </>
+              )}
+              <p className="text-muted-foreground">Gender</p>
+              <p className="font-medium">{memberData.gender}</p>
+              <p className="text-muted-foreground">Date of Birth</p>
+              <p className="font-medium">{memberData.dob}</p>
+              <p className="text-muted-foreground">Country of Origin</p>
+              <p className="font-medium">{memberData.countryOfOrigin}</p>
+              <p className="text-muted-foreground">Country of Residence</p>
+              <p className="font-medium">{memberData.countryOfResidence}</p>
+              <p className="text-muted-foreground">Branch</p>
+              <p className="font-medium">{memberData.branch}</p>
+            </div>
+
+            {/* Payment info */}
             <div className="border-t border-border pt-4 space-y-2">
               <p><strong>Registration fee:</strong> 1,000 MWK</p>
               <p><strong>Term fee:</strong> 2,000 MWK</p>
               <p className="text-sm text-muted-foreground italic">Registration is only 1,000 Malawi Kwacha. Please contact admin for payment instructions.</p>
             </div>
+
+            <p className="text-center text-sm text-muted-foreground bg-muted p-3 rounded-lg">Please save or screenshot your registration number <strong className="text-primary">{regNumber}</strong> for your records.</p>
           </div>
         </section>
       </Layout>
@@ -141,21 +234,27 @@ const Register = () => {
 
       <section className="container py-8">
         <div className="max-w-3xl mx-auto">
-          <form onSubmit={handleSubmit} className="bg-card rounded-2xl p-8 lg:p-10 shadow-elevated space-y-6">
+          <div className="bg-card rounded-2xl p-8 lg:p-10 shadow-elevated space-y-6">
             {/* Names */}
             <div className="grid sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1.5">Surname *</label>
-                <input value={form.surname} onChange={e => setForm({ ...form, surname: e.target.value })} className={inputClass} required maxLength={100} />
+                <input value={form.surname} onChange={e => setForm({ ...form, surname: e.target.value })} className={inputClass} maxLength={100} />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">First Name *</label>
-                <input value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} className={inputClass} required maxLength={100} />
+                <input value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} className={inputClass} maxLength={100} />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Other Name</label>
                 <input value={form.otherName} onChange={e => setForm({ ...form, otherName: e.target.value })} className={inputClass} maxLength={100} />
               </div>
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Email Address</label>
+              <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className={inputClass} placeholder="your@email.com" maxLength={200} />
             </div>
 
             {/* Country of origin */}
@@ -166,7 +265,6 @@ const Register = () => {
                   value={form.countryOfOrigin}
                   onChange={(val) => setForm({ ...form, countryOfOrigin: val })}
                   placeholder="Type to search country..."
-                  required
                 />
               </div>
               <div>
@@ -175,15 +273,14 @@ const Register = () => {
                   value={form.countryOfResidence}
                   onChange={(val) => setForm({ ...form, countryOfResidence: val })}
                   placeholder="Type to search country..."
-                  required
                 />
               </div>
             </div>
 
-            {/* UNHCR ID */}
+            {/* ID Number */}
             <div>
-              <label className="block text-sm font-medium mb-1.5">UNHCR ID</label>
-              <input value={form.unhcrId} onChange={e => setForm({ ...form, unhcrId: e.target.value })} className={inputClass} maxLength={50} placeholder="Enter your UNHCR ID or any valid ID" />
+              <label className="block text-sm font-medium mb-1.5">UNHCR ID / National ID / Any Valid ID</label>
+              <input value={form.unhcrId} onChange={e => setForm({ ...form, unhcrId: e.target.value })} className={inputClass} maxLength={50} placeholder="Enter your UNHCR ID, National ID, Passport or any valid ID number" />
             </div>
 
             {/* Phone */}
@@ -201,7 +298,7 @@ const Register = () => {
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1.5">Gender *</label>
-                <select value={form.gender} onChange={e => setForm({ ...form, gender: e.target.value })} className={selectClass} required>
+                <select value={form.gender} onChange={e => setForm({ ...form, gender: e.target.value })} className={selectClass}>
                   <option value="">Select gender</option>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
@@ -210,7 +307,7 @@ const Register = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Marital Status *</label>
-                <select value={form.maritalStatus} onChange={e => setForm({ ...form, maritalStatus: e.target.value })} className={selectClass} required>
+                <select value={form.maritalStatus} onChange={e => setForm({ ...form, maritalStatus: e.target.value })} className={selectClass}>
                   <option value="">Select status</option>
                   <option value="Single">Single</option>
                   <option value="Married">Married</option>
@@ -224,15 +321,15 @@ const Register = () => {
             <div>
               <label className="block text-sm font-medium mb-1.5">Date of Birth *</label>
               <div className="grid grid-cols-3 gap-3">
-                <select value={form.dobYear} onChange={e => setForm({ ...form, dobYear: e.target.value })} className={selectClass} required>
+                <select value={form.dobYear} onChange={e => setForm({ ...form, dobYear: e.target.value })} className={selectClass}>
                   <option value="">Year</option>
                   {years.map(y => <option key={y} value={String(y)}>{y}</option>)}
                 </select>
-                <select value={form.dobMonth} onChange={e => setForm({ ...form, dobMonth: e.target.value })} className={selectClass} required>
+                <select value={form.dobMonth} onChange={e => setForm({ ...form, dobMonth: e.target.value })} className={selectClass}>
                   <option value="">Month</option>
                   {months.map((m, i) => <option key={m} value={String(i + 1)}>{m}</option>)}
                 </select>
-                <select value={form.dobDay} onChange={e => setForm({ ...form, dobDay: e.target.value })} className={selectClass} required>
+                <select value={form.dobDay} onChange={e => setForm({ ...form, dobDay: e.target.value })} className={selectClass}>
                   <option value="">Day</option>
                   {days.map(d => <option key={d} value={String(d)}>{d}</option>)}
                 </select>
@@ -293,11 +390,11 @@ const Register = () => {
               </div>
             </div>
 
-            <Button type="submit" size="lg" className="w-full bg-primary hover:bg-primary/90 text-white font-bold rounded-lg" disabled={submitting}>
+            <Button type="button" onClick={handleSubmit} size="lg" className="w-full bg-primary hover:bg-primary/90 text-white font-bold rounded-lg" disabled={submitting}>
               <UserPlus className="h-5 w-5" />
               {submitting ? 'Registering...' : 'Register'}
             </Button>
-          </form>
+          </div>
         </div>
       </section>
     </Layout>

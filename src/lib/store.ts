@@ -1,6 +1,11 @@
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/firebase/client";
+import {
+  collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc,
+  query, orderBy, getCountFromServer, increment,
+  where, limit,
+} from "firebase/firestore";
 
-// ── Interfaces (kept for compatibility) ──────────────────────
+// ── Interfaces (unchanged) ──────────────────────────────────
 
 export interface Announcement {
   id: string;
@@ -66,6 +71,7 @@ export interface Member {
   surname: string;
   firstName: string;
   otherName: string;
+  email: string;
   countryOfOrigin: string;
   countryOfResidence: string;
   unhcrId: string;
@@ -100,281 +106,311 @@ export interface ContactMessage {
   date: string;
 }
 
-// ── Row ↔ Interface mappers ──────────────────────────────────
+// ── Helpers ─────────────────────────────────────────────────
 
-function rowToStory(r: any): Story {
-  return { id: r.id, title: r.title, excerpt: r.excerpt, content: r.content, image: r.image_url || undefined, date: r.date, category: r.category };
+function ts(d?: any): string {
+  if (!d) return new Date().toISOString();
+  if (d.toDate) return d.toDate().toISOString();
+  return String(d);
 }
 
-function rowToBlog(r: any): BlogPost {
-  return { id: r.id, title: r.title, excerpt: r.excerpt, content: r.content, image: r.image_url || undefined, author: r.author, date: r.date, tags: r.tags || [] };
+async function getAll<T>(col: string, orderField: string): Promise<T[]> {
+  try {
+    const q = query(collection(db, col), orderBy(orderField, "desc"));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }) as T);
+  } catch (e) { console.error(`get ${col}:`, e); return []; }
 }
 
-function rowToGallery(r: any): GalleryItem {
-  return { id: r.id, title: r.title, url: r.url, type: r.type, date: r.date };
-}
-
-function rowToVolunteer(r: any): VolunteerSubmission {
-  return { id: r.id, name: r.name, email: r.email, phone: r.phone, country: r.country || '', type: r.type, message: r.message, date: r.date || r.created_at };
-}
-
-function rowToDonation(r: any): DonationSubmission {
-  return { id: r.id, name: r.name, email: r.email, amount: Number(r.amount), currency: r.currency || '', message: r.message, date: r.date || r.created_at };
-}
-
-function rowToSubscriber(r: any): NewsletterSubscriber {
-  return { id: r.id, email: r.email, date: r.created_at };
-}
-
-function rowToMessage(r: any): ContactMessage {
-  return { id: r.id, name: r.name, email: r.email, subject: r.subject, message: r.message, date: r.created_at };
-}
-
-function rowToAnnouncement(r: any): Announcement {
-  return { id: r.id, title: r.title, content: r.content, image: r.image_url || undefined, donationCount: r.donation_count ?? 0 };
-}
-
-function rowToMember(r: any): Member {
-  return {
-    id: r.id, regNumber: r.reg_number, surname: r.surname, firstName: r.first_name,
-    otherName: r.other_name, countryOfOrigin: r.country_of_origin, countryOfResidence: r.country_of_residence,
-    unhcrId: r.unhcr_id, phone: r.phone, phoneCode: r.phone_code, gender: r.gender,
-    maritalStatus: r.marital_status, dateOfBirth: r.date_of_birth, familySize: r.family_size,
-    photo: r.photo, document: r.document, paymentCurrency: r.payment_currency,
-    paymentAmount: Number(r.payment_amount), registrationDate: r.registration_date,
-    expiryDate: r.expiry_date, branchName: r.branch_name, username: r.username,
-  };
-}
-
-// ── Async store (Supabase) ───────────────────────────────────
+// ── Async store (Firestore) ─────────────────────────────────
 
 export const store = {
   // ─── Stories ────────────────────────────────
   getStories: async (): Promise<Story[]> => {
-    const { data, error } = await supabase.from('stories').select('*').order('date', { ascending: false });
-    if (error) { console.error('getStories:', error); return []; }
-    return (data || []).map(rowToStory);
+    try {
+      const q = query(collection(db, "stories"), orderBy("date", "desc"));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => {
+        const r = d.data();
+        return { id: d.id, title: r.title, excerpt: r.excerpt, content: r.content, image: r.image || undefined, date: ts(r.date), category: r.category };
+      });
+    } catch (e) { console.error("getStories:", e); return []; }
   },
   addStory: async (item: Omit<Story, 'id'>): Promise<Story | null> => {
-    const { data, error } = await supabase.from('stories').insert({
-      title: item.title, excerpt: item.excerpt, content: item.content,
-      image_url: item.image || null, category: item.category, date: item.date,
-    }).select().single();
-    if (error) { console.error('addStory:', error); return null; }
-    return rowToStory(data);
+    try {
+      const ref = await addDoc(collection(db, "stories"), {
+        title: item.title, excerpt: item.excerpt, content: item.content,
+        image: item.image || null, category: item.category, date: item.date, created_at: new Date().toISOString(),
+      });
+      return { id: ref.id, ...item };
+    } catch (e) { console.error("addStory:", e); return null; }
   },
   updateStory: async (id: string, item: Partial<Story>): Promise<boolean> => {
-    const updates: any = {};
-    if (item.title !== undefined) updates.title = item.title;
-    if (item.excerpt !== undefined) updates.excerpt = item.excerpt;
-    if (item.content !== undefined) updates.content = item.content;
-    if (item.image !== undefined) updates.image_url = item.image;
-    if (item.category !== undefined) updates.category = item.category;
-    if (item.date !== undefined) updates.date = item.date;
-    const { error } = await supabase.from('stories').update(updates).eq('id', id);
-    if (error) { console.error('updateStory:', error); return false; }
-    return true;
+    try {
+      const updates: any = {};
+      if (item.title !== undefined) updates.title = item.title;
+      if (item.excerpt !== undefined) updates.excerpt = item.excerpt;
+      if (item.content !== undefined) updates.content = item.content;
+      if (item.image !== undefined) updates.image = item.image;
+      if (item.category !== undefined) updates.category = item.category;
+      if (item.date !== undefined) updates.date = item.date;
+      await updateDoc(doc(db, "stories", id), updates);
+      return true;
+    } catch (e) { console.error("updateStory:", e); return false; }
   },
   deleteStory: async (id: string): Promise<boolean> => {
-    const { error } = await supabase.from('stories').delete().eq('id', id);
-    if (error) { console.error('deleteStory:', error); return false; }
-    return true;
+    try { await deleteDoc(doc(db, "stories", id)); return true; }
+    catch (e) { console.error("deleteStory:", e); return false; }
   },
 
   // ─── Blog Posts ─────────────────────────────
   getBlogs: async (): Promise<BlogPost[]> => {
-    const { data, error } = await supabase.from('blog_posts').select('*').order('date', { ascending: false });
-    if (error) { console.error('getBlogs:', error); return []; }
-    return (data || []).map(rowToBlog);
+    try {
+      const q = query(collection(db, "blog_posts"), orderBy("date", "desc"));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => {
+        const r = d.data();
+        return { id: d.id, title: r.title, excerpt: r.excerpt, content: r.content, image: r.image || undefined, author: r.author, date: ts(r.date), tags: r.tags || [] };
+      });
+    } catch (e) { console.error("getBlogs:", e); return []; }
   },
   addBlog: async (item: Omit<BlogPost, 'id'>): Promise<BlogPost | null> => {
-    const { data, error } = await supabase.from('blog_posts').insert({
-      title: item.title, excerpt: item.excerpt, content: item.content,
-      image_url: item.image || null, author: item.author, tags: item.tags, date: item.date,
-    }).select().single();
-    if (error) { console.error('addBlog:', error); return null; }
-    return rowToBlog(data);
+    try {
+      const ref = await addDoc(collection(db, "blog_posts"), {
+        title: item.title, excerpt: item.excerpt, content: item.content,
+        image: item.image || null, author: item.author, tags: item.tags, date: item.date, created_at: new Date().toISOString(),
+      });
+      return { id: ref.id, ...item };
+    } catch (e) { console.error("addBlog:", e); return null; }
   },
   updateBlog: async (id: string, item: Partial<BlogPost>): Promise<boolean> => {
-    const updates: any = {};
-    if (item.title !== undefined) updates.title = item.title;
-    if (item.excerpt !== undefined) updates.excerpt = item.excerpt;
-    if (item.content !== undefined) updates.content = item.content;
-    if (item.image !== undefined) updates.image_url = item.image;
-    if (item.author !== undefined) updates.author = item.author;
-    if (item.tags !== undefined) updates.tags = item.tags;
-    if (item.date !== undefined) updates.date = item.date;
-    const { error } = await supabase.from('blog_posts').update(updates).eq('id', id);
-    if (error) { console.error('updateBlog:', error); return false; }
-    return true;
+    try {
+      const updates: any = {};
+      if (item.title !== undefined) updates.title = item.title;
+      if (item.excerpt !== undefined) updates.excerpt = item.excerpt;
+      if (item.content !== undefined) updates.content = item.content;
+      if (item.image !== undefined) updates.image = item.image;
+      if (item.author !== undefined) updates.author = item.author;
+      if (item.tags !== undefined) updates.tags = item.tags;
+      if (item.date !== undefined) updates.date = item.date;
+      await updateDoc(doc(db, "blog_posts", id), updates);
+      return true;
+    } catch (e) { console.error("updateBlog:", e); return false; }
   },
   deleteBlog: async (id: string): Promise<boolean> => {
-    const { error } = await supabase.from('blog_posts').delete().eq('id', id);
-    if (error) { console.error('deleteBlog:', error); return false; }
-    return true;
+    try { await deleteDoc(doc(db, "blog_posts", id)); return true; }
+    catch (e) { console.error("deleteBlog:", e); return false; }
   },
 
   // ─── Gallery ────────────────────────────────
   getGallery: async (): Promise<GalleryItem[]> => {
-    const { data, error } = await supabase.from('gallery_items').select('*').order('date', { ascending: false });
-    if (error) { console.error('getGallery:', error); return []; }
-    return (data || []).map(rowToGallery);
+    try {
+      const q = query(collection(db, "gallery_items"), orderBy("date", "desc"));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => {
+        const r = d.data();
+        return { id: d.id, title: r.title, url: r.url, type: r.type, date: ts(r.date) };
+      });
+    } catch (e) { console.error("getGallery:", e); return []; }
   },
   addGalleryItem: async (item: Omit<GalleryItem, 'id'>): Promise<GalleryItem | null> => {
-    const { data, error } = await supabase.from('gallery_items').insert({
-      title: item.title, url: item.url, type: item.type, date: item.date,
-    }).select().single();
-    if (error) { console.error('addGalleryItem:', error); return null; }
-    return rowToGallery(data);
+    try {
+      const ref = await addDoc(collection(db, "gallery_items"), {
+        title: item.title, url: item.url, type: item.type, date: item.date, created_at: new Date().toISOString(),
+      });
+      return { id: ref.id, ...item };
+    } catch (e) { console.error("addGalleryItem:", e); return null; }
   },
   deleteGalleryItem: async (id: string): Promise<boolean> => {
-    const { error } = await supabase.from('gallery_items').delete().eq('id', id);
-    if (error) { console.error('deleteGalleryItem:', error); return false; }
-    return true;
+    try { await deleteDoc(doc(db, "gallery_items", id)); return true; }
+    catch (e) { console.error("deleteGalleryItem:", e); return false; }
   },
 
   // ─── Volunteers ─────────────────────────────
   getVolunteers: async (): Promise<VolunteerSubmission[]> => {
-    const { data, error } = await supabase.from('volunteer_submissions').select('*').order('created_at', { ascending: false });
-    if (error) { console.error('getVolunteers:', error); return []; }
-    return (data || []).map(rowToVolunteer);
+    try {
+      const q = query(collection(db, "volunteer_submissions"), orderBy("created_at", "desc"));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => {
+        const r = d.data();
+        return { id: d.id, name: r.name, email: r.email, phone: r.phone, country: r.country || '', type: r.type, message: r.message, date: r.date || ts(r.created_at) };
+      });
+    } catch (e) { console.error("getVolunteers:", e); return []; }
   },
   addVolunteer: async (item: Omit<VolunteerSubmission, 'id'>): Promise<VolunteerSubmission | null> => {
-    const { data, error } = await supabase.from('volunteer_submissions').insert({
-      name: item.name, email: item.email, phone: item.phone, country: item.country,
-      type: item.type, message: item.message, date: item.date,
-    }).select().single();
-    if (error) { console.error('addVolunteer:', error); return null; }
-    return rowToVolunteer(data);
+    try {
+      const ref = await addDoc(collection(db, "volunteer_submissions"), {
+        name: item.name, email: item.email, phone: item.phone, country: item.country,
+        type: item.type, message: item.message, date: item.date, created_at: new Date().toISOString(),
+      });
+      return { id: ref.id, ...item };
+    } catch (e) { console.error("addVolunteer:", e); return null; }
   },
 
   // ─── Donations ──────────────────────────────
   getDonations: async (): Promise<DonationSubmission[]> => {
-    const { data, error } = await supabase.from('donation_submissions').select('*').order('created_at', { ascending: false });
-    if (error) { console.error('getDonations:', error); return []; }
-    return (data || []).map(rowToDonation);
+    try {
+      const q = query(collection(db, "donation_submissions"), orderBy("created_at", "desc"));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => {
+        const r = d.data();
+        return { id: d.id, name: r.name, email: r.email, amount: Number(r.amount), currency: r.currency || '', message: r.message, date: r.date || ts(r.created_at) };
+      });
+    } catch (e) { console.error("getDonations:", e); return []; }
   },
   addDonation: async (item: Omit<DonationSubmission, 'id'>): Promise<DonationSubmission | null> => {
-    const { data, error } = await supabase.from('donation_submissions').insert({
-      name: item.name, email: item.email, amount: item.amount, currency: item.currency,
-      message: item.message, date: item.date,
-    }).select().single();
-    if (error) { console.error('addDonation:', error); return null; }
-    return rowToDonation(data);
+    try {
+      const ref = await addDoc(collection(db, "donation_submissions"), {
+        name: item.name, email: item.email, amount: item.amount, currency: item.currency,
+        message: item.message, date: item.date, created_at: new Date().toISOString(),
+      });
+      return { id: ref.id, ...item };
+    } catch (e) { console.error("addDonation:", e); return null; }
   },
 
   // ─── Newsletter Subscribers ─────────────────
   getSubscribers: async (): Promise<NewsletterSubscriber[]> => {
-    const { data, error } = await supabase.from('newsletter_subscribers').select('*').order('created_at', { ascending: false });
-    if (error) { console.error('getSubscribers:', error); return []; }
-    return (data || []).map(rowToSubscriber);
+    try {
+      const q = query(collection(db, "newsletter_subscribers"), orderBy("created_at", "desc"));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => {
+        const r = d.data();
+        return { id: d.id, email: r.email, date: ts(r.created_at) };
+      });
+    } catch (e) { console.error("getSubscribers:", e); return []; }
   },
   addSubscriber: async (email: string): Promise<NewsletterSubscriber | null> => {
-    const { data, error } = await supabase.from('newsletter_subscribers').insert({
-      email, opt_in: true,
-    }).select().single();
-    if (error) {
-      if (error.code === '23505') return null; // duplicate email
-      console.error('addSubscriber:', error); return null;
-    }
-    return rowToSubscriber(data);
+    try {
+      // Check for duplicate
+      const q = query(collection(db, "newsletter_subscribers"), where("email", "==", email), limit(1));
+      const snap = await getDocs(q);
+      if (!snap.empty) return null;
+      const now = new Date().toISOString();
+      const ref = await addDoc(collection(db, "newsletter_subscribers"), { email, opt_in: true, created_at: now });
+      return { id: ref.id, email, date: now };
+    } catch (e) { console.error("addSubscriber:", e); return null; }
   },
   deleteSubscriber: async (id: string): Promise<boolean> => {
-    const { error } = await supabase.from('newsletter_subscribers').delete().eq('id', id);
-    if (error) { console.error('deleteSubscriber:', error); return false; }
-    return true;
+    try { await deleteDoc(doc(db, "newsletter_subscribers", id)); return true; }
+    catch (e) { console.error("deleteSubscriber:", e); return false; }
   },
 
   // ─── Contact Messages ──────────────────────
   getMessages: async (): Promise<ContactMessage[]> => {
-    const { data, error } = await supabase.from('contact_messages').select('*').order('created_at', { ascending: false });
-    if (error) { console.error('getMessages:', error); return []; }
-    return (data || []).map(rowToMessage);
+    try {
+      const q = query(collection(db, "contact_messages"), orderBy("created_at", "desc"));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => {
+        const r = d.data();
+        return { id: d.id, name: r.name, email: r.email, subject: r.subject, message: r.message, date: ts(r.created_at) };
+      });
+    } catch (e) { console.error("getMessages:", e); return []; }
   },
   addMessage: async (item: Omit<ContactMessage, 'id'>): Promise<ContactMessage | null> => {
-    const { data, error } = await supabase.from('contact_messages').insert({
-      name: item.name, email: item.email, subject: item.subject, message: item.message,
-    }).select().single();
-    if (error) { console.error('addMessage:', error); return null; }
-    return rowToMessage(data);
+    try {
+      const now = new Date().toISOString();
+      const ref = await addDoc(collection(db, "contact_messages"), {
+        name: item.name, email: item.email, subject: item.subject, message: item.message, created_at: now,
+      });
+      return { id: ref.id, ...item, date: now };
+    } catch (e) { console.error("addMessage:", e); return null; }
   },
   deleteMessage: async (id: string): Promise<boolean> => {
-    const { error } = await supabase.from('contact_messages').delete().eq('id', id);
-    if (error) { console.error('deleteMessage:', error); return false; }
-    return true;
+    try { await deleteDoc(doc(db, "contact_messages", id)); return true; }
+    catch (e) { console.error("deleteMessage:", e); return false; }
   },
 
   // ─── Announcements ─────────────────────────
   getAnnouncements: async (): Promise<Announcement[]> => {
-    const { data, error } = await supabase.from('announcements').select('*').order('created_at', { ascending: false });
-    if (error) { console.error('getAnnouncements:', error); return []; }
-    return (data || []).map(rowToAnnouncement);
+    try {
+      const q = query(collection(db, "announcements"), orderBy("created_at", "desc"));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => {
+        const r = d.data();
+        return { id: d.id, title: r.title, content: r.content, image: r.image || undefined, donationCount: r.donationCount ?? 0 };
+      });
+    } catch (e) { console.error("getAnnouncements:", e); return []; }
   },
   addAnnouncement: async (item: Omit<Announcement, 'id'>): Promise<Announcement | null> => {
-    const { data, error } = await supabase.from('announcements').insert({
-      title: item.title, content: item.content, image_url: item.image || null, donation_count: item.donationCount ?? 0,
-    }).select().single();
-    if (error) { console.error('addAnnouncement:', error); return null; }
-    return rowToAnnouncement(data);
+    try {
+      const ref = await addDoc(collection(db, "announcements"), {
+        title: item.title, content: item.content, image: item.image || null, donationCount: item.donationCount ?? 0, created_at: new Date().toISOString(),
+      });
+      return { id: ref.id, ...item };
+    } catch (e) { console.error("addAnnouncement:", e); return null; }
   },
   updateAnnouncement: async (id: string, item: Partial<Announcement>): Promise<boolean> => {
-    const updates: any = {};
-    if (item.title !== undefined) updates.title = item.title;
-    if (item.content !== undefined) updates.content = item.content;
-    if (item.image !== undefined) updates.image_url = item.image;
-    if (item.donationCount !== undefined) updates.donation_count = item.donationCount;
-    const { error } = await supabase.from('announcements').update(updates).eq('id', id);
-    if (error) { console.error('updateAnnouncement:', error); return false; }
-    return true;
+    try {
+      const updates: any = {};
+      if (item.title !== undefined) updates.title = item.title;
+      if (item.content !== undefined) updates.content = item.content;
+      if (item.image !== undefined) updates.image = item.image;
+      if (item.donationCount !== undefined) updates.donationCount = item.donationCount;
+      await updateDoc(doc(db, "announcements", id), updates);
+      return true;
+    } catch (e) { console.error("updateAnnouncement:", e); return false; }
   },
   deleteAnnouncement: async (id: string): Promise<boolean> => {
-    const { error } = await supabase.from('announcements').delete().eq('id', id);
-    if (error) { console.error('deleteAnnouncement:', error); return false; }
-    return true;
+    try { await deleteDoc(doc(db, "announcements", id)); return true; }
+    catch (e) { console.error("deleteAnnouncement:", e); return false; }
   },
   incrementDonationCount: async (id: string): Promise<boolean> => {
-    const { data } = await supabase.from('announcements').select('donation_count').eq('id', id).single();
-    if (!data) return false;
-    const { error } = await supabase.from('announcements').update({ donation_count: (data.donation_count ?? 0) + 1 }).eq('id', id);
-    if (error) { console.error('incrementDonationCount:', error); return false; }
-    return true;
+    try {
+      await updateDoc(doc(db, "announcements", id), { donationCount: increment(1) });
+      return true;
+    } catch (e) { console.error("incrementDonationCount:", e); return false; }
   },
 
   // ─── Members ────────────────────────────────
   getMembers: async (): Promise<Member[]> => {
-    const { data, error } = await supabase.from('members').select('*').order('created_at', { ascending: false });
-    if (error) { console.error('getMembers:', error); return []; }
-    return (data || []).map(rowToMember);
+    try {
+      const q = query(collection(db, "members"), orderBy("created_at", "desc"));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => {
+        const r = d.data();
+        return {
+          id: d.id, regNumber: r.regNumber, surname: r.surname, firstName: r.firstName,
+          otherName: r.otherName, email: r.email || '', countryOfOrigin: r.countryOfOrigin, countryOfResidence: r.countryOfResidence,
+          unhcrId: r.unhcrId, phone: r.phone, phoneCode: r.phoneCode, gender: r.gender,
+          maritalStatus: r.maritalStatus, dateOfBirth: r.dateOfBirth, familySize: r.familySize,
+          photo: r.photo, document: r.document, paymentCurrency: r.paymentCurrency,
+          paymentAmount: Number(r.paymentAmount), registrationDate: r.registrationDate,
+          expiryDate: r.expiryDate, branchName: r.branchName, username: r.username,
+        };
+      });
+    } catch (e) { console.error("getMembers:", e); return []; }
   },
   getNextRegNumber: async (): Promise<string> => {
-    const { count, error } = await supabase.from('members').select('*', { count: 'exact', head: true });
-    const total = error ? 0 : (count ?? 0);
-    const year = new Date().getFullYear();
-    return `R${String(total + 1).padStart(4, '0')}${year}`;
+    try {
+      const snap = await getCountFromServer(collection(db, "members"));
+      const total = snap.data().count;
+      const year = new Date().getFullYear();
+      return `R${String(total + 1).padStart(4, '0')}${year}`;
+    } catch (e) { console.error("getNextRegNumber:", e); return `R0001${new Date().getFullYear()}`; }
   },
   addMember: async (item: Omit<Member, 'id' | 'regNumber'>): Promise<Member | null> => {
-    const regNumber = await store.getNextRegNumber();
-    const { data, error } = await supabase.from('members').insert({
-      reg_number: regNumber, surname: item.surname, first_name: item.firstName,
-      other_name: item.otherName, country_of_origin: item.countryOfOrigin,
-      country_of_residence: item.countryOfResidence, unhcr_id: item.unhcrId,
-      phone: item.phone, phone_code: item.phoneCode, gender: item.gender,
-      marital_status: item.maritalStatus, date_of_birth: item.dateOfBirth,
-      family_size: item.familySize, photo: item.photo, document: item.document,
-      payment_currency: item.paymentCurrency, payment_amount: item.paymentAmount,
-      registration_date: item.registrationDate, expiry_date: item.expiryDate,
-      branch_name: item.branchName, username: item.username,
-    }).select().single();
-    if (error) { console.error('addMember:', error); return null; }
-    return rowToMember(data);
+    try {
+      const regNumber = await store.getNextRegNumber();
+      const ref = await addDoc(collection(db, "members"), {
+        regNumber, surname: item.surname, firstName: item.firstName,
+        otherName: item.otherName, email: item.email || '', countryOfOrigin: item.countryOfOrigin,
+        countryOfResidence: item.countryOfResidence, unhcrId: item.unhcrId,
+        phone: item.phone, phoneCode: item.phoneCode, gender: item.gender,
+        maritalStatus: item.maritalStatus, dateOfBirth: item.dateOfBirth,
+        familySize: item.familySize, photo: item.photo, document: item.document,
+        paymentCurrency: item.paymentCurrency, paymentAmount: item.paymentAmount,
+        registrationDate: item.registrationDate, expiryDate: item.expiryDate,
+        branchName: item.branchName, username: item.username, created_at: new Date().toISOString(),
+      });
+      return { id: ref.id, regNumber, ...item };
+    } catch (e) { console.error("addMember:", e); return null; }
   },
   deleteMember: async (id: string): Promise<boolean> => {
-    const { error } = await supabase.from('members').delete().eq('id', id);
-    if (error) { console.error('deleteMember:', error); return false; }
-    return true;
+    try { await deleteDoc(doc(db, "members", id)); return true; }
+    catch (e) { console.error("deleteMember:", e); return false; }
   },
 
-  // ─── Security Q&A (stays in localStorage – admin only, per-browser) ──
+  // ─── Security Q&A (stays in localStorage) ──
   getSecurityQuestion: () => localStorage.getItem('refan_security_question') || '',
   getSecurityAnswer: () => localStorage.getItem('refan_security_answer') || '',
   setSecurityQuestion: (question: string, answer: string) => {

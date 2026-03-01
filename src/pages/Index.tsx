@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Heart, Users, BookOpen, ArrowRight, Target, Globe, Shield, Baby, User, Home, Grid3X3, Quote, Megaphone, X, Share2, Facebook, Twitter, Link2 } from "lucide-react";
 import { store, Announcement } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
-import heroBg from "@/assets/hero-bg.jpg";
+const heroBg = "/holi.jpg";
 import educationImg from "@/assets/programs-education.jpg";
 import healthImg from "@/assets/programs-health.jpg";
 import livelihoodImg from "@/assets/programs-livelihood.jpg";
@@ -32,6 +32,37 @@ const values = [
   { icon: Target, title: "Refugee-Led", desc: "Founded and run by refugees themselves — we understand the needs because we live them." },
   { icon: Globe, title: "Women-Led", desc: "Led by President Goreth from Burundi, empowering women and children at every level." },
   { icon: Shield, title: "Self-Funded", desc: "Built from the ground up with our own resources, powered by hope and community spirit." },
+];
+
+const sampleAnnouncements: Announcement[] = [
+  {
+    id: "sample-1",
+    title: "ReFAN Launches New Education Scholarship Program for 2026",
+    content: "We are thrilled to announce our new scholarship program aimed at supporting orphaned children in Dzaleka Refugee Camp. This initiative will provide full educational support including school fees, uniforms, books, and tutoring for over 50 children this year. Thanks to the generous hearts of our community, we can continue to invest in the future of these young lives. Education is not just a right — it's a pathway to dignity and self-reliance. If you'd like to support this initiative, please consider donating or spreading the word.",
+    image: "/IMG-20260217-WA0046.jpg",
+    donationCount: 24,
+  },
+  {
+    id: "sample-2",
+    title: "Community Resilience Workshop: Empowering Widows with New Skills",
+    content: "Last month, ReFAN organized a week-long workshop focused on skill-building for widows in the camp. Over 30 women participated in sessions on tailoring, soap-making, and financial literacy. The workshop was led by experienced trainers and community leaders who understand the unique challenges faced by refugee women. Participants left with practical skills and renewed confidence. We believe that when you empower a woman, you empower an entire community. Stay tuned for our next workshop dates!",
+    image: "/IMG-20260217-WA0043.jpg",
+    donationCount: 18,
+  },
+  {
+    id: "sample-3",
+    title: "Bereavement Support Group Reaches 100 Families",
+    content: "Our bereavement support program has now reached over 100 families in Dzaleka. Through counseling, group sessions, and community gatherings, we help families navigate grief and find strength together. This milestone reflects the deep need for emotional support in our community and the incredible resilience of those we serve. We are grateful for every volunteer and donor who makes this work possible.",
+    image: "/IMG-20260217-WA0055.jpg",
+    donationCount: 12,
+  },
+  {
+    id: "sample-4",
+    title: "Annual Community Gathering: Celebrating Unity and Hope",
+    content: "ReFAN hosted its annual community gathering, bringing together over 200 refugees, volunteers, and supporters. The event featured cultural performances, speeches from community leaders, and a shared meal. It was a powerful reminder that even in the most challenging circumstances, community and togetherness can bring light. Thank you to everyone who attended and contributed to making this event a success.",
+    image: "/IMG-20260217-WA0048.jpg",
+    donationCount: 8,
+  },
 ];
 
 const testimonials = [
@@ -102,7 +133,9 @@ const Index = () => {
   const copyLink = () => { navigator.clipboard.writeText(shareUrl); toast({ title: "Link copied!" }); };
 
   useEffect(() => {
-    store.getAnnouncements().then(setAnnouncements);
+    store.getAnnouncements().then((data) => {
+      setAnnouncements(data.length > 0 ? data : sampleAnnouncements);
+    }).catch(() => setAnnouncements(sampleAnnouncements));
   }, []);
 
   useEffect(() => {
@@ -118,26 +151,29 @@ const Index = () => {
     <Layout>
       {/* Hero */}
       <section className="container py-8">
-        <div className="relative rounded-2xl overflow-hidden min-h-[600px] flex items-center shadow-elevated">
+        <div className="relative rounded-2xl overflow-hidden min-h-[600px] shadow-elevated">
           <div className="absolute inset-0">
-            <img src={heroBg} alt="Community development" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-overlay" />
+            <img src="/refan_give.jpg" alt="ReFAN Community" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/60" />
           </div>
-          {/* Logo overlay top-left */}
-          <div className="absolute top-6 left-6 z-20">
-            <img src="/logo.png" alt="ReFAN" className="h-32 w-32 rounded-xl shadow-lg border-2 border-white/30 backdrop-blur-sm" />
+          {/* Tagline - full width horizontal across the top */}
+          <div className="relative z-10 w-full text-center pt-8 lg:pt-10 px-4">
+            <h2 className="font-heading text-4xl sm:text-5xl lg:text-7xl font-extrabold text-white tracking-wider uppercase whitespace-nowrap">
+              Holistic Continuity of Care
+            </h2>
           </div>
-          <div className="relative z-10 px-8 lg:px-16 max-w-3xl flex flex-col gap-8 pt-40 lg:pt-8 lg:pl-44">
+          {/* Main content - pinned to left */}
+          <div className="absolute z-10 top-28 sm:top-32 lg:top-36 left-6 lg:left-10 max-w-xl flex flex-col gap-3">
             <span className="inline-flex items-center gap-2 w-fit px-3 py-1 rounded-full bg-primary/20 backdrop-blur-md text-primary font-bold text-xs uppercase tracking-widest border border-primary/30">
               Refugee-Led Initiative
             </span>
-            <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight">
+            <h1 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight">
               From Loss to Legacy: Continuity of Care
             </h1>
-            <p className="text-lg text-gray-200 leading-relaxed max-w-xl">
+            <p className="text-base text-gray-200 leading-relaxed max-w-md">
               Self-funded by refugees, powered by hope. Join us in turning grief into resilience for Dzaleka's most vulnerable.
             </p>
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-3 mt-1">
               <Button asChild size="lg" className="btn-hover bg-primary hover:bg-primary/90 text-white font-bold shadow-lg px-8">
                 <Link to="/donate"><Heart className="h-5 w-5" /> Donate Now</Link>
               </Button>
@@ -301,15 +337,18 @@ const Index = () => {
 
       {/* CTA */}
       <section className="container py-12 pb-20">
-        <div className="relative rounded-[2rem] bg-primary overflow-hidden p-12 lg:p-20 text-center text-white shadow-elevated">
-          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,white,transparent)]"></div>
+        <div className="relative rounded-[2rem] overflow-hidden p-12 lg:p-20 text-center text-white shadow-elevated">
+          <div className="absolute inset-0">
+            <img src="/modam_teach.jpg" alt="ReFAN Teaching" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/50" />
+          </div>
           <div className="relative z-10 max-w-2xl mx-auto flex flex-col items-center gap-6">
             <h2 className="font-heading text-3xl lg:text-5xl font-extrabold">How will you help today?</h2>
             <p className="text-white/90 text-lg leading-relaxed">
               Every donation goes directly toward empowering children and widows in Dzaleka. We are 100% refugee-run and transparent in our mission.
             </p>
             <div className="flex flex-wrap justify-center gap-4 mt-4">
-              <Button asChild size="lg" className="btn-hover bg-white text-primary hover:bg-orange-50 font-extrabold text-lg px-10 py-6 rounded-2xl shadow-xl">
+              <Button asChild size="lg" className="btn-hover bg-primary text-white hover:bg-primary/90 font-extrabold text-lg px-10 py-6 rounded-2xl shadow-xl">
                 <Link to="/donate">Partner With Us</Link>
               </Button>
               <Button asChild size="lg" className="btn-hover bg-secondary text-white hover:bg-secondary/90 font-extrabold text-lg px-10 py-6 rounded-2xl shadow-xl">

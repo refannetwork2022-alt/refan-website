@@ -5,13 +5,78 @@ import { Calendar, User, X, ChevronRight, Share2, Facebook, Twitter, Link2 } fro
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
+const sampleBlogPosts: BlogPost[] = [
+  {
+    id: "blog-1",
+    title: "Why Refugee-Led Organizations Matter More Than Ever",
+    excerpt: "Refugee-led organizations like ReFAN bring a unique understanding of community needs that external organizations often miss. Here's why investing in refugee leadership is key to sustainable development.",
+    content: "Refugee-led organizations like ReFAN bring a unique understanding of community needs that external organizations often miss. When refugees lead the response, programs are more culturally appropriate, more sustainable, and more impactful.\n\nAt ReFAN, our team lives in Dzaleka Refugee Camp. We don't just serve the community — we are the community. This means we understand the daily realities, the barriers, and the aspirations of the people we work with.\n\nStudies have shown that refugee-led organizations are often more cost-effective and have deeper reach within communities. Yet, they receive less than 1% of global humanitarian funding. This is a gap that needs to be addressed.\n\nBy supporting ReFAN, you're not just funding programs — you're investing in a model of self-reliance and dignity that empowers refugees to lead their own development. Together, we can show the world that refugees are not just recipients of aid — they are agents of change.",
+    image: "/IMG-20260217-WA0040.jpg",
+    author: "Goreth N.",
+    date: "2026-02-20",
+    tags: ["Leadership", "Refugees", "Community"],
+  },
+  {
+    id: "blog-2",
+    title: "Education as a Lifeline: Stories from Dzaleka's Classrooms",
+    excerpt: "For orphaned children in Dzaleka, education is more than learning — it's hope. Discover how ReFAN's education program is transforming young lives one classroom at a time.",
+    content: "In Dzaleka Refugee Camp, education is not a given — it's a privilege that many children struggle to access. School fees, uniforms, books, and supplies are often out of reach for families who are already stretched thin.\n\nReFAN's Education Support Program was created to bridge this gap. Since 2022, we have supported over 100 orphaned children with full educational packages, including school fees, uniforms, books, and after-school tutoring.\n\nOne of our students, Emmanuel, lost both parents at age 12. When ReFAN stepped in, he was on the verge of dropping out. Today, Emmanuel is a top student in his class and dreams of becoming a doctor.\n\n'ReFAN gave me more than school fees,' Emmanuel says. 'They gave me a reason to believe in tomorrow.'\n\nEvery child deserves the chance to learn, grow, and dream. With your support, we can reach even more children like Emmanuel and ensure that no orphan in Dzaleka is left behind.",
+    image: "/gallery-classroom.jpg",
+    author: "Wagstan M.",
+    date: "2026-02-12",
+    tags: ["Education", "Children", "Impact"],
+  },
+  {
+    id: "blog-3",
+    title: "Turning Grief into Resilience: The Power of Bereavement Support",
+    excerpt: "Losing a loved one is devastating. For refugees, grief is compounded by displacement and poverty. Learn how ReFAN's bereavement program helps families heal and rebuild.",
+    content: "Grief is a universal experience, but for refugees in Dzaleka, it carries an extra weight. Many have lost family members to conflict, disease, or the harsh realities of displacement. Without support, grief can become a barrier to survival.\n\nReFAN's Bereavement Support Program offers counseling, group therapy, and community gatherings that help families process their loss and find strength in solidarity. Our approach is rooted in cultural sensitivity and community trust.\n\nEsperance, a widow and mother of four, joined our support group after losing her husband. 'I felt alone in my pain,' she recalls. 'But in the group, I found women who understood. We cried together, and then we started building together.'\n\nToday, Esperance leads a small savings group and mentors other widows. Her story is one of many that show how grief, when met with compassion and community, can become a foundation for resilience.\n\nIf you or someone you know is struggling with loss, know that you are not alone. ReFAN is here to walk with you.",
+    image: "/IMG-20260217-WA0055.jpg",
+    author: "Goreth N.",
+    date: "2026-01-28",
+    tags: ["Bereavement", "Resilience", "Women"],
+  },
+  {
+    id: "blog-4",
+    title: "Community Voices: What ReFAN Means to Dzaleka",
+    excerpt: "We asked members of the Dzaleka community what ReFAN means to them. Their answers reveal the true impact of grassroots, refugee-led action.",
+    content: "At ReFAN, we believe that the voices of the community matter most. So we asked: What does ReFAN mean to you?\n\nMarie, a widow: 'ReFAN is family. When my husband died, they were the first to come. They helped with the funeral, and then they stayed. They helped my children go back to school. That's not just charity — that's love.'\n\nJean, a youth volunteer: 'I was lost after finishing school. No job, no hope. ReFAN gave me a purpose. Now I teach younger kids and organize community events. I feel like I matter.'\n\nClaire, a community elder: 'In my 20 years in this camp, I've seen organizations come and go. But ReFAN is different. They are us. They understand. And they don't give up.'\n\nThese voices remind us why we do this work. ReFAN is not just an organization — it's a movement of hope, led by refugees, for refugees. And with your support, this movement will only grow stronger.",
+    image: "/IMG-20260217-WA0049.jpg",
+    author: "Wagstan M.",
+    date: "2026-01-15",
+    tags: ["Community", "Stories", "Impact"],
+  },
+  {
+    id: "blog-5",
+    title: "2025 in Review: A Year of Growth and Impact",
+    excerpt: "From expanding our education program to launching new community workshops, 2025 was a year of milestones for ReFAN. Here's a look back at what we accomplished together.",
+    content: "As we step into 2026, we want to take a moment to celebrate the incredible journey of 2025. It was a year of growth, challenges, and above all, impact.\n\nKey highlights:\n\n- Education: We expanded our scholarship program to support 120 orphaned children, up from 80 in 2024.\n- Community Resilience: We launched 4 new skills workshops for widows, reaching over 60 women with training in tailoring, soap-making, beadwork, and financial literacy.\n- Bereavement Support: Our support groups reached 100 families, providing counseling and community gatherings that helped families heal.\n- Volunteers: We welcomed 15 new community volunteers who contributed over 2,000 hours of service.\n- Partnerships: We strengthened relationships with local leaders and international supporters who believe in our mission.\n\nNone of this would have been possible without the generosity and dedication of our donors, volunteers, and community members. Every contribution, no matter how small, has made a difference.\n\nAs we look ahead to 2026, we are committed to reaching even more families, expanding our programs, and continuing to prove that refugee-led action works. Thank you for being part of this journey.",
+    image: "/IMG-20260217-WA0041.jpg",
+    author: "Goreth N.",
+    date: "2026-01-05",
+    tags: ["Annual Review", "Impact", "Growth"],
+  },
+  {
+    id: "blog-6",
+    title: "How You Can Support Refugees from Anywhere in the World",
+    excerpt: "You don't have to be in Malawi to make a difference. Here are practical ways you can support ReFAN and the refugees of Dzaleka from wherever you are.",
+    content: "One of the most common questions we receive is: 'How can I help from so far away?' The answer is: more than you might think.\n\nHere are practical ways you can support ReFAN and the refugees of Dzaleka:\n\n1. Donate: Even a small contribution goes a long way. Our programs are designed to maximize impact with minimal resources. Every dollar counts.\n\n2. Spread the Word: Share our stories on social media. Talk about refugee issues with your friends and family. Awareness is a powerful tool for change.\n\n3. Volunteer Remotely: If you have skills in design, writing, marketing, or technology, we'd love your help. Remote volunteers play a crucial role in amplifying our message.\n\n4. Become a Monthly Sponsor: Regular giving helps us plan ahead and sustain our programs. Even a few dollars a month can support a child's education.\n\n5. Advocate: Write to your representatives about refugee rights. Support policies that empower refugee-led organizations.\n\nDistance is not a barrier to compassion. Together, we can build a world where every refugee has the support they need to thrive.",
+    image: "/gallery-community.jpg",
+    author: "Wagstan M.",
+    date: "2025-12-20",
+    tags: ["How to Help", "Donate", "Volunteer"],
+  },
+];
+
 const Blog = () => {
   const { toast } = useToast();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [selected, setSelected] = useState<BlogPost | null>(null);
 
   useEffect(() => {
-    store.getBlogs().then(setPosts);
+    store.getBlogs().then((data) => {
+      setPosts(data.length > 0 ? data : sampleBlogPosts);
+    }).catch(() => setPosts(sampleBlogPosts));
   }, []);
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';

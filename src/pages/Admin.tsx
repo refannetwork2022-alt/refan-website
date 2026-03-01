@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import ImageUpload from "@/components/ImageUpload";
 
 type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'donations' | 'subscribers' | 'messages' | 'members';
 
@@ -75,12 +76,12 @@ const Admin = () => {
   const docRef = useRef<HTMLInputElement>(null);
 
   const [storyForm, setStoryForm] = useState({ title: '', excerpt: '', content: '', category: 'story' as 'story' | 'announcement' });
-  const [blogForm, setBlogForm] = useState({ title: '', excerpt: '', content: '', author: 'ReFAN Team', tags: '' });
+  const [blogForm, setBlogForm] = useState({ title: '', excerpt: '', content: '', image: '', author: 'ReFAN Team', tags: '' });
   const [galleryForm, setGalleryForm] = useState({ title: '', url: '', type: 'photo' as 'photo' | 'video' });
   const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', image: '' });
 
   const emptyMemberForm = {
-    surname: '', firstName: '', otherName: '', countryOfOrigin: '', countryOfResidence: '',
+    surname: '', firstName: '', otherName: '', email: '', countryOfOrigin: '', countryOfResidence: '',
     unhcrId: '', phone: '', phoneCode: '+265', gender: '', maritalStatus: '',
     dobYear: '', dobMonth: '', dobDay: '', familySize: '', photo: '', document: '',
     paymentCurrency: 'MWK', paymentAmount: '', branchName: 'Dzaleka', username: '', expiryDate: '',
@@ -131,7 +132,7 @@ const Admin = () => {
     if (!blogForm.title.trim()) return;
     await store.addBlog({ ...blogForm, tags: blogForm.tags.split(',').map(t => t.trim()).filter(Boolean), date: new Date().toISOString() });
     setBlogs(await store.getBlogs());
-    setBlogForm({ title: '', excerpt: '', content: '', author: 'ReFAN Team', tags: '' });
+    setBlogForm({ title: '', excerpt: '', content: '', image: '', author: 'ReFAN Team', tags: '' });
     toast({ title: "Blog post added!" });
   };
 
@@ -155,64 +156,167 @@ const Admin = () => {
     toast({ title: "Gallery item deleted" });
   };
 
+  const [memberSaving, setMemberSaving] = useState(false);
+
+  const compressImage = (base64: string, maxWidth = 400): Promise<string> => {
+    return new Promise((resolve) => {
+      if (!base64) { resolve(''); return; }
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = window.document.createElement('canvas');
+        const scale = Math.min(1, maxWidth / img.width);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.6));
+      };
+      img.onerror = () => resolve('');
+      img.src = base64;
+    });
+  };
+
   const addMember = async () => {
     if (!memberForm.surname.trim() || !memberForm.firstName.trim()) {
       toast({ title: "Surname and First Name are required", variant: "destructive" });
       return;
     }
-    const dob = memberForm.dobYear ? `${memberForm.dobYear}-${(memberForm.dobMonth || '1').padStart(2, '0')}-${(memberForm.dobDay || '1').padStart(2, '0')}` : '';
-    await store.addMember({
-      surname: memberForm.surname.trim(), firstName: memberForm.firstName.trim(),
-      otherName: memberForm.otherName.trim(), countryOfOrigin: memberForm.countryOfOrigin,
-      countryOfResidence: memberForm.countryOfResidence, unhcrId: memberForm.unhcrId.trim(),
-      phone: memberForm.phone.trim(), phoneCode: memberForm.phoneCode,
-      gender: memberForm.gender, maritalStatus: memberForm.maritalStatus,
-      dateOfBirth: dob, familySize: Number(memberForm.familySize) || 0,
-      photo: memberForm.photo, document: memberForm.document,
-      paymentCurrency: memberForm.paymentCurrency, paymentAmount: Number(memberForm.paymentAmount) || 0,
-      registrationDate: new Date().toISOString(), expiryDate: memberForm.expiryDate,
-      branchName: memberForm.branchName.trim(), username: memberForm.username.trim(),
-    });
-    setMembers(await store.getMembers());
-    setMemberForm(emptyMemberForm);
-    setShowMemberForm(false);
-    toast({ title: "Member registered!" });
+    if (memberSaving) return;
+    setMemberSaving(true);
+    try {
+      const dob = memberForm.dobYear ? `${memberForm.dobYear}-${(memberForm.dobMonth || '1').padStart(2, '0')}-${(memberForm.dobDay || '1').padStart(2, '0')}` : '';
+      // Compress images to avoid Firestore 1MB document limit
+      const compressedPhoto = await compressImage(memberForm.photo);
+      const compressedDoc = await compressImage(memberForm.document, 600);
+      const result = await store.addMember({
+        surname: memberForm.surname.trim(), firstName: memberForm.firstName.trim(),
+        otherName: memberForm.otherName.trim(), email: memberForm.email.trim(), countryOfOrigin: memberForm.countryOfOrigin,
+        countryOfResidence: memberForm.countryOfResidence, unhcrId: memberForm.unhcrId.trim(),
+        phone: memberForm.phone.trim(), phoneCode: memberForm.phoneCode,
+        gender: memberForm.gender, maritalStatus: memberForm.maritalStatus,
+        dateOfBirth: dob, familySize: Number(memberForm.familySize) || 0,
+        photo: compressedPhoto, document: compressedDoc,
+        paymentCurrency: memberForm.paymentCurrency, paymentAmount: Number(memberForm.paymentAmount) || 0,
+        registrationDate: new Date().toISOString(), expiryDate: memberForm.expiryDate,
+        branchName: memberForm.branchName.trim(), username: memberForm.username.trim(),
+      });
+      if (result) {
+        setMembers(await store.getMembers());
+        setMemberForm(emptyMemberForm);
+        setShowMemberForm(false);
+        toast({ title: `Saved! Member ${result.regNumber} registered successfully.` });
+      } else {
+        toast({ title: "Failed to save member. Please try again.", variant: "destructive" });
+      }
+    } catch (err: any) {
+      console.error("addMember error:", err);
+      toast({ title: "Error saving member. Please try again.", variant: "destructive" });
+    } finally {
+      setMemberSaving(false);
+    }
   };
 
   const deleteMember = async (id: string) => {
-    await store.deleteMember(id);
+    if (!confirm("Are you sure you want to delete this member?")) return;
+    try {
+      const success = await store.deleteMember(id);
+      if (success) {
+        setMembers(await store.getMembers());
+        toast({ title: "Deleted! Member has been removed." });
+      } else {
+        toast({ title: "Failed to delete member.", variant: "destructive" });
+      }
+    } catch (err) {
+      console.error("deleteMember error:", err);
+      toast({ title: "Error deleting member.", variant: "destructive" });
+    }
+  };
+
+  const removeDuplicateMembers = async () => {
+    if (!confirm("This will keep the first registration for each name and remove duplicates. Continue?")) return;
+    const seen = new Map<string, string>();
+    const toDelete: string[] = [];
+    for (const m of members) {
+      const key = `${m.surname.toLowerCase()}_${m.firstName.toLowerCase()}_${m.email.toLowerCase()}`;
+      if (seen.has(key)) {
+        toDelete.push(m.id);
+      } else {
+        seen.set(key, m.id);
+      }
+    }
+    if (toDelete.length === 0) {
+      toast({ title: "No duplicates found" });
+      return;
+    }
+    for (const id of toDelete) {
+      await store.deleteMember(id);
+    }
     setMembers(await store.getMembers());
-    toast({ title: "Member removed" });
+    toast({ title: `Removed ${toDelete.length} duplicate(s)` });
   };
 
   const exportCSV = (data: Record<string, unknown>[], filename: string) => {
     if (data.length === 0) return;
     const headers = Object.keys(data[0]);
-    const csvContent = [
-      headers.join(","),
-      ...data.map(row => headers.map(h => {
-        const val = String(row[h] ?? "");
-        return val.includes(",") || val.includes('"') ? `"${val.replace(/"/g, '""')}"` : val;
-      }).join(","))
-    ].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv" });
+    const esc = (v: string) => v.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    const colWidths = headers.map(h => {
+      const name = h.toLowerCase();
+      if (name === '#') return 40;
+      if (name.includes('date') || name.includes('expiry')) return 180;
+      if (name.includes('email') || name.includes('country')) return 200;
+      if (name.includes('phone') || name.includes('number')) return 150;
+      return 130;
+    });
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+<Styles>
+<Style ss:ID="hdr"><Font ss:Bold="1" ss:Size="11"/><Interior ss:Color="#D9E1F2" ss:Pattern="Solid"/></Style>
+<Style ss:ID="txt"><NumberFormat ss:Format="@"/></Style>
+</Styles>
+<Worksheet ss:Name="Sheet1">
+<Table>
+${colWidths.map(w => `<Column ss:Width="${w}"/>`).join("\n")}
+<Row ss:StyleID="hdr">${headers.map(h => `<Cell><Data ss:Type="String">${esc(h)}</Data></Cell>`).join("")}</Row>
+${data.map(row => `<Row>${headers.map(h => {
+      const val = String(row[h] ?? "");
+      return `<Cell ss:StyleID="txt"><Data ss:Type="String">${esc(val)}</Data></Cell>`;
+    }).join("")}</Row>`).join("\n")}
+</Table>
+</Worksheet>
+</Workbook>`;
+    const blob = new Blob([xml], { type: "application/vnd.ms-excel;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${filename}.csv`;
+    a.download = `${filename}.xls`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   const exportMembersCSV = () => {
-    const data = members.map(m => ({
-      regNumber: m.regNumber, surname: m.surname, firstName: m.firstName, otherName: m.otherName,
-      countryOfOrigin: m.countryOfOrigin, countryOfResidence: m.countryOfResidence, unhcrId: m.unhcrId,
-      phone: `${m.phoneCode}${m.phone}`, gender: m.gender, maritalStatus: m.maritalStatus,
-      dateOfBirth: m.dateOfBirth, familySize: m.familySize, branchName: m.branchName,
-      username: m.username, registrationDate: m.registrationDate, expiryDate: m.expiryDate,
+    const data = members.map((m, i) => ({
+      "#": i + 1,
+      "Reg Number": m.regNumber,
+      "Surname": m.surname,
+      "First Name": m.firstName,
+      "Other Name": m.otherName,
+      "Email": m.email,
+      "Country of Origin": m.countryOfOrigin,
+      "Country of Residence": m.countryOfResidence,
+      "ID Number": m.unhcrId,
+      "Phone": `${m.phoneCode} ${m.phone}`,
+      "Gender": m.gender,
+      "Marital Status": m.maritalStatus,
+      "Date of Birth": m.dateOfBirth ? new Date(m.dateOfBirth + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
+      "Family Size": m.familySize,
+      "Branch": m.branchName,
+      "Username": m.username,
+      "Registration Date": m.registrationDate ? new Date(m.registrationDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
+      "Expiry Date": m.expiryDate ? new Date(m.expiryDate + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
     }));
-    exportCSV(data as unknown as Record<string, unknown>[], "members");
+    exportCSV(data as unknown as Record<string, unknown>[], "refan-members");
   };
 
   const copyRegLink = () => {
@@ -348,7 +452,10 @@ const Admin = () => {
                 <Button variant="outline" size="sm" onClick={copyRegLink}><Copy className="h-4 w-4" /> Copy Registration Link</Button>
                 <Button variant="default" size="sm" onClick={() => setShowMemberForm(!showMemberForm)}><Plus className="h-4 w-4" /> Add Member</Button>
                 {members.length > 0 && (
-                  <Button variant="outline" size="sm" onClick={exportMembersCSV}><Download className="h-4 w-4" /> Export CSV</Button>
+                  <>
+                    <Button variant="outline" size="sm" onClick={exportMembersCSV}><Download className="h-4 w-4" /> Export CSV</Button>
+                    <Button variant="destructive" size="sm" onClick={removeDuplicateMembers}><Trash2 className="h-4 w-4" /> Remove Duplicates</Button>
+                  </>
                 )}
               </div>
             </div>
@@ -362,6 +469,7 @@ const Admin = () => {
                   <input placeholder="First Name *" value={memberForm.firstName} onChange={e => setMemberForm({ ...memberForm, firstName: e.target.value })} className={inputClass} maxLength={100} />
                   <input placeholder="Other Name" value={memberForm.otherName} onChange={e => setMemberForm({ ...memberForm, otherName: e.target.value })} className={inputClass} maxLength={100} />
                 </div>
+                <input type="email" placeholder="Email Address" value={memberForm.email} onChange={e => setMemberForm({ ...memberForm, email: e.target.value })} className={inputClass} maxLength={200} />
                 <div className="grid sm:grid-cols-2 gap-3">
                   <select value={memberForm.countryOfOrigin} onChange={e => setMemberForm({ ...memberForm, countryOfOrigin: e.target.value })} className={inputClass}>
                     <option value="">Country of Origin</option>
@@ -372,7 +480,7 @@ const Admin = () => {
                     {countries.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
-                <input placeholder="UNHCR ID" value={memberForm.unhcrId} onChange={e => setMemberForm({ ...memberForm, unhcrId: e.target.value })} className={inputClass} maxLength={50} />
+                <input placeholder="UNHCR / National / Any Valid ID" value={memberForm.unhcrId} onChange={e => setMemberForm({ ...memberForm, unhcrId: e.target.value })} className={inputClass} maxLength={50} />
                 <div className="flex gap-2">
                   <select value={memberForm.phoneCode} onChange={e => setMemberForm({ ...memberForm, phoneCode: e.target.value })} className="w-28 px-2 py-2.5 rounded-lg border border-input bg-background text-sm">
                     {phoneCodes.map(p => <option key={p.code} value={p.code}>{p.country} ({p.code})</option>)}
@@ -432,7 +540,7 @@ const Admin = () => {
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <Button onClick={addMember} size="sm"><Plus className="h-4 w-4" /> Register Member</Button>
+                  <Button onClick={addMember} size="sm" disabled={memberSaving}><Plus className="h-4 w-4" /> {memberSaving ? 'Saving...' : 'Register Member'}</Button>
                   <Button variant="ghost" size="sm" onClick={() => { setShowMemberForm(false); setMemberForm(emptyMemberForm); }}>Cancel</Button>
                 </div>
               </div>
@@ -444,11 +552,13 @@ const Admin = () => {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted/50">
+                      <th className="text-left py-3 px-3 font-medium text-xs">#</th>
                       <th className="text-left py-3 px-3 font-medium text-xs">Family Size</th>
                       <th className="text-left py-3 px-3 font-medium text-xs">Country</th>
                       <th className="text-left py-3 px-3 font-medium text-xs">Names</th>
                       <th className="text-left py-3 px-3 font-medium text-xs">Reg. Number</th>
                       <th className="text-left py-3 px-3 font-medium text-xs">Profile</th>
+                      <th className="text-left py-3 px-3 font-medium text-xs">Email</th>
                       <th className="text-left py-3 px-3 font-medium text-xs">Contact</th>
                       <th className="text-left py-3 px-3 font-medium text-xs">Username</th>
                       <th className="text-left py-3 px-3 font-medium text-xs">Branch</th>
@@ -458,8 +568,9 @@ const Admin = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {members.map((m) => (
+                    {members.map((m, idx) => (
                       <tr key={m.id} className="border-b border-border hover:bg-muted/30">
+                        <td className="py-3 px-3 text-xs text-muted-foreground">{idx + 1}</td>
                         <td className="py-3 px-3">{m.familySize}</td>
                         <td className="py-3 px-3 text-xs">{m.countryOfOrigin}</td>
                         <td className="py-3 px-3 font-medium">{m.firstName} {m.surname}</td>
@@ -471,6 +582,7 @@ const Admin = () => {
                             <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-xs text-muted-foreground">N/A</div>
                           )}
                         </td>
+                        <td className="py-3 px-3 text-xs">{m.email}</td>
                         <td className="py-3 px-3 text-xs">{m.phoneCode}{m.phone}</td>
                         <td className="py-3 px-3 text-xs">{m.username}</td>
                         <td className="py-3 px-3 text-xs">{m.branchName}</td>
@@ -558,6 +670,8 @@ const Admin = () => {
                 <input placeholder="Title" value={blogForm.title} onChange={(e) => setBlogForm({ ...blogForm, title: e.target.value })} className={inputClass} maxLength={200} />
                 <input placeholder="Excerpt" value={blogForm.excerpt} onChange={(e) => setBlogForm({ ...blogForm, excerpt: e.target.value })} className={inputClass} maxLength={300} />
                 <textarea placeholder="Content" value={blogForm.content} onChange={(e) => setBlogForm({ ...blogForm, content: e.target.value })} rows={4} className={inputClass + " resize-none"} maxLength={10000} />
+                <ImageUpload label="Upload Blog Image" onUploaded={(url) => setBlogForm({ ...blogForm, image: url })} />
+                <input placeholder="Or paste Image URL" value={blogForm.image} onChange={(e) => setBlogForm({ ...blogForm, image: e.target.value })} className={inputClass} maxLength={500} />
                 <input placeholder="Tags (comma separated)" value={blogForm.tags} onChange={(e) => setBlogForm({ ...blogForm, tags: e.target.value })} className={inputClass} maxLength={200} />
                 <Button onClick={addBlog} variant="default" size="sm"><Plus className="h-4 w-4" /> Add Post</Button>
               </div>
@@ -583,7 +697,8 @@ const Admin = () => {
               <h3 className="font-heading font-bold mb-4">Add Item</h3>
               <div className="space-y-3">
                 <input placeholder="Title" value={galleryForm.title} onChange={(e) => setGalleryForm({ ...galleryForm, title: e.target.value })} className={inputClass} maxLength={200} />
-                <input placeholder="Image/Video URL" value={galleryForm.url} onChange={(e) => setGalleryForm({ ...galleryForm, url: e.target.value })} className={inputClass} maxLength={500} />
+                <ImageUpload label="Upload Photo" onUploaded={(url) => setGalleryForm({ ...galleryForm, url })} />
+                <input placeholder="Or paste Image/Video URL" value={galleryForm.url} onChange={(e) => setGalleryForm({ ...galleryForm, url: e.target.value })} className={inputClass} maxLength={500} />
                 <select value={galleryForm.type} onChange={(e) => setGalleryForm({ ...galleryForm, type: e.target.value as 'photo' | 'video' })} className={inputClass}>
                   <option value="photo">Photo</option>
                   <option value="video">Video</option>
