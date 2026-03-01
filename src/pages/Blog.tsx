@@ -154,7 +154,28 @@ const Blog = () => {
             </div>
             <div className="px-8 py-6">
               <div className="h-1 w-16 rounded-full bg-gradient-to-r from-primary to-secondary mb-6" />
-              <p className="text-foreground/80 text-lg leading-relaxed whitespace-pre-wrap">{selected.content}</p>
+              {(() => {
+                try {
+                  const blocks = JSON.parse(selected.content);
+                  if (Array.isArray(blocks)) {
+                    return (
+                      <div className="space-y-6">
+                        {blocks.map((block: any, idx: number) =>
+                          block.type === 'image' ? (
+                            <figure key={idx} className="space-y-2">
+                              <img src={block.url} alt={block.caption || ''} className="w-full rounded-xl object-cover max-h-[500px]" />
+                              {block.caption && <figcaption className="text-sm text-muted-foreground text-center italic">{block.caption}</figcaption>}
+                            </figure>
+                          ) : (
+                            <p key={idx} className="text-foreground/80 text-lg leading-relaxed whitespace-pre-wrap">{block.value}</p>
+                          )
+                        )}
+                      </div>
+                    );
+                  }
+                } catch {}
+                return <p className="text-foreground/80 text-lg leading-relaxed whitespace-pre-wrap">{selected.content}</p>;
+              })()}
             </div>
             <div className="px-8 pb-6 flex items-center justify-between border-t border-border pt-4">
               <Button onClick={() => setSelected(null)} variant="outline" className="btn-hover">Close</Button>

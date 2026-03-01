@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   LayoutDashboard, FileText, Image, Megaphone, Users, Heart,
   Plus, Trash2, ArrowLeft, LogOut, Download, Mail, Send, MessageSquare, KeyRound,
-  UserPlus, Copy, Camera, Upload, Shield
+  UserPlus, Copy, Camera, Upload, Shield, ChevronUp, ChevronDown, Type, ImagePlus
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -79,7 +79,8 @@ const Admin = () => {
   const docRef = useRef<HTMLInputElement>(null);
 
   const [storyForm, setStoryForm] = useState({ title: '', excerpt: '', content: '', category: 'story' as 'story' | 'announcement' });
-  const [blogForm, setBlogForm] = useState({ title: '', excerpt: '', content: '', image: '', author: 'ReFAN Team', tags: '' });
+  const [blogForm, setBlogForm] = useState({ title: '', excerpt: '', image: '', author: 'ReFAN Team', tags: '' });
+  const [contentBlocks, setContentBlocks] = useState<Array<{ type: 'text' | 'image'; value?: string; url?: string; caption?: string }>>([{ type: 'text', value: '' }]);
   const [galleryForm, setGalleryForm] = useState({ title: '', url: '', type: 'photo' as 'photo' | 'video' });
   const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', image: '' });
 
@@ -133,10 +134,28 @@ const Admin = () => {
 
   const addBlog = async () => {
     if (!blogForm.title.trim()) return;
-    await store.addBlog({ ...blogForm, tags: blogForm.tags.split(',').map(t => t.trim()).filter(Boolean), date: new Date().toISOString() });
+    const content = JSON.stringify(contentBlocks.filter(b => (b.type === 'text' && b.value?.trim()) || (b.type === 'image' && b.url?.trim())));
+    await store.addBlog({ ...blogForm, content, tags: blogForm.tags.split(',').map(t => t.trim()).filter(Boolean), date: new Date().toISOString() });
     setBlogs(await store.getBlogs());
-    setBlogForm({ title: '', excerpt: '', content: '', image: '', author: 'ReFAN Team', tags: '' });
+    setBlogForm({ title: '', excerpt: '', image: '', author: 'ReFAN Team', tags: '' });
+    setContentBlocks([{ type: 'text', value: '' }]);
     toast({ title: "Blog post added!" });
+  };
+
+  const updateBlock = (index: number, updates: Partial<typeof contentBlocks[0]>) => {
+    setContentBlocks(prev => prev.map((b, i) => i === index ? { ...b, ...updates } : b));
+  };
+  const removeBlock = (index: number) => {
+    setContentBlocks(prev => prev.filter((_, i) => i !== index));
+  };
+  const moveBlock = (index: number, dir: -1 | 1) => {
+    const next = index + dir;
+    if (next < 0 || next >= contentBlocks.length) return;
+    setContentBlocks(prev => {
+      const arr = [...prev];
+      [arr[index], arr[next]] = [arr[next], arr[index]];
+      return arr;
+    });
   };
 
   const deleteBlog = async (id: string) => {
@@ -727,10 +746,45 @@ ${data.map(row => `<Row>${headers.map(h => {
               <div className="space-y-3">
                 <input placeholder="Title" value={blogForm.title} onChange={(e) => setBlogForm({ ...blogForm, title: e.target.value })} className={inputClass} maxLength={200} />
                 <input placeholder="Excerpt" value={blogForm.excerpt} onChange={(e) => setBlogForm({ ...blogForm, excerpt: e.target.value })} className={inputClass} maxLength={300} />
-                <textarea placeholder="Content" value={blogForm.content} onChange={(e) => setBlogForm({ ...blogForm, content: e.target.value })} rows={4} className={inputClass + " resize-none"} maxLength={10000} />
-                <ImageUpload label="Upload Blog Image" onUploaded={(url) => setBlogForm({ ...blogForm, image: url })} />
-                <input placeholder="Or paste Image URL" value={blogForm.image} onChange={(e) => setBlogForm({ ...blogForm, image: e.target.value })} className={inputClass} maxLength={500} />
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-muted-foreground">Featured Image (thumbnail)</label>
+                  <ImageUpload label="Upload Thumbnail" onUploaded={(url) => setBlogForm({ ...blogForm, image: url })} />
+                  <input placeholder="Or paste thumbnail URL" value={blogForm.image} onChange={(e) => setBlogForm({ ...blogForm, image: e.target.value })} className={inputClass} maxLength={500} />
+                </div>
                 <input placeholder="Tags (comma separated)" value={blogForm.tags} onChange={(e) => setBlogForm({ ...blogForm, tags: e.target.value })} className={inputClass} maxLength={200} />
+
+                {/* Content Blocks */}
+                <div className="border border-border rounded-lg p-4 space-y-3 bg-muted/30">
+                  <label className="text-sm font-bold text-foreground">Content Blocks</label>
+                  {contentBlocks.map((block, idx) => (
+                    <div key={idx} className="bg-card rounded-lg border border-border p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                          {block.type === 'text' ? <><Type className="h-3 w-3" /> Text Block {idx + 1}</> : <><ImagePlus className="h-3 w-3" /> Image Block {idx + 1}</>}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveBlock(idx, -1)} disabled={idx === 0}><ChevronUp className="h-3 w-3" /></Button>
+                          <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveBlock(idx, 1)} disabled={idx === contentBlocks.length - 1}><ChevronDown className="h-3 w-3" /></Button>
+                          {contentBlocks.length > 1 && <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => removeBlock(idx)}><Trash2 className="h-3 w-3" /></Button>}
+                        </div>
+                      </div>
+                      {block.type === 'text' ? (
+                        <textarea placeholder="Write your content here..." value={block.value || ''} onChange={(e) => updateBlock(idx, { value: e.target.value })} rows={3} className={inputClass + " resize-none"} maxLength={5000} />
+                      ) : (
+                        <div className="space-y-2">
+                          <ImageUpload label="Upload Image" onUploaded={(url) => updateBlock(idx, { url })} />
+                          <input placeholder="Or paste image URL" value={block.url || ''} onChange={(e) => updateBlock(idx, { url: e.target.value })} className={inputClass} maxLength={500} />
+                          {block.url && <img src={block.url} alt="Preview" className="w-full max-h-40 object-cover rounded-md" />}
+                          <input placeholder="Caption (optional)" value={block.caption || ''} onChange={(e) => updateBlock(idx, { caption: e.target.value })} className={inputClass} maxLength={200} />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <div className="flex gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => setContentBlocks(prev => [...prev, { type: 'text', value: '' }])}><Type className="h-4 w-4" /> Add Text</Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => setContentBlocks(prev => [...prev, { type: 'image', url: '', caption: '' }])}><ImagePlus className="h-4 w-4" /> Add Image</Button>
+                  </div>
+                </div>
                 <Button onClick={addBlog} variant="default" size="sm"><Plus className="h-4 w-4" /> Add Post</Button>
               </div>
             </div>
