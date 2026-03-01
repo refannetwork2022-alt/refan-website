@@ -6,6 +6,19 @@ import { Calendar, X, ChevronRight, Share2, Facebook, Twitter, Link2, Heart } fr
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
+const getEmbedUrl = (url: string): string | null => {
+  if (!url) return null;
+  // YouTube
+  let m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
+  if (m) return `https://www.youtube.com/embed/${m[1]}`;
+  // Vimeo
+  m = url.match(/vimeo\.com\/(\d+)/);
+  if (m) return `https://player.vimeo.com/video/${m[1]}`;
+  // Already an embed or direct video URL
+  if (url.includes('/embed/') || url.includes('player.vimeo.com')) return url;
+  return null;
+};
+
 const Stories = () => {
   const { toast } = useToast();
   const [filter, setFilter] = useState<'all' | 'story' | 'announcement'>('all');
@@ -150,6 +163,11 @@ const Stories = () => {
                 <img src={selectedStory.image} alt={selectedStory.title} className="w-full h-full object-cover" />
               </div>
             )}
+            {selectedStory.video && getEmbedUrl(selectedStory.video) && (
+              <div className="w-full aspect-video">
+                <iframe src={getEmbedUrl(selectedStory.video)!} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title="Video" />
+              </div>
+            )}
             <div className="sticky top-0 bg-card border-b border-border px-8 py-6 flex items-start justify-between">
               <div>
                 <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold mb-2 ${
@@ -195,6 +213,11 @@ const Stories = () => {
             {selectedAnnouncement.image && (
               <div className="w-full h-64 md:h-80 overflow-hidden">
                 <img src={selectedAnnouncement.image} alt={selectedAnnouncement.title} className="w-full h-full object-cover" />
+              </div>
+            )}
+            {selectedAnnouncement.video && getEmbedUrl(selectedAnnouncement.video) && (
+              <div className="w-full aspect-video">
+                <iframe src={getEmbedUrl(selectedAnnouncement.video)!} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title="Video" />
               </div>
             )}
             <div className="sticky top-0 bg-card border-b border-border px-8 py-6 flex items-start justify-between">

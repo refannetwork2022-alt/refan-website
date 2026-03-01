@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   LayoutDashboard, FileText, Image, Megaphone, Users, Heart,
   Plus, Trash2, ArrowLeft, LogOut, Download, Mail, Send, MessageSquare, KeyRound,
-  UserPlus, Copy, Camera, Upload, Shield, ChevronUp, ChevronDown, Type, ImagePlus
+  UserPlus, Copy, Camera, Upload, Shield, ChevronUp, ChevronDown, Type, ImagePlus, Video
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -78,11 +78,11 @@ const Admin = () => {
   const photoRef = useRef<HTMLInputElement>(null);
   const docRef = useRef<HTMLInputElement>(null);
 
-  const [storyForm, setStoryForm] = useState({ title: '', excerpt: '', content: '', category: 'story' as 'story' | 'announcement' });
+  const [storyForm, setStoryForm] = useState({ title: '', excerpt: '', content: '', video: '', category: 'story' as 'story' | 'announcement' });
   const [blogForm, setBlogForm] = useState({ title: '', excerpt: '', image: '', author: 'ReFAN Team', tags: '' });
-  const [contentBlocks, setContentBlocks] = useState<Array<{ type: 'text' | 'image'; value?: string; url?: string; caption?: string }>>([{ type: 'text', value: '' }]);
+  const [contentBlocks, setContentBlocks] = useState<Array<{ type: 'text' | 'image' | 'video'; value?: string; url?: string; caption?: string }>>([{ type: 'text', value: '' }]);
   const [galleryForm, setGalleryForm] = useState({ title: '', url: '', type: 'photo' as 'photo' | 'video' });
-  const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', image: '' });
+  const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', image: '', video: '' });
 
   const emptyMemberForm = {
     surname: '', firstName: '', otherName: '', email: '', countryOfOrigin: '', countryOfResidence: '',
@@ -108,7 +108,7 @@ const Admin = () => {
     if (!announcementForm.title.trim()) return;
     await store.addAnnouncement({ ...announcementForm, donationCount: 0 });
     setAnnouncements(await store.getAnnouncements());
-    setAnnouncementForm({ title: '', content: '', image: '' });
+    setAnnouncementForm({ title: '', content: '', image: '', video: '' });
     toast({ title: "Announcement added!" });
   };
 
@@ -122,7 +122,7 @@ const Admin = () => {
     if (!storyForm.title.trim()) return;
     await store.addStory({ ...storyForm, date: new Date().toISOString() });
     setStories(await store.getStories());
-    setStoryForm({ title: '', excerpt: '', content: '', category: 'story' });
+    setStoryForm({ title: '', excerpt: '', content: '', video: '', category: 'story' });
     toast({ title: "Story added!" });
   };
 
@@ -134,7 +134,7 @@ const Admin = () => {
 
   const addBlog = async () => {
     if (!blogForm.title.trim()) return;
-    const content = JSON.stringify(contentBlocks.filter(b => (b.type === 'text' && b.value?.trim()) || (b.type === 'image' && b.url?.trim())));
+    const content = JSON.stringify(contentBlocks.filter(b => (b.type === 'text' && b.value?.trim()) || ((b.type === 'image' || b.type === 'video') && b.url?.trim())));
     await store.addBlog({ ...blogForm, content, tags: blogForm.tags.split(',').map(t => t.trim()).filter(Boolean), date: new Date().toISOString() });
     setBlogs(await store.getBlogs());
     setBlogForm({ title: '', excerpt: '', image: '', author: 'ReFAN Team', tags: '' });
@@ -686,6 +686,7 @@ ${data.map(row => `<Row>${headers.map(h => {
                 <input placeholder="Title" value={announcementForm.title} onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })} className={inputClass} maxLength={200} />
                 <textarea placeholder="Content (description)" value={announcementForm.content} onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })} rows={4} className={inputClass + " resize-none"} maxLength={5000} />
                 <input placeholder="Image URL (e.g. /gallery-community.jpg)" value={announcementForm.image} onChange={(e) => setAnnouncementForm({ ...announcementForm, image: e.target.value })} className={inputClass} maxLength={500} />
+                <input placeholder="Video URL (YouTube, Vimeo, etc.)" value={announcementForm.video} onChange={(e) => setAnnouncementForm({ ...announcementForm, video: e.target.value })} className={inputClass} maxLength={500} />
                 <Button onClick={addAnnouncement} variant="default" size="sm"><Plus className="h-4 w-4" /> Add Announcement</Button>
               </div>
             </div>
@@ -716,6 +717,7 @@ ${data.map(row => `<Row>${headers.map(h => {
                 <input placeholder="Title" value={storyForm.title} onChange={(e) => setStoryForm({ ...storyForm, title: e.target.value })} className={inputClass} maxLength={200} />
                 <input placeholder="Excerpt" value={storyForm.excerpt} onChange={(e) => setStoryForm({ ...storyForm, excerpt: e.target.value })} className={inputClass} maxLength={300} />
                 <textarea placeholder="Content" value={storyForm.content} onChange={(e) => setStoryForm({ ...storyForm, content: e.target.value })} rows={3} className={inputClass + " resize-none"} maxLength={5000} />
+                <input placeholder="Video URL (YouTube, Vimeo, etc.)" value={storyForm.video} onChange={(e) => setStoryForm({ ...storyForm, video: e.target.value })} className={inputClass} maxLength={500} />
                 <select value={storyForm.category} onChange={(e) => setStoryForm({ ...storyForm, category: e.target.value as 'story' | 'announcement' })} className={inputClass}>
                   <option value="story">Story</option>
                   <option value="announcement">Announcement</option>
@@ -760,7 +762,7 @@ ${data.map(row => `<Row>${headers.map(h => {
                     <div key={idx} className="bg-card rounded-lg border border-border p-3 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                          {block.type === 'text' ? <><Type className="h-3 w-3" /> Text Block {idx + 1}</> : <><ImagePlus className="h-3 w-3" /> Image Block {idx + 1}</>}
+                          {block.type === 'text' ? <><Type className="h-3 w-3" /> Text Block {idx + 1}</> : block.type === 'image' ? <><ImagePlus className="h-3 w-3" /> Image Block {idx + 1}</> : <><Video className="h-3 w-3" /> Video Block {idx + 1}</>}
                         </span>
                         <div className="flex items-center gap-1">
                           <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveBlock(idx, -1)} disabled={idx === 0}><ChevronUp className="h-3 w-3" /></Button>
@@ -770,11 +772,17 @@ ${data.map(row => `<Row>${headers.map(h => {
                       </div>
                       {block.type === 'text' ? (
                         <textarea placeholder="Write your content here..." value={block.value || ''} onChange={(e) => updateBlock(idx, { value: e.target.value })} rows={3} className={inputClass + " resize-none"} maxLength={5000} />
-                      ) : (
+                      ) : block.type === 'image' ? (
                         <div className="space-y-2">
                           <ImageUpload label="Upload Image" onUploaded={(url) => updateBlock(idx, { url })} />
                           <input placeholder="Or paste image URL" value={block.url || ''} onChange={(e) => updateBlock(idx, { url: e.target.value })} className={inputClass} maxLength={500} />
                           {block.url && <img src={block.url} alt="Preview" className="w-full max-h-40 object-cover rounded-md" />}
+                          <input placeholder="Caption (optional)" value={block.caption || ''} onChange={(e) => updateBlock(idx, { caption: e.target.value })} className={inputClass} maxLength={200} />
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <input placeholder="Paste video URL (YouTube, Vimeo, etc.)" value={block.url || ''} onChange={(e) => updateBlock(idx, { url: e.target.value })} className={inputClass} maxLength={500} />
+                          {block.url && <p className="text-xs text-green-600 font-medium">Video URL added</p>}
                           <input placeholder="Caption (optional)" value={block.caption || ''} onChange={(e) => updateBlock(idx, { caption: e.target.value })} className={inputClass} maxLength={200} />
                         </div>
                       )}
@@ -783,6 +791,7 @@ ${data.map(row => `<Row>${headers.map(h => {
                   <div className="flex gap-2">
                     <Button type="button" variant="outline" size="sm" onClick={() => setContentBlocks(prev => [...prev, { type: 'text', value: '' }])}><Type className="h-4 w-4" /> Add Text</Button>
                     <Button type="button" variant="outline" size="sm" onClick={() => setContentBlocks(prev => [...prev, { type: 'image', url: '', caption: '' }])}><ImagePlus className="h-4 w-4" /> Add Image</Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => setContentBlocks(prev => [...prev, { type: 'video', url: '', caption: '' }])}><Video className="h-4 w-4" /> Add Video</Button>
                   </div>
                 </div>
                 <Button onClick={addBlog} variant="default" size="sm"><Plus className="h-4 w-4" /> Add Post</Button>

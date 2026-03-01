@@ -5,6 +5,16 @@ import { Calendar, User, X, ChevronRight, Share2, Facebook, Twitter, Link2 } fro
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
+const getEmbedUrl = (url: string): string | null => {
+  if (!url) return null;
+  let m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
+  if (m) return `https://www.youtube.com/embed/${m[1]}`;
+  m = url.match(/vimeo\.com\/(\d+)/);
+  if (m) return `https://player.vimeo.com/video/${m[1]}`;
+  if (url.includes('/embed/') || url.includes('player.vimeo.com')) return url;
+  return null;
+};
+
 const sampleBlogPosts: BlogPost[] = [
   {
     id: "blog-1",
@@ -172,6 +182,13 @@ const Blog = () => {
                           block.type === 'image' ? (
                             <figure key={idx} className="space-y-2">
                               <img src={block.url} alt={block.caption || ''} className="w-full rounded-xl object-cover max-h-[500px]" />
+                              {block.caption && <figcaption className="text-sm text-muted-foreground text-center italic">{block.caption}</figcaption>}
+                            </figure>
+                          ) : block.type === 'video' && getEmbedUrl(block.url) ? (
+                            <figure key={idx} className="space-y-2">
+                              <div className="w-full aspect-video rounded-xl overflow-hidden">
+                                <iframe src={getEmbedUrl(block.url)!} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title="Video" />
+                              </div>
                               {block.caption && <figcaption className="text-sm text-muted-foreground text-center italic">{block.caption}</figcaption>}
                             </figure>
                           ) : (

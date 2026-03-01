@@ -12,6 +12,7 @@ export interface Announcement {
   title: string;
   content: string;
   image?: string;
+  video?: string;
   donationCount: number;
 }
 
@@ -21,6 +22,7 @@ export interface Story {
   excerpt: string;
   content: string;
   image?: string;
+  video?: string;
   date: string;
   category: 'story' | 'announcement';
 }
@@ -132,7 +134,7 @@ export const store = {
       const snap = await getDocs(q);
       return snap.docs.map(d => {
         const r = d.data();
-        return { id: d.id, title: r.title, excerpt: r.excerpt, content: r.content, image: r.image || undefined, date: ts(r.date), category: r.category };
+        return { id: d.id, title: r.title, excerpt: r.excerpt, content: r.content, image: r.image || undefined, video: r.video || undefined, date: ts(r.date), category: r.category };
       });
     } catch (e) { console.error("getStories:", e); return []; }
   },
@@ -140,7 +142,7 @@ export const store = {
     try {
       const ref = await addDoc(collection(db, "stories"), {
         title: item.title, excerpt: item.excerpt, content: item.content,
-        image: item.image || null, category: item.category, date: item.date, created_at: new Date().toISOString(),
+        image: item.image || null, video: item.video || null, category: item.category, date: item.date, created_at: new Date().toISOString(),
       });
       return { id: ref.id, ...item };
     } catch (e) { console.error("addStory:", e); return null; }
@@ -152,6 +154,7 @@ export const store = {
       if (item.excerpt !== undefined) updates.excerpt = item.excerpt;
       if (item.content !== undefined) updates.content = item.content;
       if (item.image !== undefined) updates.image = item.image;
+      if (item.video !== undefined) updates.video = item.video;
       if (item.category !== undefined) updates.category = item.category;
       if (item.date !== undefined) updates.date = item.date;
       await updateDoc(doc(db, "stories", id), updates);
@@ -327,14 +330,14 @@ export const store = {
       const snap = await getDocs(q);
       return snap.docs.map(d => {
         const r = d.data();
-        return { id: d.id, title: r.title, content: r.content, image: r.image || undefined, donationCount: r.donationCount ?? 0 };
+        return { id: d.id, title: r.title, content: r.content, image: r.image || undefined, video: r.video || undefined, donationCount: r.donationCount ?? 0 };
       });
     } catch (e) { console.error("getAnnouncements:", e); return []; }
   },
   addAnnouncement: async (item: Omit<Announcement, 'id'>): Promise<Announcement | null> => {
     try {
       const ref = await addDoc(collection(db, "announcements"), {
-        title: item.title, content: item.content, image: item.image || null, donationCount: item.donationCount ?? 0, created_at: new Date().toISOString(),
+        title: item.title, content: item.content, image: item.image || null, video: item.video || null, donationCount: item.donationCount ?? 0, created_at: new Date().toISOString(),
       });
       return { id: ref.id, ...item };
     } catch (e) { console.error("addAnnouncement:", e); return null; }
@@ -345,6 +348,7 @@ export const store = {
       if (item.title !== undefined) updates.title = item.title;
       if (item.content !== undefined) updates.content = item.content;
       if (item.image !== undefined) updates.image = item.image;
+      if (item.video !== undefined) updates.video = item.video;
       if (item.donationCount !== undefined) updates.donationCount = item.donationCount;
       await updateDoc(doc(db, "announcements", id), updates);
       return true;
