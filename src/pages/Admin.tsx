@@ -883,19 +883,18 @@ ${data.map(row => `<Row>${headers.map(h => {
                         <div className="flex-1">
                           <div className="flex justify-between items-start mb-2">
                             <span className="font-medium">{v.name}</span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-muted-foreground">{new Date(v.date).toLocaleDateString()}</span>
-                              <Button variant="ghost" size="sm" className="text-destructive h-7 w-7 p-0" onClick={async () => {
-                                if (!confirm(`Delete ${v.name}?`)) return;
-                                await store.deleteVolunteer(v.id);
-                                setVolunteers(await store.getVolunteers());
-                                toast({ title: "Deleted" });
-                              }}><Trash2 className="h-4 w-4" /></Button>
-                            </div>
+                            <span className="text-xs text-muted-foreground">{new Date(v.date).toLocaleDateString()}</span>
                           </div>
                           <p className="text-sm text-muted-foreground">{v.email} {v.phone && `• ${v.phone}`}</p>
+                          {v.country && <p className="text-sm text-muted-foreground">Country: {v.country}</p>}
                           {v.message && <p className="text-sm mt-2 text-muted-foreground whitespace-pre-line">{v.message}</p>}
                         </div>
+                        <Button variant="destructive" size="sm" className="shrink-0" onClick={async () => {
+                          if (!confirm(`Delete ${v.name}?`)) return;
+                          await store.deleteVolunteer(v.id);
+                          setVolunteers(await store.getVolunteers());
+                          toast({ title: "Deleted" });
+                        }}><Trash2 className="h-4 w-4" /></Button>
                       </div>
                     </div>
                   ))}
@@ -971,7 +970,7 @@ ${data.map(row => `<Row>${headers.map(h => {
                         <td className="py-3 px-4 font-bold text-primary">{d.amount}</td>
                         <td className="py-3 px-4 text-muted-foreground text-xs max-w-[200px] truncate">{d.message || '-'}</td>
                         <td className="py-3 px-4 text-muted-foreground">{new Date(d.date).toLocaleDateString()}</td>
-                        <td className="py-3 px-2"><Button variant="ghost" size="sm" className="text-destructive h-7 w-7 p-0" onClick={async () => {
+                        <td className="py-3 px-2"><Button variant="destructive" size="sm" className="h-8 w-8 p-0" onClick={async () => {
                           if (!confirm(`Delete donation from ${d.name}?`)) return;
                           await store.deleteDonation(d.id);
                           setDonations(await store.getDonations());
