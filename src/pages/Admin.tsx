@@ -65,6 +65,9 @@ const Admin = () => {
     loadData();
   }, []);
   const [selectedSubs, setSelectedSubs] = useState<Set<string>>(new Set());
+  const [selectedVols, setSelectedVols] = useState<Set<string>>(new Set());
+  const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set());
+  const [selectedDonors, setSelectedDonors] = useState<Set<string>>(new Set());
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -319,6 +322,11 @@ ${data.map(row => `<Row>${headers.map(h => {
     exportCSV(data as unknown as Record<string, unknown>[], "refan-members");
   };
 
+  const openGmail = (emails: string[], subject: string, body: string) => {
+    const mailto = `https://mail.google.com/mail/?view=cm&fs=1&bcc=${encodeURIComponent(emails.join(','))}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(mailto, '_blank');
+  };
+
   const copyRegLink = () => {
     const link = `${window.location.origin}${window.location.pathname}#/register`;
     navigator.clipboard.writeText(link).then(() => {
@@ -411,7 +419,8 @@ ${data.map(row => `<Row>${headers.map(h => {
                 { label: 'Stories', count: stories.length, icon: Megaphone },
                 { label: 'Blog Posts', count: blogs.length, icon: FileText },
                 { label: 'Gallery Items', count: gallery.length, icon: Image },
-                { label: 'Volunteers', count: volunteers.length, icon: Users },
+                { label: 'Volunteers', count: volunteers.filter(v => v.type === 'volunteer').length, icon: Users },
+                { label: 'Sponsors', count: volunteers.filter(v => v.type === 'sponsor').length, icon: Heart },
                 { label: 'Subscribers', count: subscribers.length, icon: Mail },
                 { label: 'Messages', count: messages.length, icon: MessageSquare },
                 { label: 'Donations', count: donations.length, icon: Heart },
@@ -425,18 +434,33 @@ ${data.map(row => `<Row>${headers.map(h => {
                 </div>
               ))}
             </div>
-            <div className="mt-8 bg-card rounded-xl p-6 shadow-soft">
-              <h3 className="font-heading font-bold mb-4">Recent Donations</h3>
-              {donations.length === 0 ? <p className="text-sm text-muted-foreground">No donations yet.</p> : (
-                <div className="space-y-3">
-                  {donations.slice(0, 5).map((d) => (
-                    <div key={d.id} className="flex justify-between items-center text-sm border-b border-border pb-2">
-                      <div><span className="font-medium">{d.name}</span> <span className="text-muted-foreground">({d.email})</span></div>
-                      <span className="font-bold text-primary">{d.currency || 'USD'} {d.amount}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div className="grid md:grid-cols-2 gap-6 mt-8">
+              <div className="bg-card rounded-xl p-6 shadow-soft">
+                <h3 className="font-heading font-bold mb-4">Recent Donations</h3>
+                {donations.length === 0 ? <p className="text-sm text-muted-foreground">No donations yet.</p> : (
+                  <div className="space-y-3">
+                    {donations.slice(0, 5).map((d) => (
+                      <div key={d.id} className="flex justify-between items-center text-sm border-b border-border pb-2">
+                        <div><span className="font-medium">{d.name}</span> <span className="text-muted-foreground">({d.email})</span></div>
+                        <span className="font-bold text-primary">{d.currency || 'USD'} {d.amount}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="bg-card rounded-xl p-6 shadow-soft">
+                <h3 className="font-heading font-bold mb-4">Recent Sponsors</h3>
+                {volunteers.filter(v => v.type === 'sponsor').length === 0 ? <p className="text-sm text-muted-foreground">No sponsors yet.</p> : (
+                  <div className="space-y-3">
+                    {volunteers.filter(v => v.type === 'sponsor').slice(0, 5).map((s) => (
+                      <div key={s.id} className="flex justify-between items-center text-sm border-b border-border pb-2">
+                        <div><span className="font-medium">{s.name}</span> <span className="text-muted-foreground">({s.email})</span></div>
+                        <span className="text-xs text-muted-foreground">{new Date(s.date).toLocaleDateString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -548,10 +572,21 @@ ${data.map(row => `<Row>${headers.map(h => {
 
             {/* Members Table */}
             {members.length === 0 ? <p className="text-muted-foreground">No members registered yet.</p> : (
+              <>
+              <div className="flex items-center gap-4 mb-4">
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="checkbox" checked={selectedMembers.size === members.length && members.length > 0} onChange={(e) => {
+                    setSelectedMembers(e.target.checked ? new Set(members.map(m => m.id)) : new Set());
+                  }} className="rounded" />
+                  Select All ({members.length})
+                </label>
+                {selectedMembers.size > 0 && <span className="text-sm text-muted-foreground">{selectedMembers.size} selected</span>}
+              </div>
               <div className="overflow-x-auto bg-card rounded-xl shadow-soft">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted/50">
+                      <th className="py-3 px-2 w-8"></th>
                       <th className="text-left py-3 px-3 font-medium text-xs">#</th>
                       <th className="text-left py-3 px-3 font-medium text-xs">Family Size</th>
                       <th className="text-left py-3 px-3 font-medium text-xs">Country</th>
@@ -570,6 +605,11 @@ ${data.map(row => `<Row>${headers.map(h => {
                   <tbody>
                     {members.map((m, idx) => (
                       <tr key={m.id} className="border-b border-border hover:bg-muted/30">
+                        <td className="py-3 px-2"><input type="checkbox" checked={selectedMembers.has(m.id)} onChange={(e) => {
+                          const next = new Set(selectedMembers);
+                          if (e.target.checked) next.add(m.id); else next.delete(m.id);
+                          setSelectedMembers(next);
+                        }} className="rounded" /></td>
                         <td className="py-3 px-3 text-xs text-muted-foreground">{idx + 1}</td>
                         <td className="py-3 px-3">{m.familySize}</td>
                         <td className="py-3 px-3 text-xs">{m.countryOfOrigin}</td>
@@ -596,6 +636,23 @@ ${data.map(row => `<Row>${headers.map(h => {
                   </tbody>
                 </table>
               </div>
+              {selectedMembers.size > 0 && (
+                <div className="bg-card rounded-xl p-6 shadow-soft mt-6">
+                  <h3 className="font-heading font-bold mb-4">Send Email to {selectedMembers.size} member{selectedMembers.size > 1 ? 's' : ''}</h3>
+                  <div className="space-y-3">
+                    <input placeholder="Subject" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} className={inputClass} maxLength={200} />
+                    <textarea placeholder="Write your message here..." value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={6} className={inputClass + " resize-none"} maxLength={5000} />
+                    <Button variant="default" size="sm" disabled={!emailSubject.trim() || !emailBody.trim()} onClick={() => {
+                      const emails = members.filter(m => selectedMembers.has(m.id)).map(m => m.email).filter(Boolean);
+                      openGmail(emails, emailSubject, emailBody);
+                    }}>
+                      <Send className="h-4 w-4" /> Send via Gmail
+                    </Button>
+                    <p className="text-xs text-muted-foreground">Opens Gmail in a new tab with selected members in BCC.</p>
+                  </div>
+                </div>
+              )}
+              </>
             )}
           </div>
         )}
@@ -724,7 +781,7 @@ ${data.map(row => `<Row>${headers.map(h => {
 
         {tab === 'volunteers' && (
           <div>
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex flex-wrap justify-between items-center mb-8 gap-4">
               <h1 className="font-heading text-2xl font-bold">Volunteer & Sponsor Submissions</h1>
               {volunteers.length > 0 && (
                 <Button variant="outline" size="sm" onClick={() => exportCSV(volunteers as unknown as Record<string, unknown>[], "volunteers")}>
@@ -733,21 +790,57 @@ ${data.map(row => `<Row>${headers.map(h => {
               )}
             </div>
             {volunteers.length === 0 ? <p className="text-muted-foreground">No submissions yet.</p> : (
-              <div className="space-y-4">
-                {volunteers.map((v) => (
-                  <div key={v.id} className="bg-card rounded-lg p-5 shadow-soft">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium mr-2 ${v.type === 'volunteer' ? 'bg-accent text-accent-foreground' : 'bg-primary/10 text-primary'}`}>{v.type}</span>
-                        <span className="font-medium">{v.name}</span>
+              <>
+                <div className="flex items-center gap-4 mb-4">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="checkbox" checked={selectedVols.size === volunteers.length && volunteers.length > 0} onChange={(e) => {
+                      setSelectedVols(e.target.checked ? new Set(volunteers.map(v => v.id)) : new Set());
+                    }} className="rounded" />
+                    Select All ({volunteers.length})
+                  </label>
+                  {selectedVols.size > 0 && <span className="text-sm text-muted-foreground">{selectedVols.size} selected</span>}
+                </div>
+                <div className="space-y-4 mb-8">
+                  {volunteers.map((v) => (
+                    <div key={v.id} className="bg-card rounded-lg p-5 shadow-soft">
+                      <div className="flex items-start gap-3">
+                        <input type="checkbox" checked={selectedVols.has(v.id)} onChange={(e) => {
+                          const next = new Set(selectedVols);
+                          if (e.target.checked) next.add(v.id); else next.delete(v.id);
+                          setSelectedVols(next);
+                        }} className="rounded mt-1" />
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium mr-2 ${v.type === 'volunteer' ? 'bg-accent text-accent-foreground' : 'bg-primary/10 text-primary'}`}>{v.type}</span>
+                              <span className="font-medium">{v.name}</span>
+                            </div>
+                            <span className="text-xs text-muted-foreground">{new Date(v.date).toLocaleDateString()}</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{v.email} {v.phone && `• ${v.phone}`}</p>
+                          {v.message && <p className="text-sm mt-2 text-muted-foreground whitespace-pre-line">{v.message}</p>}
+                        </div>
                       </div>
-                      <span className="text-xs text-muted-foreground">{new Date(v.date).toLocaleDateString()}</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">{v.email} {v.phone && `• ${v.phone}`}</p>
-                    {v.message && <p className="text-sm mt-2 text-muted-foreground whitespace-pre-line">{v.message}</p>}
+                  ))}
+                </div>
+                {selectedVols.size > 0 && (
+                  <div className="bg-card rounded-xl p-6 shadow-soft">
+                    <h3 className="font-heading font-bold mb-4">Send Email to {selectedVols.size} {selectedVols.size > 1 ? 'people' : 'person'}</h3>
+                    <div className="space-y-3">
+                      <input placeholder="Subject" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} className={inputClass} maxLength={200} />
+                      <textarea placeholder="Write your message here..." value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={6} className={inputClass + " resize-none"} maxLength={5000} />
+                      <Button variant="default" size="sm" disabled={!emailSubject.trim() || !emailBody.trim()} onClick={() => {
+                        const emails = volunteers.filter(v => selectedVols.has(v.id)).map(v => v.email).filter(Boolean);
+                        openGmail(emails, emailSubject, emailBody);
+                      }}>
+                        <Send className="h-4 w-4" /> Send via Gmail
+                      </Button>
+                      <p className="text-xs text-muted-foreground">Opens Gmail in a new tab with selected people in BCC.</p>
+                    </div>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </div>
         )}
@@ -763,10 +856,21 @@ ${data.map(row => `<Row>${headers.map(h => {
               )}
             </div>
             {donations.length === 0 ? <p className="text-muted-foreground">No donations yet.</p> : (
+              <>
+              <div className="flex items-center gap-4 mb-4">
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="checkbox" checked={selectedDonors.size === donations.length && donations.length > 0} onChange={(e) => {
+                    setSelectedDonors(e.target.checked ? new Set(donations.map(d => d.id)) : new Set());
+                  }} className="rounded" />
+                  Select All ({donations.length})
+                </label>
+                {selectedDonors.size > 0 && <span className="text-sm text-muted-foreground">{selectedDonors.size} selected</span>}
+              </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border">
+                      <th className="py-3 px-2 w-8"></th>
                       <th className="text-left py-3 px-4 font-medium">Name</th>
                       <th className="text-left py-3 px-4 font-medium">Email</th>
                       <th className="text-left py-3 px-4 font-medium">Currency</th>
@@ -778,6 +882,11 @@ ${data.map(row => `<Row>${headers.map(h => {
                   <tbody>
                     {donations.map((d) => (
                       <tr key={d.id} className="border-b border-border">
+                        <td className="py-3 px-2"><input type="checkbox" checked={selectedDonors.has(d.id)} onChange={(e) => {
+                          const next = new Set(selectedDonors);
+                          if (e.target.checked) next.add(d.id); else next.delete(d.id);
+                          setSelectedDonors(next);
+                        }} className="rounded" /></td>
                         <td className="py-3 px-4">{d.name}</td>
                         <td className="py-3 px-4 text-muted-foreground">{d.email}</td>
                         <td className="py-3 px-4">{d.currency || 'USD'}</td>
@@ -789,6 +898,23 @@ ${data.map(row => `<Row>${headers.map(h => {
                   </tbody>
                 </table>
               </div>
+              {selectedDonors.size > 0 && (
+                <div className="bg-card rounded-xl p-6 shadow-soft mt-6">
+                  <h3 className="font-heading font-bold mb-4">Send Email to {selectedDonors.size} donor{selectedDonors.size > 1 ? 's' : ''}</h3>
+                  <div className="space-y-3">
+                    <input placeholder="Subject" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} className={inputClass} maxLength={200} />
+                    <textarea placeholder="Write your message here..." value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={6} className={inputClass + " resize-none"} maxLength={5000} />
+                    <Button variant="default" size="sm" disabled={!emailSubject.trim() || !emailBody.trim()} onClick={() => {
+                      const emails = donations.filter(d => selectedDonors.has(d.id)).map(d => d.email).filter(Boolean);
+                      openGmail(emails, emailSubject, emailBody);
+                    }}>
+                      <Send className="h-4 w-4" /> Send via Gmail
+                    </Button>
+                    <p className="text-xs text-muted-foreground">Opens Gmail in a new tab with selected donors in BCC.</p>
+                  </div>
+                </div>
+              )}
+              </>
             )}
           </div>
         )}
@@ -912,8 +1038,7 @@ ${data.map(row => `<Row>${headers.map(h => {
                         disabled={!emailSubject.trim() || !emailBody.trim()}
                         onClick={() => {
                           const selectedEmails = subscribers.filter(s => selectedSubs.has(s.id)).map(s => s.email);
-                          const mailto = `https://mail.google.com/mail/?view=cm&fs=1&bcc=${encodeURIComponent(selectedEmails.join(','))}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-                          window.open(mailto, '_blank');
+                          openGmail(selectedEmails, emailSubject, emailBody);
                         }}
                       >
                         <Send className="h-4 w-4" /> Send via Gmail
