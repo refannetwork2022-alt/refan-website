@@ -13,7 +13,7 @@ const Footer = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 items-center">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 items-start">
           {/* Quick Links */}
           <div>
             <h4 className="font-heading font-bold text-sm uppercase tracking-wider mb-4 text-primary">Quick Links</h4>
@@ -38,16 +38,16 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Centered logo emblem */}
-          <div className="flex items-center justify-center overflow-visible">
-            <img src="/ReFAN Hands Logo_ReFAN.png" alt="ReFAN emblem" className="w-[44rem] h-auto object-contain scale-150" />
+          {/* Centered logo emblem - hidden on mobile, visible on lg+ */}
+          <div className="hidden lg:flex items-center justify-center overflow-hidden">
+            <img src="/ReFAN Hands Logo_ReFAN.png" alt="ReFAN emblem" className="w-64 h-auto object-contain opacity-80" />
           </div>
 
           {/* Contact */}
-          <div>
+          <div className="col-span-2 md:col-span-1">
             <h4 className="font-heading font-bold text-sm uppercase tracking-wider mb-4 text-primary">Contact</h4>
             <ul className="space-y-3 text-sm text-white/60">
-              <li className="flex items-start gap-2"><Mail className="h-4 w-4 mt-0.5 shrink-0 text-primary" /> refannetwork2022@gmail.com</li>
+              <li className="flex items-start gap-2"><Mail className="h-4 w-4 mt-0.5 shrink-0 text-primary" /> <span className="break-all">refannetwork2022@gmail.com</span></li>
               <li className="flex items-start gap-2"><Phone className="h-4 w-4 mt-0.5 shrink-0 text-primary" /> +265 997 561 852</li>
               <li className="flex items-start gap-2"><MapPin className="h-4 w-4 mt-0.5 shrink-0 text-primary" /> Dzaleka Refugee Camp, Dowa District, Malawi</li>
               <li className="flex items-start gap-2"><Linkedin className="h-4 w-4 mt-0.5 shrink-0 text-primary" /> <a href="https://www.linkedin.com/in/holistic-continuity-of-care-571586315" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">LinkedIn</a></li>
@@ -55,7 +55,7 @@ const Footer = () => {
           </div>
 
           {/* Newsletter */}
-          <div>
+          <div className="col-span-2 md:col-span-1">
             <h4 className="font-heading font-bold text-sm uppercase tracking-wider mb-4 text-primary">Newsletter</h4>
             <p className="text-white/60 text-sm mb-3">Stay updated on our programs and impact.</p>
             <NewsletterForm />

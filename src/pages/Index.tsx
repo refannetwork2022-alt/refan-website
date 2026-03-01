@@ -158,7 +158,7 @@ const Index = () => {
           </div>
           {/* Tagline - full width horizontal across the top */}
           <div className="relative z-10 w-full text-center pt-8 lg:pt-10 px-4">
-            <h2 className="font-heading text-4xl sm:text-5xl lg:text-7xl font-extrabold text-white tracking-wider uppercase whitespace-nowrap">
+            <h2 className="font-heading text-2xl sm:text-4xl lg:text-7xl font-extrabold text-white tracking-wider uppercase">
               Holistic Continuity of Care
             </h2>
           </div>
@@ -207,9 +207,9 @@ const Index = () => {
         </div>
         <div className="grid md:grid-cols-2 gap-6">
           {announcements.slice(0, 4).map((item) => (
-            <div key={item.id} onClick={() => setSelectedAnnouncement(item)} className="bg-card rounded-2xl border border-border overflow-hidden flex flex-row group hover:shadow-elevated transition-all cursor-pointer">
+            <div key={item.id} onClick={() => setSelectedAnnouncement(item)} className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col sm:flex-row group hover:shadow-elevated transition-all cursor-pointer">
               {item.image && (
-                <div className="w-48 md:w-56 shrink-0 overflow-hidden">
+                <div className="w-full h-48 sm:w-48 sm:h-auto md:w-56 shrink-0 overflow-hidden">
                   <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
               )}

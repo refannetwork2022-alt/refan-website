@@ -83,10 +83,10 @@ const Stories = () => {
                     <div
                       key={item.id}
                       onClick={() => setSelectedAnnouncement(item)}
-                      className="bg-card rounded-2xl border border-border overflow-hidden flex flex-row group hover:shadow-elevated transition-all cursor-pointer"
+                      className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col sm:flex-row group hover:shadow-elevated transition-all cursor-pointer"
                     >
                       {item.image && (
-                        <div className="w-48 md:w-56 shrink-0 overflow-hidden">
+                        <div className="w-full h-48 sm:w-48 sm:h-auto md:w-56 shrink-0 overflow-hidden">
                           <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                         </div>
                       )}
@@ -120,10 +120,10 @@ const Stories = () => {
                     <div
                       key={story.id}
                       onClick={() => setSelectedStory(story)}
-                      className="bg-card rounded-2xl border border-border overflow-hidden flex flex-row group hover:shadow-elevated transition-all cursor-pointer"
+                      className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col sm:flex-row group hover:shadow-elevated transition-all cursor-pointer"
                     >
                       {story.image && (
-                        <div className="w-48 md:w-56 shrink-0 overflow-hidden">
+                        <div className="w-full h-48 sm:w-48 sm:h-auto md:w-56 shrink-0 overflow-hidden">
                           <img src={story.image} alt={story.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                         </div>
                       )}

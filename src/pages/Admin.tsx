@@ -411,18 +411,18 @@ ${data.map(row => `<Row>${headers.map(h => {
       </aside>
 
       {/* Mobile nav */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-secondary z-50 border-t border-sidebar-border">
-        <div className="flex overflow-x-auto">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-secondary z-50 border-t border-sidebar-border safe-bottom">
+        <div className="flex overflow-x-auto scrollbar-hide gap-0.5 px-1">
           {sidebarItems.map((item) => (
             <button
               key={item.id}
               onClick={() => setTab(item.id)}
-              className={`flex-1 flex flex-col items-center gap-1 py-3 text-xs min-w-[60px] ${
-                tab === item.id ? 'text-primary' : 'text-secondary-foreground/60'
+              className={`flex flex-col items-center gap-0.5 py-2 px-2 rounded-md text-[10px] min-w-[52px] shrink-0 ${
+                tab === item.id ? 'text-primary bg-primary/10' : 'text-secondary-foreground/60'
               }`}
             >
-              <item.icon className="h-4 w-4" />
-              {item.label}
+              <item.icon className="h-3.5 w-3.5" />
+              <span className="leading-tight">{item.label}</span>
             </button>
           ))}
         </div>

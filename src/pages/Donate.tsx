@@ -70,7 +70,7 @@ const Donate = () => {
 
       <section className="container py-12">
         <div className="container max-w-2xl">
-          <form onSubmit={handleSubmit} className="bg-card rounded-2xl p-8 lg:p-10 shadow-elevated space-y-6">
+          <form onSubmit={handleSubmit} className="bg-card rounded-2xl p-5 sm:p-8 lg:p-10 shadow-elevated space-y-6">
             {/* Currency + Amount */}
             <div>
               <label className="block font-heading font-bold mb-3">Select Your Currency & Amount</label>
@@ -111,9 +111,9 @@ const Donate = () => {
               </div>
             </div>
 
-            <Button type="submit" size="lg" className="w-full bg-primary hover:bg-primary/90 text-white font-bold rounded-lg" disabled={submitting}>
-              <Send className="h-5 w-5" />
-              {submitting ? 'Sending...' : `Send Donation Request (${currency} ${amount || '0'})`}
+            <Button type="submit" size="lg" className="w-full bg-primary hover:bg-primary/90 text-white font-bold rounded-lg text-sm sm:text-base" disabled={submitting}>
+              <Send className="h-5 w-5 shrink-0" />
+              <span className="truncate">{submitting ? 'Sending...' : `Send Donation Request (${currency} ${amount || '0'})`}</span>
             </Button>
 
             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
