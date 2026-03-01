@@ -249,6 +249,10 @@ export const store = {
       return { id: ref.id, ...item };
     } catch (e) { console.error("addVolunteer:", e); return null; }
   },
+  deleteVolunteer: async (id: string): Promise<boolean> => {
+    try { await deleteDoc(doc(db, "volunteer_submissions", id)); return true; }
+    catch (e) { console.error("deleteVolunteer:", e); return false; }
+  },
 
   // ─── Donations ──────────────────────────────
   getDonations: async (): Promise<DonationSubmission[]> => {
@@ -269,6 +273,10 @@ export const store = {
       });
       return { id: ref.id, ...item };
     } catch (e) { console.error("addDonation:", e); return null; }
+  },
+  deleteDonation: async (id: string): Promise<boolean> => {
+    try { await deleteDoc(doc(db, "donation_submissions", id)); return true; }
+    catch (e) { console.error("deleteDonation:", e); return false; }
   },
 
   // ─── Newsletter Subscribers ─────────────────
