@@ -102,7 +102,11 @@ const Blog = () => {
                 onClick={() => setSelected(post)}
                 className="bg-card rounded-2xl overflow-hidden border border-border hover:border-secondary/50 hover:shadow-elevated transition-all cursor-pointer group"
               >
-                <div className="h-2 bg-gradient-to-r from-primary to-secondary" />
+                {post.image ? (
+                  <img src={post.image} alt={post.title} className="w-full h-48 object-cover" />
+                ) : (
+                  <div className="h-2 bg-gradient-to-r from-primary to-secondary" />
+                )}
                 <div className="p-6">
                   <div className="flex flex-wrap gap-2 mb-3">
                     {post.tags.map(tag => (
@@ -134,7 +138,11 @@ const Blog = () => {
             className="bg-card rounded-2xl max-w-5xl w-full max-h-[95vh] overflow-y-auto shadow-2xl animate-scale-in"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="h-2 rounded-t-2xl bg-gradient-to-r from-primary to-secondary" />
+            {selected.image ? (
+              <img src={selected.image} alt={selected.title} className="w-full h-64 object-cover rounded-t-2xl" />
+            ) : (
+              <div className="h-2 rounded-t-2xl bg-gradient-to-r from-primary to-secondary" />
+            )}
             <div className="sticky top-0 bg-card border-b border-border px-8 py-6 flex items-start justify-between">
               <div>
                 <div className="flex flex-wrap gap-2 mb-2">
