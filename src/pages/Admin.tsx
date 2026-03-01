@@ -11,7 +11,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import ImageUpload from "@/components/ImageUpload";
 
-type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'donations' | 'subscribers' | 'messages' | 'members';
+type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'sponsors' | 'donations' | 'subscribers' | 'messages' | 'members';
 
 const countries = [
   "Afghanistan", "Albania", "Algeria", "Angola", "Argentina", "Australia", "Austria", "Bangladesh",
@@ -342,6 +342,7 @@ ${data.map(row => `<Row>${headers.map(h => {
     { id: 'blogs', label: 'Blog Posts', icon: FileText },
     { id: 'gallery', label: 'Gallery', icon: Image },
     { id: 'volunteers', label: 'Volunteers', icon: Users },
+    { id: 'sponsors', label: 'Sponsors', icon: Heart },
     { id: 'donations', label: 'Donations', icon: Heart },
     { id: 'subscribers', label: 'Subscribers', icon: Mail },
     { id: 'messages', label: 'Messages', icon: MessageSquare },
@@ -779,29 +780,36 @@ ${data.map(row => `<Row>${headers.map(h => {
           </div>
         )}
 
-        {tab === 'volunteers' && (
+        {(tab === 'volunteers' || tab === 'sponsors') && (() => {
+          const filterType = tab === 'sponsors' ? 'sponsor' : 'volunteer';
+          const filtered = volunteers.filter(v => v.type === filterType);
+          const title = tab === 'sponsors' ? 'Sponsors' : 'Volunteers';
+          return (
           <div>
             <div className="flex flex-wrap justify-between items-center mb-8 gap-4">
-              <h1 className="font-heading text-2xl font-bold">Volunteer & Sponsor Submissions</h1>
-              {volunteers.length > 0 && (
-                <Button variant="outline" size="sm" onClick={() => exportCSV(volunteers as unknown as Record<string, unknown>[], "volunteers")}>
+              <div>
+                <h1 className="font-heading text-2xl font-bold">{title}</h1>
+                <p className="text-sm text-muted-foreground">Total: {filtered.length}</p>
+              </div>
+              {filtered.length > 0 && (
+                <Button variant="outline" size="sm" onClick={() => exportCSV(filtered as unknown as Record<string, unknown>[], title.toLowerCase())}>
                   <Download className="h-4 w-4" /> Export CSV
                 </Button>
               )}
             </div>
-            {volunteers.length === 0 ? <p className="text-muted-foreground">No submissions yet.</p> : (
+            {filtered.length === 0 ? <p className="text-muted-foreground">No {title.toLowerCase()} yet.</p> : (
               <>
                 <div className="flex items-center gap-4 mb-4">
                   <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input type="checkbox" checked={selectedVols.size === volunteers.length && volunteers.length > 0} onChange={(e) => {
-                      setSelectedVols(e.target.checked ? new Set(volunteers.map(v => v.id)) : new Set());
+                    <input type="checkbox" checked={selectedVols.size === filtered.length && filtered.length > 0} onChange={(e) => {
+                      setSelectedVols(e.target.checked ? new Set(filtered.map(v => v.id)) : new Set());
                     }} className="rounded" />
-                    Select All ({volunteers.length})
+                    Select All ({filtered.length})
                   </label>
                   {selectedVols.size > 0 && <span className="text-sm text-muted-foreground">{selectedVols.size} selected</span>}
                 </div>
                 <div className="space-y-4 mb-8">
-                  {volunteers.map((v) => (
+                  {filtered.map((v) => (
                     <div key={v.id} className="bg-card rounded-lg p-5 shadow-soft">
                       <div className="flex items-start gap-3">
                         <input type="checkbox" checked={selectedVols.has(v.id)} onChange={(e) => {
@@ -811,10 +819,7 @@ ${data.map(row => `<Row>${headers.map(h => {
                         }} className="rounded mt-1" />
                         <div className="flex-1">
                           <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium mr-2 ${v.type === 'volunteer' ? 'bg-accent text-accent-foreground' : 'bg-primary/10 text-primary'}`}>{v.type}</span>
-                              <span className="font-medium">{v.name}</span>
-                            </div>
+                            <span className="font-medium">{v.name}</span>
                             <span className="text-xs text-muted-foreground">{new Date(v.date).toLocaleDateString()}</span>
                           </div>
                           <p className="text-sm text-muted-foreground">{v.email} {v.phone && `• ${v.phone}`}</p>
@@ -826,24 +831,25 @@ ${data.map(row => `<Row>${headers.map(h => {
                 </div>
                 {selectedVols.size > 0 && (
                   <div className="bg-card rounded-xl p-6 shadow-soft">
-                    <h3 className="font-heading font-bold mb-4">Send Email to {selectedVols.size} {selectedVols.size > 1 ? 'people' : 'person'}</h3>
+                    <h3 className="font-heading font-bold mb-4">Send Email to {selectedVols.size} {title.toLowerCase()}</h3>
                     <div className="space-y-3">
                       <input placeholder="Subject" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} className={inputClass} maxLength={200} />
                       <textarea placeholder="Write your message here..." value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={6} className={inputClass + " resize-none"} maxLength={5000} />
                       <Button variant="default" size="sm" disabled={!emailSubject.trim() || !emailBody.trim()} onClick={() => {
-                        const emails = volunteers.filter(v => selectedVols.has(v.id)).map(v => v.email).filter(Boolean);
+                        const emails = filtered.filter(v => selectedVols.has(v.id)).map(v => v.email).filter(Boolean);
                         openGmail(emails, emailSubject, emailBody);
                       }}>
                         <Send className="h-4 w-4" /> Send via Gmail
                       </Button>
-                      <p className="text-xs text-muted-foreground">Opens Gmail in a new tab with selected people in BCC.</p>
+                      <p className="text-xs text-muted-foreground">Opens Gmail in a new tab with selected {title.toLowerCase()} in BCC.</p>
                     </div>
                   </div>
                 )}
               </>
             )}
           </div>
-        )}
+          );
+        })()}
 
         {tab === 'donations' && (
           <div>
