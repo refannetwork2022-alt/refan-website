@@ -113,7 +113,7 @@ const Blog = () => {
                 className="bg-card rounded-2xl overflow-hidden border border-border hover:border-secondary/50 hover:shadow-elevated transition-all cursor-pointer group"
               >
                 {post.image ? (
-                  <img src={post.image} alt={post.title} className="w-full h-48 object-cover" />
+                  <img src={post.image} alt={post.title} className="w-full aspect-video object-contain bg-muted" />
                 ) : (
                   <div className="h-2 bg-gradient-to-r from-primary to-secondary" />
                 )}
@@ -149,7 +149,7 @@ const Blog = () => {
             onClick={(e) => e.stopPropagation()}
           >
             {selected.image ? (
-              <img src={selected.image} alt={selected.title} className="w-full h-64 object-cover rounded-t-2xl" />
+              <img src={selected.image} alt={selected.title} className="w-full aspect-video object-contain bg-muted rounded-t-2xl" />
             ) : (
               <div className="h-2 rounded-t-2xl bg-gradient-to-r from-primary to-secondary" />
             )}
