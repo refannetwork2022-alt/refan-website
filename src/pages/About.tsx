@@ -48,15 +48,17 @@ const About = () => {
               </div>
             </div>
           </div>
-          <div className="relative">
-            <div className="aspect-[4/5] rounded-xl bg-cover bg-center shadow-elevated overflow-hidden">
-              <img src={aboutTeam} alt="ReFAN team" className="w-full h-full object-cover" />
+          <div className="space-y-4">
+            <div className="relative">
+              <div className="aspect-[4/3] rounded-xl bg-cover bg-center shadow-elevated overflow-hidden">
+                <img src={aboutTeam} alt="ReFAN team" className="w-full h-full object-cover" />
+              </div>
+              <div className="absolute -bottom-6 -left-6 bg-card p-6 rounded-lg shadow-elevated hidden lg:block border border-border">
+                <p className="italic text-primary font-medium">"Restoring hope, one family at a time."</p>
+              </div>
             </div>
-            <div className="absolute -bottom-4 -right-4 w-28 h-28 md:w-36 md:h-36 rounded-xl overflow-hidden shadow-elevated border-4 border-white">
+            <div className="aspect-[3/2] rounded-xl overflow-hidden shadow-elevated border-4 border-primary/20">
               <img src="/Founder &  chairman.jpg" alt="Founder & Chairman" className="w-full h-full object-cover" />
-            </div>
-            <div className="absolute -bottom-6 -left-6 bg-card p-6 rounded-lg shadow-elevated hidden lg:block border border-border">
-              <p className="italic text-primary font-medium">"Restoring hope, one family at a time."</p>
             </div>
           </div>
         </div>

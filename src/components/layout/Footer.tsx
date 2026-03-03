@@ -69,7 +69,6 @@ const Footer = () => {
           <div className="flex gap-6">
             <Link to="/admin-login" className="hover:text-white/60 transition-colors">Admin</Link>
             <a href="https://www.linkedin.com/in/holistic-continuity-of-care-571586315" target="_blank" rel="noopener noreferrer" className="hover:text-white/60 transition-colors uppercase font-bold tracking-widest">LinkedIn</a>
-            <a href="https://wa.me/265997561852" target="_blank" rel="noopener noreferrer" className="hover:text-green-400 transition-colors uppercase font-bold tracking-widest">WhatsApp</a>
           </div>
         </div>
       </div>
