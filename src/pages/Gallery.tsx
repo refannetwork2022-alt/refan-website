@@ -39,7 +39,9 @@ const Gallery = () => {
 
   useEffect(() => {
     store.getGallery().then((data) => {
-      setItems(data.length > 0 ? data : sampleGalleryItems);
+      // Combine Firestore uploads with sample photos (Firestore first)
+      const combined = [...data, ...sampleGalleryItems];
+      setItems(combined);
     }).catch(() => setItems(sampleGalleryItems));
   }, []);
 

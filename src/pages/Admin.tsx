@@ -10,6 +10,7 @@ import {
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import ImageUpload from "@/components/ImageUpload";
+import RichTextEditor from "@/components/RichTextEditor";
 
 type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'sponsors' | 'donations' | 'subscribers' | 'messages' | 'members';
 
@@ -146,6 +147,7 @@ const Admin = () => {
   };
 
   const deleteAnnouncement = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this announcement?")) return;
     await store.deleteAnnouncement(id);
     setAnnouncements(await store.getAnnouncements());
     toast({ title: "Announcement deleted" });
@@ -173,6 +175,7 @@ const Admin = () => {
   };
 
   const deleteStory = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this story?")) return;
     await store.deleteStory(id);
     setStories(await store.getStories());
     toast({ title: "Story deleted" });
@@ -223,6 +226,7 @@ const Admin = () => {
   };
 
   const deleteBlog = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this blog post?")) return;
     await store.deleteBlog(id);
     setBlogs(await store.getBlogs());
     toast({ title: "Blog post deleted" });
@@ -237,6 +241,7 @@ const Admin = () => {
   };
 
   const deleteGalleryItem = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this gallery item?")) return;
     await store.deleteGalleryItem(id);
     setGallery(await store.getGallery());
     toast({ title: "Gallery item deleted" });
@@ -411,44 +416,6 @@ const Admin = () => {
 
   const inputClass = "w-full px-4 py-2.5 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring outline-none text-sm";
 
-  const applyFormat = (textareaId: string, tag: string, getValue: () => string, setValue: (v: string) => void) => {
-    const el = document.getElementById(textareaId) as HTMLTextAreaElement;
-    if (!el) return;
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
-    const text = getValue();
-    const selected = text.substring(start, end);
-    if (!selected) return;
-    const wrapped = `<${tag}>${selected}</${tag}>`;
-    setValue(text.substring(0, start) + wrapped + text.substring(end));
-  };
-
-  const applyColor = (textareaId: string, color: string, getValue: () => string, setValue: (v: string) => void) => {
-    const el = document.getElementById(textareaId) as HTMLTextAreaElement;
-    if (!el) return;
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
-    const text = getValue();
-    const selected = text.substring(start, end);
-    if (!selected) return;
-    const wrapped = `<span style="color:${color}">${selected}</span>`;
-    setValue(text.substring(0, start) + wrapped + text.substring(end));
-  };
-
-  const FormatBar = ({ textareaId, getValue, setValue }: { textareaId: string; getValue: () => string; setValue: (v: string) => void }) => (
-    <div className="flex flex-wrap gap-1 mb-1">
-      <Button type="button" variant="outline" size="sm" className="h-7 px-2 text-xs font-bold" onClick={() => applyFormat(textareaId, 'b', getValue, setValue)}>B</Button>
-      <Button type="button" variant="outline" size="sm" className="h-7 px-2 text-xs italic" onClick={() => applyFormat(textareaId, 'i', getValue, setValue)}>I</Button>
-      <Button type="button" variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => applyFormat(textareaId, 'u', getValue, setValue)}>U</Button>
-      <Button type="button" variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => applyFormat(textareaId, 'h3', getValue, setValue)}>H</Button>
-      <Button type="button" variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => applyFormat(textareaId, 'small', getValue, setValue)}>S</Button>
-      <span className="flex items-center gap-1 ml-1">
-        {['#e74c3c','#2ecc71','#3498db','#f39c12','#9b59b6'].map(c => (
-          <button key={c} type="button" className="w-5 h-5 rounded-full border border-border" style={{ background: c }} onClick={() => applyColor(textareaId, c, getValue, setValue)} />
-        ))}
-      </span>
-    </div>
-  );
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
@@ -765,8 +732,7 @@ const Admin = () => {
               <h3 className="font-heading font-bold mb-4">{editingAnnouncement ? 'Edit Announcement' : 'Add New Announcement'}</h3>
               <div className="space-y-3">
                 <input placeholder="Title" value={announcementForm.title} onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })} className={inputClass} maxLength={200} />
-                <FormatBar textareaId="ann-content" getValue={() => announcementForm.content} setValue={(v) => setAnnouncementForm({ ...announcementForm, content: v })} />
-                <textarea id="ann-content" placeholder="Content (description)" value={announcementForm.content} onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })} rows={4} className={inputClass + " resize-none"} maxLength={5000} />
+                <RichTextEditor value={announcementForm.content} onChange={(v) => setAnnouncementForm({ ...announcementForm, content: v })} placeholder="Content (description)" rows={4} />
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-muted-foreground">Image</label>
                   <ImageUpload label="Upload Image" onUploaded={(url) => setAnnouncementForm({ ...announcementForm, image: url })} />
@@ -811,8 +777,7 @@ const Admin = () => {
               <div className="space-y-3">
                 <input placeholder="Title" value={storyForm.title} onChange={(e) => setStoryForm({ ...storyForm, title: e.target.value })} className={inputClass} maxLength={200} />
                 <input placeholder="Excerpt" value={storyForm.excerpt} onChange={(e) => setStoryForm({ ...storyForm, excerpt: e.target.value })} className={inputClass} maxLength={300} />
-                <FormatBar textareaId="story-content" getValue={() => storyForm.content} setValue={(v) => setStoryForm({ ...storyForm, content: v })} />
-                <textarea id="story-content" placeholder="Content" value={storyForm.content} onChange={(e) => setStoryForm({ ...storyForm, content: e.target.value })} rows={3} className={inputClass + " resize-none"} maxLength={5000} />
+                <RichTextEditor value={storyForm.content} onChange={(v) => setStoryForm({ ...storyForm, content: v })} placeholder="Write content here..." rows={4} />
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-muted-foreground">Image</label>
                   <ImageUpload label="Upload Image" onUploaded={(url) => setStoryForm({ ...storyForm, image: url })} />
@@ -881,10 +846,7 @@ const Admin = () => {
                         </div>
                       </div>
                       {block.type === 'text' ? (
-                        <div>
-                          <FormatBar textareaId={`blog-block-${idx}`} getValue={() => block.value || ''} setValue={(v) => updateBlock(idx, { value: v })} />
-                          <textarea id={`blog-block-${idx}`} placeholder="Write your content here..." value={block.value || ''} onChange={(e) => updateBlock(idx, { value: e.target.value })} rows={3} className={inputClass + " resize-none"} maxLength={5000} />
-                        </div>
+                        <RichTextEditor value={block.value || ''} onChange={(v) => updateBlock(idx, { value: v })} placeholder="Write your content here..." rows={3} />
                       ) : block.type === 'image' ? (
                         <div className="space-y-2">
                           <ImageUpload label="Upload Image" onUploaded={(url) => updateBlock(idx, { url })} />
@@ -1171,6 +1133,7 @@ const Admin = () => {
                           openGmail([m.email], `Re: ${m.subject}`, '');
                         }}><Send className="h-4 w-4 text-blue-500" /></Button>
                         <Button variant="ghost" size="icon" onClick={async () => {
+                          if (!confirm("Are you sure you want to delete this message?")) return;
                           await store.deleteMessage(m.id);
                           setMessages(await store.getMessages());
                           const next = new Set(selectedMsgs); next.delete(m.id); setSelectedMsgs(next);
@@ -1259,6 +1222,7 @@ const Admin = () => {
                         <span className="text-xs text-muted-foreground">{new Date(s.date).toLocaleDateString()}</span>
                       </label>
                       <Button variant="ghost" size="icon" onClick={async () => {
+                        if (!confirm("Are you sure you want to remove this subscriber?")) return;
                         await store.deleteSubscriber(s.id);
                         setSubscribers(await store.getSubscribers());
                         const next = new Set(selectedSubs);
