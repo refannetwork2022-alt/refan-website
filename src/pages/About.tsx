@@ -58,7 +58,7 @@ const About = () => {
               </div>
             </div>
             <div className="aspect-[3/2] rounded-xl overflow-hidden shadow-elevated border-4 border-primary/20">
-              <img src="/founder.jpg" alt="Founder & Chairman" className="w-full h-full object-cover" />
+              <img src="/founder_1.jpg" alt="Founder & Chairman" className="w-full h-full object-cover" />
             </div>
           </div>
         </div>
