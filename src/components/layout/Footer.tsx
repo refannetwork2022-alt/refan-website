@@ -1,15 +1,34 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Mail, Phone, MapPin, Linkedin, MessageCircle } from "lucide-react";
 import NewsletterForm from "@/components/NewsletterForm";
+import { store, FooterSettings } from "@/lib/store";
+
+const DEFAULTS: FooterSettings = {
+  email: "refannetwork2022@gmail.com",
+  phone: "+265 997 561 852",
+  address: "Dzaleka Refugee Camp, Dowa District, Malawi",
+  whatsapp: "265997561852",
+  linkedin: "https://www.linkedin.com/in/holistic-continuity-of-care-571586315",
+  description: "Resilient Foundation Assistance Network (ReFAN) is a refugee-led NGO based in Dzaleka, Malawi, dedicated to the continuity of care for the most vulnerable.",
+};
 
 const Footer = () => {
+  const [info, setInfo] = useState<FooterSettings>(DEFAULTS);
+
+  useEffect(() => {
+    store.getFooterSettings().then((data) => {
+      if (data) setInfo({ ...DEFAULTS, ...data });
+    });
+  }, []);
+
   return (
     <footer className="bg-[#0f1d3d] text-white -mt-16">
       <div className="container pt-4 pb-16">
         {/* Top: Description */}
         <div className="text-center mb-10">
           <p className="text-white/60 text-sm leading-relaxed max-w-lg mx-auto">
-            Resilient Foundation Assistance Network (ReFAN) is a refugee-led NGO based in Dzaleka, Malawi, dedicated to the continuity of care for the most vulnerable.
+            {info.description}
           </p>
         </div>
 
@@ -47,11 +66,11 @@ const Footer = () => {
           <div className="col-span-2 md:col-span-1">
             <h4 className="font-heading font-bold text-sm uppercase tracking-wider mb-4 text-primary">Contact</h4>
             <ul className="space-y-3 text-sm text-white/60">
-              <li className="flex items-start gap-2"><Mail className="h-4 w-4 mt-0.5 shrink-0 text-primary" /> <span className="break-all">refannetwork2022@gmail.com</span></li>
-              <li className="flex items-start gap-2"><Phone className="h-4 w-4 mt-0.5 shrink-0 text-primary" /> +265 997 561 852</li>
-              <li className="flex items-start gap-2"><MapPin className="h-4 w-4 mt-0.5 shrink-0 text-primary" /> Dzaleka Refugee Camp, Dowa District, Malawi</li>
-              <li className="flex items-start gap-2"><MessageCircle className="h-4 w-4 mt-0.5 shrink-0 text-primary" /> <a href="https://api.whatsapp.com/send?phone=265997561852" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">WhatsApp</a></li>
-              <li className="flex items-start gap-2"><Linkedin className="h-4 w-4 mt-0.5 shrink-0 text-primary" /> <a href="https://www.linkedin.com/in/holistic-continuity-of-care-571586315" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">LinkedIn</a></li>
+              <li className="flex items-start gap-2"><Mail className="h-4 w-4 mt-0.5 shrink-0 text-primary" /> <span className="break-all">{info.email}</span></li>
+              <li className="flex items-start gap-2"><Phone className="h-4 w-4 mt-0.5 shrink-0 text-primary" /> {info.phone}</li>
+              <li className="flex items-start gap-2"><MapPin className="h-4 w-4 mt-0.5 shrink-0 text-primary" /> {info.address}</li>
+              <li className="flex items-start gap-2"><MessageCircle className="h-4 w-4 mt-0.5 shrink-0 text-primary" /> <a href={`https://api.whatsapp.com/send?phone=${info.whatsapp}`} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">WhatsApp</a></li>
+              <li className="flex items-start gap-2"><Linkedin className="h-4 w-4 mt-0.5 shrink-0 text-primary" /> <a href={info.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">LinkedIn</a></li>
             </ul>
           </div>
 
@@ -68,7 +87,7 @@ const Footer = () => {
           <p>&copy; 2026 ReFAN. All rights reserved.</p>
           <div className="flex gap-6">
             <Link to="/admin-login" className="hover:text-white/60 transition-colors">Admin</Link>
-            <a href="https://www.linkedin.com/in/holistic-continuity-of-care-571586315" target="_blank" rel="noopener noreferrer" className="hover:text-white/60 transition-colors uppercase font-bold tracking-widest">LinkedIn</a>
+            <a href={info.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-white/60 transition-colors uppercase font-bold tracking-widest">LinkedIn</a>
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { db } from "@/integrations/firebase/client";
 import {
-  collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc,
+  collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, setDoc,
   query, orderBy, getCountFromServer, increment,
   where, limit,
 } from "firebase/firestore";
@@ -97,6 +97,15 @@ export interface NewsletterSubscriber {
   id: string;
   email: string;
   date: string;
+}
+
+export interface FooterSettings {
+  email: string;
+  phone: string;
+  address: string;
+  whatsapp: string;
+  linkedin: string;
+  description: string;
 }
 
 export interface ContactMessage {
@@ -433,5 +442,20 @@ export const store = {
   validateSecurityAnswer: (answer: string) => {
     const stored = localStorage.getItem('refan_security_answer') || '';
     return answer.toLowerCase().trim() === stored;
+  },
+
+  // ─── Footer Settings ──────────────────────────
+  getFooterSettings: async (): Promise<FooterSettings | null> => {
+    try {
+      const snap = await getDoc(doc(db, "settings", "footer"));
+      if (snap.exists()) return snap.data() as FooterSettings;
+      return null;
+    } catch (e) { console.error("getFooterSettings:", e); return null; }
+  },
+  saveFooterSettings: async (settings: FooterSettings): Promise<boolean> => {
+    try {
+      await setDoc(doc(db, "settings", "footer"), settings);
+      return true;
+    } catch (e) { console.error("saveFooterSettings:", e); return false; }
   },
 };

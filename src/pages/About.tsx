@@ -40,7 +40,7 @@ const About = () => {
             <div className="grid grid-cols-2 gap-6 pt-4">
               <div>
                 <div className="text-3xl font-extrabold text-primary font-heading">2022</div>
-                <div className="text-sm font-medium">Year Founded</div>
+                <div className="text-sm font-medium">Founded in 2022</div>
               </div>
               <div>
                 <div className="text-3xl font-extrabold text-primary font-heading">100+</div>

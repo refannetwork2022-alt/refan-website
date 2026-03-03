@@ -1,18 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { store, type Story, type BlogPost, type GalleryItem, type NewsletterSubscriber, type ContactMessage, type Announcement, type Member } from "@/lib/store";
+import { store, type Story, type BlogPost, type GalleryItem, type NewsletterSubscriber, type ContactMessage, type Announcement, type Member, type FooterSettings } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import {
   LayoutDashboard, FileText, Image, Megaphone, Users, Heart,
   Plus, Trash2, ArrowLeft, LogOut, Download, Mail, Send, MessageSquare, KeyRound,
-  UserPlus, Copy, Camera, Upload, Shield, ChevronUp, ChevronDown, Type, ImagePlus, Video, Pencil, Save, Loader2
+  UserPlus, Copy, Camera, Upload, Shield, ChevronUp, ChevronDown, Type, ImagePlus, Video, Pencil, Save, Loader2, Settings
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import ImageUpload from "@/components/ImageUpload";
 import RichTextEditor from "@/components/RichTextEditor";
 
-type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'sponsors' | 'donations' | 'subscribers' | 'messages' | 'members';
+type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'sponsors' | 'donations' | 'subscribers' | 'messages' | 'members' | 'footer';
 
 const countries = [
   "Afghanistan", "Albania", "Algeria", "Angola", "Argentina", "Australia", "Austria", "Bangladesh",
@@ -67,6 +67,12 @@ const Admin = () => {
   const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
+  const [footerForm, setFooterForm] = useState<FooterSettings>({
+    email: "refannetwork2022@gmail.com", phone: "+265 997 561 852",
+    address: "Dzaleka Refugee Camp, Dowa District, Malawi", whatsapp: "265997561852",
+    linkedin: "https://www.linkedin.com/in/holistic-continuity-of-care-571586315",
+    description: "Resilient Foundation Assistance Network (ReFAN) is a refugee-led NGO based in Dzaleka, Malawi, dedicated to the continuity of care for the most vulnerable.",
+  });
 
   useEffect(() => {
     const loadData = async () => {
@@ -76,6 +82,8 @@ const Admin = () => {
       ]);
       setAnnouncements(a); setStories(s); setBlogs(b); setGallery(g);
       setVolunteers(v); setDonations(d); setSubscribers(sub); setMessages(msg); setMembers(mem);
+      const footerData = await store.getFooterSettings();
+      if (footerData) setFooterForm(prev => ({ ...prev, ...footerData }));
     };
     loadData();
   }, []);
@@ -412,6 +420,7 @@ const Admin = () => {
     { id: 'donations', label: 'Donations', icon: Heart },
     { id: 'subscribers', label: 'Subscribers', icon: Mail },
     { id: 'messages', label: 'Messages', icon: MessageSquare },
+    { id: 'footer', label: 'Footer Settings', icon: Settings },
   ];
 
   const inputClass = "w-full px-4 py-2.5 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring outline-none text-sm";
@@ -1248,6 +1257,50 @@ const Admin = () => {
                 )}
               </>
             )}
+          </div>
+        )}
+
+        {tab === 'footer' && (
+          <div>
+            <h1 className="font-heading text-2xl font-bold mb-8">Footer Settings</h1>
+            <div className="bg-card rounded-xl p-6 shadow-soft">
+              <p className="text-sm text-muted-foreground mb-6">Edit the contact information and description shown in the website footer.</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground">Description</label>
+                  <textarea value={footerForm.description} onChange={(e) => setFooterForm({ ...footerForm, description: e.target.value })} className={inputClass + " resize-none"} rows={3} maxLength={500} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground">Email</label>
+                  <input value={footerForm.email} onChange={(e) => setFooterForm({ ...footerForm, email: e.target.value })} className={inputClass} maxLength={100} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground">Phone</label>
+                  <input value={footerForm.phone} onChange={(e) => setFooterForm({ ...footerForm, phone: e.target.value })} className={inputClass} maxLength={50} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground">Address</label>
+                  <input value={footerForm.address} onChange={(e) => setFooterForm({ ...footerForm, address: e.target.value })} className={inputClass} maxLength={200} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground">WhatsApp Number (no + or spaces, e.g. 265997561852)</label>
+                  <input value={footerForm.whatsapp} onChange={(e) => setFooterForm({ ...footerForm, whatsapp: e.target.value })} className={inputClass} maxLength={20} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground">LinkedIn URL</label>
+                  <input value={footerForm.linkedin} onChange={(e) => setFooterForm({ ...footerForm, linkedin: e.target.value })} className={inputClass} maxLength={300} />
+                </div>
+                <Button variant="default" size="sm" disabled={saving} onClick={async () => {
+                  setSaving(true);
+                  const ok = await store.saveFooterSettings(footerForm);
+                  setSaving(false);
+                  toast({ title: ok ? "Footer settings saved!" : "Failed to save" });
+                }}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Save Footer Settings
+                </Button>
+              </div>
+            </div>
           </div>
         )}
       </main>

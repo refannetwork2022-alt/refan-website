@@ -30,7 +30,7 @@ const programs = [
 
 const values = [
   { icon: Target, title: "Refugee-Led", desc: "Founded and run by refugees themselves — we understand the needs because we live them." },
-  { icon: Globe, title: "Women-Led", desc: "Led by President Goreth from Burundi, empowering women and children at every level." },
+  { icon: Globe, title: "Women-Led", desc: "Led by Président Goreth from Burundi, empowering women and children at every level." },
   { icon: Shield, title: "Self-Funded", desc: "Built from the ground up with our own resources, powered by hope and community spirit." },
 ];
 

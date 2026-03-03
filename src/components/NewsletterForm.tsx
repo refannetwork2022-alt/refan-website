@@ -83,7 +83,7 @@ const NewsletterForm = () => {
         />
         <Button type="submit" size="sm" disabled={!optIn || status === "loading"}>
           <Mail className="h-4 w-4 mr-1" />
-          {status === "loading" ? "Sending…" : "Subscribe"}
+          {status === "loading" ? "Sending..." : "Subscribe"}
         </Button>
       </div>
       <div className="flex items-start gap-2">
