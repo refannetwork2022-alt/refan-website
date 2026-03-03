@@ -51,7 +51,7 @@ const ImageUpload = ({ onUploaded, label = "Upload Image" }: ImageUploadProps) =
         {uploading ? "Uploading..." : label}
       </Button>
       {preview && (
-        <img src={preview} alt="Preview" className="w-20 h-20 object-cover rounded-lg" />
+        <img src={preview} alt="Preview" className="max-w-full max-h-48 object-contain rounded-lg border border-border" />
       )}
     </div>
   );

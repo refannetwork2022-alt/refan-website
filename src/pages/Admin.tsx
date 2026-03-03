@@ -753,7 +753,7 @@ const Admin = () => {
                 <div key={a.id} className="bg-card rounded-lg p-4 shadow-soft">
                   <div className="flex justify-between items-start gap-2">
                     <div className="flex-1">
-                      {a.image && <img src={a.image} alt={a.title} className="w-full h-32 object-cover rounded-md mb-3" />}
+                      {a.image && <img src={a.image} alt={a.title} className="w-full max-h-48 object-contain rounded-md mb-3" />}
                       <h4 className="font-medium text-sm">{a.title}</h4>
                       <p className="text-xs text-muted-foreground mt-1">{a.content.slice(0, 80)}...</p>
                       <p className="text-xs text-primary font-medium mt-2">Donations: {a.donationCount}</p>
@@ -851,7 +851,7 @@ const Admin = () => {
                         <div className="space-y-2">
                           <ImageUpload label="Upload Image" onUploaded={(url) => updateBlock(idx, { url })} />
                           <input placeholder="Or paste image URL" value={block.url || ''} onChange={(e) => updateBlock(idx, { url: e.target.value })} className={inputClass} maxLength={500} />
-                          {block.url && <img src={block.url} alt="Preview" className="w-full max-h-40 object-cover rounded-md" />}
+                          {block.url && <img src={block.url} alt="Preview" className="w-full max-h-48 object-contain rounded-md" />}
                           <input placeholder="Caption (optional)" value={block.caption || ''} onChange={(e) => updateBlock(idx, { caption: e.target.value })} className={inputClass} maxLength={200} />
                         </div>
                       ) : (
