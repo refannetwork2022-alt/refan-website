@@ -187,7 +187,7 @@ const Stories = () => {
             </div>
             <div className="px-8 py-6">
               <div className="h-1 w-16 rounded-full bg-gradient-to-r from-primary to-secondary mb-6" />
-              <p className="text-foreground/80 text-lg leading-relaxed whitespace-pre-wrap">{selectedStory.content}</p>
+              <div className="text-foreground/80 text-lg leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: selectedStory.content }} />
             </div>
             <div className="px-8 pb-6 flex items-center justify-between border-t border-border pt-4">
               <Button onClick={() => setSelectedStory(null)} variant="outline" className="btn-hover">Close</Button>
@@ -231,7 +231,7 @@ const Stories = () => {
             </div>
             <div className="px-8 py-6">
               <div className="h-1 w-16 rounded-full bg-gradient-to-r from-primary to-secondary mb-6" />
-              <p className="text-foreground/80 text-lg leading-relaxed whitespace-pre-wrap">{selectedAnnouncement.content}</p>
+              <div className="text-foreground/80 text-lg leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: selectedAnnouncement.content }} />
             </div>
             <div className="px-8 pb-6 flex items-center justify-between border-t border-border pt-4">
               <div className="flex items-center gap-3">

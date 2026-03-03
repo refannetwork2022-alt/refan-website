@@ -41,6 +41,10 @@ const Donate = () => {
       toast({ title: "Please fill all required fields", variant: "destructive" });
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      toast({ title: "Please enter a valid email address", variant: "destructive" });
+      return;
+    }
     setSubmitting(true);
     await store.addDonation({
       name: name.trim(),

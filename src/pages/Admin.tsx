@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   LayoutDashboard, FileText, Image, Megaphone, Users, Heart,
   Plus, Trash2, ArrowLeft, LogOut, Download, Mail, Send, MessageSquare, KeyRound,
-  UserPlus, Copy, Camera, Upload, Shield, ChevronUp, ChevronDown, Type, ImagePlus, Video
+  UserPlus, Copy, Camera, Upload, Shield, ChevronUp, ChevronDown, Type, ImagePlus, Video, Pencil, Save, Loader2
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,6 +37,20 @@ const phoneCodes = [
   { code: "+33", country: "FR" }, { code: "+49", country: "DE" }, { code: "+254", country: "KE" },
   { code: "+255", country: "TZ" }, { code: "+256", country: "UG" }, { code: "+250", country: "RW" },
   { code: "+257", country: "BI" }, { code: "+243", country: "CD" }, { code: "+27", country: "ZA" },
+  { code: "+91", country: "IN" }, { code: "+86", country: "CN" }, { code: "+61", country: "AU" },
+  { code: "+234", country: "NG" }, { code: "+251", country: "ET" }, { code: "+252", country: "SO" },
+  { code: "+211", country: "SS" }, { code: "+249", country: "SD" }, { code: "+212", country: "MA" },
+  { code: "+213", country: "DZ" }, { code: "+216", country: "TN" }, { code: "+218", country: "LY" },
+  { code: "+20", country: "EG" }, { code: "+221", country: "SN" }, { code: "+233", country: "GH" },
+  { code: "+237", country: "CM" }, { code: "+242", country: "CG" }, { code: "+260", country: "ZM" },
+  { code: "+263", country: "ZW" }, { code: "+258", country: "MZ" }, { code: "+55", country: "BR" },
+  { code: "+81", country: "JP" }, { code: "+82", country: "KR" }, { code: "+7", country: "RU" },
+  { code: "+39", country: "IT" }, { code: "+34", country: "ES" }, { code: "+31", country: "NL" },
+  { code: "+46", country: "SE" }, { code: "+47", country: "NO" }, { code: "+90", country: "TR" },
+  { code: "+966", country: "SA" }, { code: "+971", country: "AE" }, { code: "+92", country: "PK" },
+  { code: "+93", country: "AF" }, { code: "+964", country: "IQ" }, { code: "+962", country: "JO" },
+  { code: "+961", country: "LB" }, { code: "+63", country: "PH" }, { code: "+62", country: "ID" },
+  { code: "+66", country: "TH" }, { code: "+84", country: "VN" }, { code: "+60", country: "MY" },
 ];
 
 const Admin = () => {
@@ -68,6 +82,7 @@ const Admin = () => {
   const [selectedVols, setSelectedVols] = useState<Set<string>>(new Set());
   const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set());
   const [selectedDonors, setSelectedDonors] = useState<Set<string>>(new Set());
+  const [selectedMsgs, setSelectedMsgs] = useState<Set<string>>(new Set());
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -78,11 +93,14 @@ const Admin = () => {
   const photoRef = useRef<HTMLInputElement>(null);
   const docRef = useRef<HTMLInputElement>(null);
 
-  const [storyForm, setStoryForm] = useState({ title: '', excerpt: '', content: '', video: '', category: 'story' as 'story' | 'announcement' });
+  const [storyForm, setStoryForm] = useState({ title: '', excerpt: '', content: '', image: '', video: '', category: 'story' as 'story' | 'announcement' });
   const [blogForm, setBlogForm] = useState({ title: '', excerpt: '', image: '', author: 'ReFAN Team', tags: '' });
   const [contentBlocks, setContentBlocks] = useState<Array<{ type: 'text' | 'image' | 'video'; value?: string; url?: string; caption?: string }>>([{ type: 'text', value: '' }]);
   const [galleryForm, setGalleryForm] = useState({ title: '', url: '', type: 'photo' as 'photo' | 'video' });
   const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', image: '', video: '' });
+  const [editingAnnouncement, setEditingAnnouncement] = useState<string | null>(null);
+  const [editingStory, setEditingStory] = useState<string | null>(null);
+  const [editingBlog, setEditingBlog] = useState<string | null>(null);
 
   const emptyMemberForm = {
     surname: '', firstName: '', otherName: '', email: '', countryOfOrigin: '', countryOfResidence: '',
@@ -104,12 +122,27 @@ const Admin = () => {
     reader.readAsDataURL(file);
   };
 
+  const [saving, setSaving] = useState(false);
+
   const addAnnouncement = async () => {
     if (!announcementForm.title.trim()) return;
-    await store.addAnnouncement({ ...announcementForm, donationCount: 0 });
+    setSaving(true);
+    if (editingAnnouncement) {
+      await store.updateAnnouncement(editingAnnouncement, announcementForm);
+      setEditingAnnouncement(null);
+      toast({ title: "Announcement updated!" });
+    } else {
+      await store.addAnnouncement({ ...announcementForm, donationCount: 0 });
+      toast({ title: "Announcement added!" });
+    }
     setAnnouncements(await store.getAnnouncements());
     setAnnouncementForm({ title: '', content: '', image: '', video: '' });
-    toast({ title: "Announcement added!" });
+    setSaving(false);
+  };
+
+  const startEditAnnouncement = (a: Announcement) => {
+    setAnnouncementForm({ title: a.title, content: a.content, image: a.image || '', video: a.video || '' });
+    setEditingAnnouncement(a.id);
   };
 
   const deleteAnnouncement = async (id: string) => {
@@ -120,10 +153,23 @@ const Admin = () => {
 
   const addStory = async () => {
     if (!storyForm.title.trim()) return;
-    await store.addStory({ ...storyForm, date: new Date().toISOString() });
+    setSaving(true);
+    if (editingStory) {
+      await store.updateStory(editingStory, storyForm);
+      setEditingStory(null);
+      toast({ title: "Story updated!" });
+    } else {
+      await store.addStory({ ...storyForm, date: new Date().toISOString() });
+      toast({ title: "Story added!" });
+    }
     setStories(await store.getStories());
-    setStoryForm({ title: '', excerpt: '', content: '', video: '', category: 'story' });
-    toast({ title: "Story added!" });
+    setStoryForm({ title: '', excerpt: '', content: '', image: '', video: '', category: 'story' });
+    setSaving(false);
+  };
+
+  const startEditStory = (s: Story) => {
+    setStoryForm({ title: s.title, excerpt: s.excerpt, content: s.content, image: s.image || '', video: s.video || '', category: s.category });
+    setEditingStory(s.id);
   };
 
   const deleteStory = async (id: string) => {
@@ -134,12 +180,30 @@ const Admin = () => {
 
   const addBlog = async () => {
     if (!blogForm.title.trim()) return;
+    setSaving(true);
     const content = JSON.stringify(contentBlocks.filter(b => (b.type === 'text' && b.value?.trim()) || ((b.type === 'image' || b.type === 'video') && b.url?.trim())));
-    await store.addBlog({ ...blogForm, content, tags: blogForm.tags.split(',').map(t => t.trim()).filter(Boolean), date: new Date().toISOString() });
+    if (editingBlog) {
+      await store.updateBlog(editingBlog, { ...blogForm, content, tags: blogForm.tags.split(',').map(t => t.trim()).filter(Boolean) });
+      setEditingBlog(null);
+      toast({ title: "Blog post updated!" });
+    } else {
+      await store.addBlog({ ...blogForm, content, tags: blogForm.tags.split(',').map(t => t.trim()).filter(Boolean), date: new Date().toISOString() });
+      toast({ title: "Blog post added!" });
+    }
     setBlogs(await store.getBlogs());
     setBlogForm({ title: '', excerpt: '', image: '', author: 'ReFAN Team', tags: '' });
     setContentBlocks([{ type: 'text', value: '' }]);
-    toast({ title: "Blog post added!" });
+    setSaving(false);
+  };
+
+  const startEditBlog = (b: BlogPost) => {
+    setBlogForm({ title: b.title, excerpt: b.excerpt, image: b.image || '', author: b.author || 'ReFAN Team', tags: (b.tags || []).join(', ') });
+    try {
+      const blocks = JSON.parse(b.content);
+      if (Array.isArray(blocks)) setContentBlocks(blocks);
+      else setContentBlocks([{ type: 'text', value: b.content }]);
+    } catch { setContentBlocks([{ type: 'text', value: b.content }]); }
+    setEditingBlog(b.id);
   };
 
   const updateBlock = (index: number, updates: Partial<typeof contentBlocks[0]>) => {
@@ -280,39 +344,17 @@ const Admin = () => {
   const exportCSV = (data: Record<string, unknown>[], filename: string) => {
     if (data.length === 0) return;
     const headers = Object.keys(data[0]);
-    const esc = (v: string) => v.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    const colWidths = headers.map(h => {
-      const name = h.toLowerCase();
-      if (name === '#') return 40;
-      if (name.includes('date') || name.includes('expiry')) return 180;
-      if (name.includes('email') || name.includes('country')) return 200;
-      if (name.includes('phone') || name.includes('number')) return 150;
-      return 130;
-    });
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
-<Styles>
-<Style ss:ID="hdr"><Font ss:Bold="1" ss:Size="11"/><Interior ss:Color="#D9E1F2" ss:Pattern="Solid"/></Style>
-<Style ss:ID="txt"><NumberFormat ss:Format="@"/></Style>
-</Styles>
-<Worksheet ss:Name="Sheet1">
-<Table>
-${colWidths.map(w => `<Column ss:Width="${w}"/>`).join("\n")}
-<Row ss:StyleID="hdr">${headers.map(h => `<Cell><Data ss:Type="String">${esc(h)}</Data></Cell>`).join("")}</Row>
-${data.map(row => `<Row>${headers.map(h => {
-      const val = String(row[h] ?? "");
-      return `<Cell ss:StyleID="txt"><Data ss:Type="String">${esc(val)}</Data></Cell>`;
-    }).join("")}</Row>`).join("\n")}
-</Table>
-</Worksheet>
-</Workbook>`;
-    const blob = new Blob([xml], { type: "application/vnd.ms-excel;charset=utf-8" });
+    const csvEsc = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const rows = [
+      headers.map(h => csvEsc(h)).join(','),
+      ...data.map(row => headers.map(h => csvEsc(String(row[h] ?? ''))).join(','))
+    ];
+    const csv = '\uFEFF' + rows.join('\n');
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${filename}.xls`;
+    a.download = `${filename}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -368,6 +410,45 @@ ${data.map(row => `<Row>${headers.map(h => {
   ];
 
   const inputClass = "w-full px-4 py-2.5 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring outline-none text-sm";
+
+  const applyFormat = (textareaId: string, tag: string, getValue: () => string, setValue: (v: string) => void) => {
+    const el = document.getElementById(textareaId) as HTMLTextAreaElement;
+    if (!el) return;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const text = getValue();
+    const selected = text.substring(start, end);
+    if (!selected) return;
+    const wrapped = `<${tag}>${selected}</${tag}>`;
+    setValue(text.substring(0, start) + wrapped + text.substring(end));
+  };
+
+  const applyColor = (textareaId: string, color: string, getValue: () => string, setValue: (v: string) => void) => {
+    const el = document.getElementById(textareaId) as HTMLTextAreaElement;
+    if (!el) return;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const text = getValue();
+    const selected = text.substring(start, end);
+    if (!selected) return;
+    const wrapped = `<span style="color:${color}">${selected}</span>`;
+    setValue(text.substring(0, start) + wrapped + text.substring(end));
+  };
+
+  const FormatBar = ({ textareaId, getValue, setValue }: { textareaId: string; getValue: () => string; setValue: (v: string) => void }) => (
+    <div className="flex flex-wrap gap-1 mb-1">
+      <Button type="button" variant="outline" size="sm" className="h-7 px-2 text-xs font-bold" onClick={() => applyFormat(textareaId, 'b', getValue, setValue)}>B</Button>
+      <Button type="button" variant="outline" size="sm" className="h-7 px-2 text-xs italic" onClick={() => applyFormat(textareaId, 'i', getValue, setValue)}>I</Button>
+      <Button type="button" variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => applyFormat(textareaId, 'u', getValue, setValue)}>U</Button>
+      <Button type="button" variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => applyFormat(textareaId, 'h3', getValue, setValue)}>H</Button>
+      <Button type="button" variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => applyFormat(textareaId, 'small', getValue, setValue)}>S</Button>
+      <span className="flex items-center gap-1 ml-1">
+        {['#e74c3c','#2ecc71','#3498db','#f39c12','#9b59b6'].map(c => (
+          <button key={c} type="button" className="w-5 h-5 rounded-full border border-border" style={{ background: c }} onClick={() => applyColor(textareaId, c, getValue, setValue)} />
+        ))}
+      </span>
+    </div>
+  );
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
@@ -681,13 +762,24 @@ ${data.map(row => `<Row>${headers.map(h => {
           <div>
             <h1 className="font-heading text-2xl font-bold mb-8">Manage Announcements</h1>
             <div className="bg-card rounded-xl p-6 shadow-soft mb-8">
-              <h3 className="font-heading font-bold mb-4">Add New Announcement</h3>
+              <h3 className="font-heading font-bold mb-4">{editingAnnouncement ? 'Edit Announcement' : 'Add New Announcement'}</h3>
               <div className="space-y-3">
                 <input placeholder="Title" value={announcementForm.title} onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })} className={inputClass} maxLength={200} />
-                <textarea placeholder="Content (description)" value={announcementForm.content} onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })} rows={4} className={inputClass + " resize-none"} maxLength={5000} />
-                <input placeholder="Image URL (e.g. /gallery-community.jpg)" value={announcementForm.image} onChange={(e) => setAnnouncementForm({ ...announcementForm, image: e.target.value })} className={inputClass} maxLength={500} />
+                <FormatBar textareaId="ann-content" getValue={() => announcementForm.content} setValue={(v) => setAnnouncementForm({ ...announcementForm, content: v })} />
+                <textarea id="ann-content" placeholder="Content (description)" value={announcementForm.content} onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })} rows={4} className={inputClass + " resize-none"} maxLength={5000} />
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-muted-foreground">Image</label>
+                  <ImageUpload label="Upload Image" onUploaded={(url) => setAnnouncementForm({ ...announcementForm, image: url })} />
+                  <input placeholder="Or paste Image URL" value={announcementForm.image} onChange={(e) => setAnnouncementForm({ ...announcementForm, image: e.target.value })} className={inputClass} maxLength={500} />
+                </div>
                 <input placeholder="Video URL (YouTube, Vimeo, etc.)" value={announcementForm.video} onChange={(e) => setAnnouncementForm({ ...announcementForm, video: e.target.value })} className={inputClass} maxLength={500} />
-                <Button onClick={addAnnouncement} variant="default" size="sm"><Plus className="h-4 w-4" /> Add Announcement</Button>
+                <div className="flex gap-2">
+                  <Button onClick={addAnnouncement} variant="default" size="sm" disabled={saving}>
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingAnnouncement ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                    {editingAnnouncement ? 'Update' : 'Add Announcement'}
+                  </Button>
+                  {editingAnnouncement && <Button variant="ghost" size="sm" onClick={() => { setEditingAnnouncement(null); setAnnouncementForm({ title: '', content: '', image: '', video: '' }); }}>Cancel</Button>}
+                </div>
               </div>
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
@@ -700,7 +792,10 @@ ${data.map(row => `<Row>${headers.map(h => {
                       <p className="text-xs text-muted-foreground mt-1">{a.content.slice(0, 80)}...</p>
                       <p className="text-xs text-primary font-medium mt-2">Donations: {a.donationCount}</p>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => deleteAnnouncement(a.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => startEditAnnouncement(a)}><Pencil className="h-4 w-4 text-blue-500" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => deleteAnnouncement(a.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -712,17 +807,29 @@ ${data.map(row => `<Row>${headers.map(h => {
           <div>
             <h1 className="font-heading text-2xl font-bold mb-8">Manage Stories & Announcements</h1>
             <div className="bg-card rounded-xl p-6 shadow-soft mb-8">
-              <h3 className="font-heading font-bold mb-4">Add New</h3>
+              <h3 className="font-heading font-bold mb-4">{editingStory ? 'Edit Story' : 'Add New'}</h3>
               <div className="space-y-3">
                 <input placeholder="Title" value={storyForm.title} onChange={(e) => setStoryForm({ ...storyForm, title: e.target.value })} className={inputClass} maxLength={200} />
                 <input placeholder="Excerpt" value={storyForm.excerpt} onChange={(e) => setStoryForm({ ...storyForm, excerpt: e.target.value })} className={inputClass} maxLength={300} />
-                <textarea placeholder="Content" value={storyForm.content} onChange={(e) => setStoryForm({ ...storyForm, content: e.target.value })} rows={3} className={inputClass + " resize-none"} maxLength={5000} />
+                <FormatBar textareaId="story-content" getValue={() => storyForm.content} setValue={(v) => setStoryForm({ ...storyForm, content: v })} />
+                <textarea id="story-content" placeholder="Content" value={storyForm.content} onChange={(e) => setStoryForm({ ...storyForm, content: e.target.value })} rows={3} className={inputClass + " resize-none"} maxLength={5000} />
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-muted-foreground">Image</label>
+                  <ImageUpload label="Upload Image" onUploaded={(url) => setStoryForm({ ...storyForm, image: url })} />
+                  <input placeholder="Or paste Image URL" value={storyForm.image} onChange={(e) => setStoryForm({ ...storyForm, image: e.target.value })} className={inputClass} maxLength={500} />
+                </div>
                 <input placeholder="Video URL (YouTube, Vimeo, etc.)" value={storyForm.video} onChange={(e) => setStoryForm({ ...storyForm, video: e.target.value })} className={inputClass} maxLength={500} />
                 <select value={storyForm.category} onChange={(e) => setStoryForm({ ...storyForm, category: e.target.value as 'story' | 'announcement' })} className={inputClass}>
                   <option value="story">Story</option>
                   <option value="announcement">Announcement</option>
                 </select>
-                <Button onClick={addStory} variant="default" size="sm"><Plus className="h-4 w-4" /> Add Story</Button>
+                <div className="flex gap-2">
+                  <Button onClick={addStory} variant="default" size="sm" disabled={saving}>
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingStory ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                    {editingStory ? 'Update' : 'Add Story'}
+                  </Button>
+                  {editingStory && <Button variant="ghost" size="sm" onClick={() => { setEditingStory(null); setStoryForm({ title: '', excerpt: '', content: '', image: '', video: '', category: 'story' }); }}>Cancel</Button>}
+                </div>
               </div>
             </div>
             <div className="space-y-3">
@@ -733,7 +840,10 @@ ${data.map(row => `<Row>${headers.map(h => {
                     <h4 className="font-medium">{s.title}</h4>
                     <p className="text-xs text-muted-foreground">{s.excerpt}</p>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => deleteStory(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => startEditStory(s)}><Pencil className="h-4 w-4 text-blue-500" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => deleteStory(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -744,7 +854,7 @@ ${data.map(row => `<Row>${headers.map(h => {
           <div>
             <h1 className="font-heading text-2xl font-bold mb-8">Manage Blog Posts</h1>
             <div className="bg-card rounded-xl p-6 shadow-soft mb-8">
-              <h3 className="font-heading font-bold mb-4">Add New Post</h3>
+              <h3 className="font-heading font-bold mb-4">{editingBlog ? 'Edit Post' : 'Add New Post'}</h3>
               <div className="space-y-3">
                 <input placeholder="Title" value={blogForm.title} onChange={(e) => setBlogForm({ ...blogForm, title: e.target.value })} className={inputClass} maxLength={200} />
                 <input placeholder="Excerpt" value={blogForm.excerpt} onChange={(e) => setBlogForm({ ...blogForm, excerpt: e.target.value })} className={inputClass} maxLength={300} />
@@ -771,7 +881,10 @@ ${data.map(row => `<Row>${headers.map(h => {
                         </div>
                       </div>
                       {block.type === 'text' ? (
-                        <textarea placeholder="Write your content here..." value={block.value || ''} onChange={(e) => updateBlock(idx, { value: e.target.value })} rows={3} className={inputClass + " resize-none"} maxLength={5000} />
+                        <div>
+                          <FormatBar textareaId={`blog-block-${idx}`} getValue={() => block.value || ''} setValue={(v) => updateBlock(idx, { value: v })} />
+                          <textarea id={`blog-block-${idx}`} placeholder="Write your content here..." value={block.value || ''} onChange={(e) => updateBlock(idx, { value: e.target.value })} rows={3} className={inputClass + " resize-none"} maxLength={5000} />
+                        </div>
                       ) : block.type === 'image' ? (
                         <div className="space-y-2">
                           <ImageUpload label="Upload Image" onUploaded={(url) => updateBlock(idx, { url })} />
@@ -794,7 +907,13 @@ ${data.map(row => `<Row>${headers.map(h => {
                     <Button type="button" variant="outline" size="sm" onClick={() => setContentBlocks(prev => [...prev, { type: 'video', url: '', caption: '' }])}><Video className="h-4 w-4" /> Add Video</Button>
                   </div>
                 </div>
-                <Button onClick={addBlog} variant="default" size="sm"><Plus className="h-4 w-4" /> Add Post</Button>
+                <div className="flex gap-2">
+                  <Button onClick={addBlog} variant="default" size="sm" disabled={saving}>
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingBlog ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                    {editingBlog ? 'Update Post' : 'Add Post'}
+                  </Button>
+                  {editingBlog && <Button variant="ghost" size="sm" onClick={() => { setEditingBlog(null); setBlogForm({ title: '', excerpt: '', image: '', author: 'ReFAN Team', tags: '' }); setContentBlocks([{ type: 'text', value: '' }]); }}>Cancel</Button>}
+                </div>
               </div>
             </div>
             <div className="space-y-3">
@@ -804,7 +923,10 @@ ${data.map(row => `<Row>${headers.map(h => {
                     <h4 className="font-medium">{b.title}</h4>
                     <p className="text-xs text-muted-foreground">{b.excerpt}</p>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => deleteBlog(b.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => startEditBlog(b)}><Pencil className="h-4 w-4 text-blue-500" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => deleteBlog(b.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -829,13 +951,16 @@ ${data.map(row => `<Row>${headers.map(h => {
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {gallery.map((g) => (
-                <div key={g.id} className="bg-card rounded-lg p-4 shadow-soft">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium text-sm">{g.title}</p>
-                      <p className="text-xs text-muted-foreground">{g.type} • {new Date(g.date).toLocaleDateString()}</p>
+                <div key={g.id} className="bg-card rounded-lg shadow-soft overflow-hidden">
+                  {g.url && <img src={g.url} alt={g.title} className="w-full h-32 object-cover" />}
+                  <div className="p-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium text-sm">{g.title}</p>
+                        <p className="text-xs text-muted-foreground">{g.type} • {new Date(g.date).toLocaleDateString()}</p>
+                      </div>
+                      <Button variant="destructive" size="sm" className="h-7 w-7 p-0" onClick={() => deleteGalleryItem(g.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => deleteGalleryItem(g.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </div>
                 </div>
               ))}
@@ -1013,10 +1138,25 @@ ${data.map(row => `<Row>${headers.map(h => {
               )}
             </div>
             {messages.length === 0 ? <p className="text-muted-foreground">No messages yet.</p> : (
-              <div className="space-y-4">
+              <>
+              <div className="flex items-center gap-4 mb-4">
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="checkbox" checked={selectedMsgs.size === messages.length && messages.length > 0} onChange={(e) => {
+                    setSelectedMsgs(e.target.checked ? new Set(messages.map(m => m.id)) : new Set());
+                  }} className="rounded" />
+                  Select All ({messages.length})
+                </label>
+                {selectedMsgs.size > 0 && <span className="text-sm text-muted-foreground">{selectedMsgs.size} selected</span>}
+              </div>
+              <div className="space-y-4 mb-8">
                 {messages.map((m) => (
                   <div key={m.id} className="bg-card rounded-lg p-5 shadow-soft">
-                    <div className="flex justify-between items-start">
+                    <div className="flex items-start gap-3">
+                      <input type="checkbox" checked={selectedMsgs.has(m.id)} onChange={(e) => {
+                        const next = new Set(selectedMsgs);
+                        if (e.target.checked) next.add(m.id); else next.delete(m.id);
+                        setSelectedMsgs(next);
+                      }} className="rounded mt-1" />
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-1">
                           <span className="font-medium">{m.name}</span>
@@ -1026,17 +1166,40 @@ ${data.map(row => `<Row>${headers.map(h => {
                         <p className="text-sm text-muted-foreground">{m.message}</p>
                         <p className="text-xs text-muted-foreground mt-2">{new Date(m.date).toLocaleString()}</p>
                       </div>
-                      <Button variant="ghost" size="icon" onClick={async () => {
-                        await store.deleteMessage(m.id);
-                        setMessages(await store.getMessages());
-                        toast({ title: "Message deleted" });
-                      }}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => {
+                          openGmail([m.email], `Re: ${m.subject}`, '');
+                        }}><Send className="h-4 w-4 text-blue-500" /></Button>
+                        <Button variant="ghost" size="icon" onClick={async () => {
+                          await store.deleteMessage(m.id);
+                          setMessages(await store.getMessages());
+                          const next = new Set(selectedMsgs); next.delete(m.id); setSelectedMsgs(next);
+                          toast({ title: "Message deleted" });
+                        }}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
+              {selectedMsgs.size > 0 && (
+                <div className="bg-card rounded-xl p-6 shadow-soft">
+                  <h3 className="font-heading font-bold mb-4">Reply to {selectedMsgs.size} message{selectedMsgs.size > 1 ? 's' : ''}</h3>
+                  <div className="space-y-3">
+                    <input placeholder="Subject" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} className={inputClass} maxLength={200} />
+                    <textarea placeholder="Write your reply..." value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={6} className={inputClass + " resize-none"} maxLength={5000} />
+                    <Button variant="default" size="sm" disabled={!emailSubject.trim() || !emailBody.trim()} onClick={() => {
+                      const emails = messages.filter(m => selectedMsgs.has(m.id)).map(m => m.email).filter(Boolean);
+                      openGmail(emails, emailSubject, emailBody);
+                    }}>
+                      <Send className="h-4 w-4" /> Reply via Gmail
+                    </Button>
+                    <p className="text-xs text-muted-foreground">Opens Gmail in a new tab with selected senders in BCC.</p>
+                  </div>
+                </div>
+              )}
+              </>
             )}
           </div>
         )}

@@ -18,8 +18,15 @@ const inputClass = "w-full px-4 py-3 rounded-lg border border-input bg-backgroun
 
 const GetInvolved = () => {
   const { toast } = useToast();
+  const phoneCodes = [
+    { code: "+265", country: "MW" }, { code: "+1", country: "US" }, { code: "+44", country: "GB" },
+    { code: "+254", country: "KE" }, { code: "+255", country: "TZ" }, { code: "+256", country: "UG" },
+    { code: "+250", country: "RW" }, { code: "+257", country: "BI" }, { code: "+243", country: "CD" },
+    { code: "+27", country: "ZA" }, { code: "+234", country: "NG" }, { code: "+33", country: "FR" },
+    { code: "+49", country: "DE" }, { code: "+91", country: "IN" }, { code: "+61", country: "AU" },
+  ];
   const [form, setForm] = useState({
-    name: '', email: '', phone: '', country: '', countryOfOrigin: '', idNumber: '',
+    name: '', email: '', phoneCode: '+265', phone: '', country: '', countryOfOrigin: '', idNumber: '',
     type: 'volunteer' as 'volunteer' | 'sponsor', message: '',
   });
   const [submitting, setSubmitting] = useState(false);
@@ -30,19 +37,23 @@ const GetInvolved = () => {
       toast({ title: "Please fill required fields", variant: "destructive" });
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      toast({ title: "Please enter a valid email address", variant: "destructive" });
+      return;
+    }
     setSubmitting(true);
     await store.addVolunteer({
       ...form,
       name: form.name.trim(),
       email: form.email.trim(),
-      phone: form.phone.trim(),
+      phone: `${form.phoneCode} ${form.phone.trim()}`,
       country: form.country,
       message: `${form.message.trim()}${form.countryOfOrigin ? `\n[Country of Origin: ${form.countryOfOrigin}]` : ''}${form.idNumber ? `\n[ID: ${form.idNumber}]` : ''}`,
       date: new Date().toISOString(),
     });
     setSubmitting(false);
     toast({ title: "Registration submitted!", description: "Thank you for your interest. We'll be in touch soon." });
-    setForm({ name: '', email: '', phone: '', country: '', countryOfOrigin: '', idNumber: '', type: 'volunteer', message: '' });
+    setForm({ name: '', email: '', phoneCode: '+265', phone: '', country: '', countryOfOrigin: '', idNumber: '', type: 'volunteer', message: '' });
   };
 
   return (
@@ -114,7 +125,12 @@ const GetInvolved = () => {
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1.5">Phone</label>
-                <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inputClass} maxLength={20} />
+                <div className="flex gap-2">
+                  <select value={form.phoneCode} onChange={(e) => setForm({ ...form, phoneCode: e.target.value })} className="w-28 px-2 py-3 rounded-lg border border-input bg-background text-sm">
+                    {phoneCodes.map(p => <option key={p.code} value={p.code}>{p.country} ({p.code})</option>)}
+                  </select>
+                  <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inputClass} maxLength={15} placeholder="Phone number" />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">

@@ -52,6 +52,9 @@ const About = () => {
             <div className="aspect-[4/5] rounded-xl bg-cover bg-center shadow-elevated overflow-hidden">
               <img src={aboutTeam} alt="ReFAN team" className="w-full h-full object-cover" />
             </div>
+            <div className="absolute -bottom-4 -right-4 w-28 h-28 md:w-36 md:h-36 rounded-xl overflow-hidden shadow-elevated border-4 border-white">
+              <img src="/Founder &  chairman.jpg" alt="Founder & Chairman" className="w-full h-full object-cover" />
+            </div>
             <div className="absolute -bottom-6 -left-6 bg-card p-6 rounded-lg shadow-elevated hidden lg:block border border-border">
               <p className="italic text-primary font-medium">"Restoring hope, one family at a time."</p>
             </div>
@@ -117,9 +120,9 @@ const About = () => {
           {/* Lydia */}
           <div className="flex flex-col items-center text-center">
             <div className="w-64 h-64 rounded-2xl overflow-hidden mb-6 shadow-elevated border-4 border-white">
-              <img src="/Lydia Igirajeza - Général Secretary.jpg" alt="Général Secretary Lydia Igirajeza" className="w-full h-full object-cover" />
+              <img src="/Lydia Igiraneza - Général Secretary.jpg" alt="Général Secretary Lydia Igiraneza" className="w-full h-full object-cover" />
             </div>
-            <h3 className="font-heading text-2xl font-bold">Lydia Igirajeza</h3>
+            <h3 className="font-heading text-2xl font-bold">Lydia Igiraneza</h3>
             <p className="text-primary font-bold mb-4 uppercase tracking-widest text-xs">Général Secretary</p>
             <p className="text-muted-foreground text-sm italic">"Strategic partnership is the engine that drives transformation and scale."</p>
             <div className="flex gap-4 mt-6">

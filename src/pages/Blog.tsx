@@ -192,14 +192,14 @@ const Blog = () => {
                               {block.caption && <figcaption className="text-sm text-muted-foreground text-center italic">{block.caption}</figcaption>}
                             </figure>
                           ) : (
-                            <p key={idx} className="text-foreground/80 text-lg leading-relaxed whitespace-pre-wrap">{block.value}</p>
+                            <div key={idx} className="text-foreground/80 text-lg leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: block.value }} />
                           )
                         )}
                       </div>
                     );
                   }
                 } catch {}
-                return <p className="text-foreground/80 text-lg leading-relaxed whitespace-pre-wrap">{selected.content}</p>;
+                return <div className="text-foreground/80 text-lg leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: selected.content }} />;
               })()}
             </div>
             <div className="px-8 pb-6 flex items-center justify-between border-t border-border pt-4">

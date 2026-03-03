@@ -18,6 +18,10 @@ const Contact = () => {
       toast({ title: "Please fill all required fields", variant: "destructive" });
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      toast({ title: "Please enter a valid email address", variant: "destructive" });
+      return;
+    }
     setSubmitting(true);
 
     try {
