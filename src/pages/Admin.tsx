@@ -1029,44 +1029,33 @@ const Admin = () => {
                 </label>
                 {selectedDonors.size > 0 && <span className="text-sm text-muted-foreground">{selectedDonors.size} selected</span>}
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="py-3 px-2 w-8"></th>
-                      <th className="text-left py-3 px-4 font-medium">Name</th>
-                      <th className="text-left py-3 px-4 font-medium">Email</th>
-                      <th className="text-left py-3 px-4 font-medium">Currency</th>
-                      <th className="text-left py-3 px-4 font-medium">Amount</th>
-                      <th className="text-left py-3 px-4 font-medium">Message</th>
-                      <th className="text-left py-3 px-4 font-medium">Date</th>
-                      <th className="py-3 px-2 w-10"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {donations.map((d) => (
-                      <tr key={d.id} className="border-b border-border">
-                        <td className="py-3 px-2"><input type="checkbox" checked={selectedDonors.has(d.id)} onChange={(e) => {
-                          const next = new Set(selectedDonors);
-                          if (e.target.checked) next.add(d.id); else next.delete(d.id);
-                          setSelectedDonors(next);
-                        }} className="rounded" /></td>
-                        <td className="py-3 px-4">{d.name}</td>
-                        <td className="py-3 px-4 text-muted-foreground">{d.email}</td>
-                        <td className="py-3 px-4">{d.currency || 'USD'}</td>
-                        <td className="py-3 px-4 font-bold text-primary">{d.amount}</td>
-                        <td className="py-3 px-4 text-muted-foreground text-xs max-w-[200px] truncate">{d.message || '-'}</td>
-                        <td className="py-3 px-4 text-muted-foreground">{new Date(d.date).toLocaleDateString()}</td>
-                        <td className="py-3 px-2"><Button variant="destructive" size="sm" className="h-8 w-8 p-0" onClick={async () => {
-                          if (!confirm(`Delete donation from ${d.name}?`)) return;
-                          await store.deleteDonation(d.id);
-                          setDonations(await store.getDonations());
-                          toast({ title: "Donation deleted" });
-                        }}><Trash2 className="h-4 w-4" /></Button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="space-y-4 mb-8">
+                {donations.map((d) => (
+                  <div key={d.id} className="bg-card rounded-lg p-5 shadow-soft">
+                    <div className="flex items-start gap-3">
+                      <input type="checkbox" checked={selectedDonors.has(d.id)} onChange={(e) => {
+                        const next = new Set(selectedDonors);
+                        if (e.target.checked) next.add(d.id); else next.delete(d.id);
+                        setSelectedDonors(next);
+                      }} className="rounded mt-1" />
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="font-medium">{d.name}</span>
+                          <span className="text-xs text-muted-foreground">{new Date(d.date).toLocaleDateString()}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{d.email}</p>
+                        <p className="text-sm mt-1"><span className="font-medium">{d.currency || 'USD'}</span> <span className="font-bold text-primary">{d.amount}</span></p>
+                        {d.message && <p className="text-sm mt-2 text-muted-foreground whitespace-pre-line">{d.message}</p>}
+                      </div>
+                      <Button variant="destructive" size="sm" className="shrink-0" onClick={async () => {
+                        if (!confirm(`Delete donation from ${d.name}?`)) return;
+                        await store.deleteDonation(d.id);
+                        setDonations(await store.getDonations());
+                        toast({ title: "Donation deleted" });
+                      }}><Trash2 className="h-4 w-4" /></Button>
+                    </div>
+                  </div>
+                ))}
               </div>
               {selectedDonors.size > 0 && (
                 <div className="bg-card rounded-xl p-6 shadow-soft mt-6">
