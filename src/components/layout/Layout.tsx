@@ -1,7 +1,6 @@
 import { ReactNode, useState, useEffect } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
-import WhatsAppButton from "@/components/WhatsAppButton";
 import { ChevronUp } from "lucide-react";
 
 const ScrollToTop = () => {
@@ -29,7 +28,6 @@ const Layout = ({ children }: { children: ReactNode }) => {
       <Navbar />
       <main className="flex-1">{children}</main>
       <Footer />
-      <WhatsAppButton />
       <ScrollToTop />
     </div>
   );
