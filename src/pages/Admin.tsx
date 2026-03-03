@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { store, type Story, type BlogPost, type GalleryItem, type NewsletterSubscriber, type ContactMessage, type Announcement, type Member, type FooterSettings } from "@/lib/store";
+import { store, type Story, type BlogPost, type GalleryItem, type NewsletterSubscriber, type ContactMessage, type Announcement, type Member, type FooterSettings, type HeroSettings } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import {
   LayoutDashboard, FileText, Image, Megaphone, Users, Heart,
@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import ImageUpload from "@/components/ImageUpload";
 import RichTextEditor from "@/components/RichTextEditor";
 
-type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'sponsors' | 'donations' | 'subscribers' | 'messages' | 'members' | 'footer';
+type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'sponsors' | 'donations' | 'subscribers' | 'messages' | 'members' | 'footer' | 'hero';
 
 const countries = [
   "Afghanistan", "Albania", "Algeria", "Angola", "Argentina", "Australia", "Austria", "Bangladesh",
@@ -73,19 +73,34 @@ const Admin = () => {
     linkedin: "https://www.linkedin.com/in/holistic-continuity-of-care-571586315",
     description: "Resilient Foundation Assistance Network (ReFAN) is a refugee-led NGO based in Dzaleka, Malawi, dedicated to the continuity of care for the most vulnerable.",
   });
+  const [heroForm, setHeroForm] = useState<HeroSettings>({
+    heroImage: "/refan_give.jpg",
+    tagline: "Holistic Continuity of Care",
+    title: "From Loss to Legacy: Continuity of Care",
+    subtitle: "Self-funded by refugees, powered by hope. Join us in turning grief into resilience for Dzaleka's most vulnerable.",
+  });
+
+  const loadData = async () => {
+    const [a, s, b, g, v, d, sub, msg, mem] = await Promise.all([
+      store.getAnnouncements(), store.getStories(), store.getBlogs(), store.getGallery(),
+      store.getVolunteers(), store.getDonations(), store.getSubscribers(), store.getMessages(), store.getMembers(),
+    ]);
+    setAnnouncements(a); setStories(s); setBlogs(b); setGallery(g);
+    setVolunteers(v); setDonations(d); setSubscribers(sub); setMessages(msg); setMembers(mem);
+    const footerData = await store.getFooterSettings();
+    if (footerData) setFooterForm(prev => ({ ...prev, ...footerData }));
+    const heroData = await store.getHeroSettings();
+    if (heroData) setHeroForm(prev => ({ ...prev, ...heroData }));
+  };
 
   useEffect(() => {
-    const loadData = async () => {
-      const [a, s, b, g, v, d, sub, msg, mem] = await Promise.all([
-        store.getAnnouncements(), store.getStories(), store.getBlogs(), store.getGallery(),
-        store.getVolunteers(), store.getDonations(), store.getSubscribers(), store.getMessages(), store.getMembers(),
-      ]);
-      setAnnouncements(a); setStories(s); setBlogs(b); setGallery(g);
-      setVolunteers(v); setDonations(d); setSubscribers(sub); setMessages(msg); setMembers(mem);
-      const footerData = await store.getFooterSettings();
-      if (footerData) setFooterForm(prev => ({ ...prev, ...footerData }));
-    };
     loadData();
+    // Auto-reload data when admin switches back to this tab
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') loadData();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
   }, []);
   const [selectedSubs, setSelectedSubs] = useState<Set<string>>(new Set());
   const [selectedVols, setSelectedVols] = useState<Set<string>>(new Set());
@@ -421,6 +436,7 @@ const Admin = () => {
     { id: 'subscribers', label: 'Subscribers', icon: Mail },
     { id: 'messages', label: 'Messages', icon: MessageSquare },
     { id: 'footer', label: 'Footer Settings', icon: Settings },
+    { id: 'hero', label: 'Hero Settings', icon: ImagePlus },
   ];
 
   const inputClass = "w-full px-4 py-2.5 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring outline-none text-sm";
@@ -1298,6 +1314,47 @@ const Admin = () => {
                 }}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                   Save Footer Settings
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === 'hero' && (
+          <div>
+            <h1 className="font-heading text-2xl font-bold mb-8">Hero Settings</h1>
+            <div className="bg-card rounded-xl p-6 shadow-soft">
+              <p className="text-sm text-muted-foreground mb-6">Change the hero image and text on the home page.</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground">Hero Image</label>
+                  {heroForm.heroImage && (
+                    <img src={heroForm.heroImage} alt="Hero preview" className="w-full max-h-48 object-contain rounded-lg border border-border mb-2 bg-muted" />
+                  )}
+                  <ImageUpload label="Upload Hero Image" onUploaded={(url) => setHeroForm({ ...heroForm, heroImage: url })} />
+                  <p className="text-xs text-muted-foreground mt-1">Or enter a URL manually:</p>
+                  <input value={heroForm.heroImage} onChange={(e) => setHeroForm({ ...heroForm, heroImage: e.target.value })} className={inputClass} placeholder="/refan_give.jpg or https://..." maxLength={500} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground">Tagline (large text at top)</label>
+                  <input value={heroForm.tagline} onChange={(e) => setHeroForm({ ...heroForm, tagline: e.target.value })} className={inputClass} maxLength={100} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground">Title</label>
+                  <input value={heroForm.title} onChange={(e) => setHeroForm({ ...heroForm, title: e.target.value })} className={inputClass} maxLength={200} />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground">Subtitle</label>
+                  <textarea value={heroForm.subtitle} onChange={(e) => setHeroForm({ ...heroForm, subtitle: e.target.value })} className={inputClass + " resize-none"} rows={3} maxLength={500} />
+                </div>
+                <Button variant="default" size="sm" disabled={saving} onClick={async () => {
+                  setSaving(true);
+                  const ok = await store.saveHeroSettings(heroForm);
+                  setSaving(false);
+                  toast({ title: ok ? "Hero settings saved!" : "Failed to save" });
+                }}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Save Hero Settings
                 </Button>
               </div>
             </div>

@@ -142,7 +142,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await sendPasswordResetEmail(auth, email.trim());
       return { error: null };
     } catch (e: any) {
-      return { error: e.message || "Failed to send reset email" };
+      const msg = e.code === 'auth/user-not-found' ? 'No account found with this email. If you use Google sign-in, use that option instead.'
+        : e.code === 'auth/invalid-email' ? 'Please enter a valid email address.'
+        : e.code === 'auth/too-many-requests' ? 'Too many attempts. Please wait a few minutes and try again.'
+        : e.message || "Failed to send reset email";
+      return { error: msg };
     }
   };
 

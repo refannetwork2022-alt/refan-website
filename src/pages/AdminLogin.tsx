@@ -158,8 +158,17 @@ const AdminLogin = () => {
 
             {forgotSuccess ? (
               <div className="text-center space-y-4">
-                <p className="text-green-600 font-medium">Password reset email sent! Check your inbox.</p>
-                <p className="text-sm text-muted-foreground">If you don't see it, check your spam folder.</p>
+                <p className="text-green-600 font-medium">Password reset email sent!</p>
+                <div className="text-sm text-muted-foreground space-y-2 text-left">
+                  <p>Check your inbox for a password reset link from <strong>noreply@...</strong></p>
+                  <p>If you don't see it:</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Check your <strong>spam/junk</strong> folder</li>
+                    <li>Make sure you entered the correct email</li>
+                    <li>If you signed up with Google, use "Sign in with Google" instead</li>
+                    <li>The email may take a few minutes to arrive</li>
+                  </ul>
+                </div>
                 <Button onClick={() => { setShowForgot(false); setForgotSuccess(false); setResetEmail(''); }} className="w-full">
                   <LogIn className="h-4 w-4 mr-2" /> Back to Login
                 </Button>

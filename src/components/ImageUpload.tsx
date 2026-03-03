@@ -23,8 +23,8 @@ const ImageUpload = ({ onUploaded, label = "Upload Image" }: ImageUploadProps) =
     try {
       const url = await uploadImage(file);
       onUploaded(url);
-    } catch {
-      alert("Image upload failed. Please try again.");
+    } catch (err: any) {
+      alert(err?.message || "Image upload failed. Please try again.");
       setPreview(null);
     } finally {
       setUploading(false);

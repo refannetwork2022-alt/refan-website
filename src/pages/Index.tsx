@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Heart, Users, BookOpen, ArrowRight, Target, Globe, Shield, Baby, User, Home, Grid3X3, Quote, Megaphone, X, Share2, Facebook, Twitter, Link2 } from "lucide-react";
-import { store, Announcement } from "@/lib/store";
+import { store, Announcement, HeroSettings } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 const heroBg = "/holi.jpg";
 import educationImg from "@/assets/programs-education.jpg";
@@ -123,12 +123,20 @@ const StatCard = ({ stat, inView }: { stat: typeof impactStats[0]; inView: boole
   );
 };
 
+const HERO_DEFAULTS: HeroSettings = {
+  heroImage: "/refan_give.jpg",
+  tagline: "Holistic Continuity of Care",
+  title: "From Loss to Legacy: Continuity of Care",
+  subtitle: "Self-funded by refugees, powered by hope. Join us in turning grief into resilience for Dzaleka's most vulnerable.",
+};
+
 const Index = () => {
   const { toast } = useToast();
   const [statsInView, setStatsInView] = useState(false);
   const statsRef = useRef<HTMLDivElement>(null);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [hero, setHero] = useState<HeroSettings>(HERO_DEFAULTS);
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const copyLink = () => { navigator.clipboard.writeText(shareUrl); toast({ title: "Link copied!" }); };
 
@@ -136,6 +144,9 @@ const Index = () => {
     store.getAnnouncements().then((data) => {
       setAnnouncements(data.length > 0 ? data : sampleAnnouncements);
     }).catch(() => setAnnouncements(sampleAnnouncements));
+    store.getHeroSettings().then((data) => {
+      if (data) setHero({ ...HERO_DEFAULTS, ...data });
+    });
   }, []);
 
   useEffect(() => {
@@ -153,13 +164,13 @@ const Index = () => {
       <section className="container py-8">
         <div className="relative rounded-2xl overflow-hidden min-h-[600px] shadow-elevated">
           <div className="absolute inset-0">
-            <img src="/refan_give.jpg" alt="ReFAN Community" className="w-full h-full object-cover" />
+            <img src={hero.heroImage} alt="ReFAN Community" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/60" />
           </div>
           {/* Tagline - full width horizontal across the top */}
           <div className="relative z-10 w-full text-center pt-6 sm:pt-8 lg:pt-10 px-4">
             <h2 className="font-heading text-xl sm:text-4xl lg:text-7xl font-extrabold text-white tracking-wider uppercase leading-tight">
-              Holistic Continuity of Care
+              {hero.tagline}
             </h2>
           </div>
           {/* Main content - pinned to left */}
@@ -168,10 +179,10 @@ const Index = () => {
               Refugee-Led Initiative
             </span>
             <h1 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight">
-              From Loss to Legacy: Continuity of Care
+              {hero.title}
             </h1>
             <p className="text-base text-gray-200 leading-relaxed max-w-md">
-              Self-funded by refugees, powered by hope. Join us in turning grief into resilience for Dzaleka's most vulnerable.
+              {hero.subtitle}
             </p>
             <div className="flex flex-wrap gap-3 mt-1">
               <Button asChild size="lg" className="btn-hover bg-primary hover:bg-primary/90 text-white font-bold shadow-lg px-8">

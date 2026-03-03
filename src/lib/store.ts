@@ -108,6 +108,13 @@ export interface FooterSettings {
   description: string;
 }
 
+export interface HeroSettings {
+  heroImage: string;
+  tagline: string;
+  title: string;
+  subtitle: string;
+}
+
 export interface ContactMessage {
   id: string;
   name: string;
@@ -457,5 +464,20 @@ export const store = {
       await setDoc(doc(db, "settings", "footer"), settings);
       return true;
     } catch (e) { console.error("saveFooterSettings:", e); return false; }
+  },
+
+  // ─── Hero Settings ──────────────────────────
+  getHeroSettings: async (): Promise<HeroSettings | null> => {
+    try {
+      const snap = await getDoc(doc(db, "settings", "hero"));
+      if (snap.exists()) return snap.data() as HeroSettings;
+      return null;
+    } catch (e) { console.error("getHeroSettings:", e); return null; }
+  },
+  saveHeroSettings: async (settings: HeroSettings): Promise<boolean> => {
+    try {
+      await setDoc(doc(db, "settings", "hero"), settings);
+      return true;
+    } catch (e) { console.error("saveHeroSettings:", e); return false; }
   },
 };
