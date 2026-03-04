@@ -107,6 +107,12 @@ const Register = () => {
       const compressedPhoto = await compressImage(form.photo);
       const compressedDoc = await compressImage(form.document, 600);
 
+      // Auto-calculate expiry date: 3 months from now
+      const now = new Date();
+      const expiry = new Date(now);
+      expiry.setMonth(expiry.getMonth() + 3);
+      const expiryStr = expiry.toISOString().split('T')[0]; // YYYY-MM-DD
+
       const member = await store.addMember({
         surname: form.surname.trim(),
         firstName: form.firstName.trim(),
@@ -125,8 +131,8 @@ const Register = () => {
         document: compressedDoc,
         paymentCurrency: form.paymentCurrency,
         paymentAmount: Number(form.paymentAmount) || 0,
-        registrationDate: new Date().toISOString(),
-        expiryDate: '',
+        registrationDate: now.toISOString(),
+        expiryDate: expiryStr,
         branchName: form.branchName.trim(),
         username: form.username.trim(),
       });
@@ -143,6 +149,8 @@ const Register = () => {
           dob: dob ? `${form.dobDay}/${form.dobMonth}/${form.dobYear}` : '',
           branch: form.branchName,
           photo: compressedPhoto,
+          registrationDate: now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+          expiryDate: expiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
         });
         setSuccess(true);
         toast({ title: "Member registered successfully!" });
@@ -208,11 +216,19 @@ const Register = () => {
               <p className="font-medium">{memberData.branch}</p>
             </div>
 
-            {/* Payment info */}
+            {/* Membership info */}
             <div className="border-t border-border pt-4 space-y-2">
-              <p><strong>Registration fee:</strong> 1,000 MWK</p>
-              <p><strong>Term fee:</strong> 2,000 MWK</p>
-              <p className="text-sm text-muted-foreground italic">Registration is only 1,000 Malawi Kwacha. Please contact admin for payment instructions.</p>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <p className="text-muted-foreground">Registration Date</p>
+                <p className="font-medium">{memberData.registrationDate}</p>
+                <p className="text-muted-foreground">Membership Expires</p>
+                <p className="font-medium text-red-600">{memberData.expiryDate}</p>
+              </div>
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-3">
+                <p className="text-sm font-bold text-amber-800">Membership Term: 3 Months</p>
+                <p className="text-xs text-amber-700">Registration fee: 1,000 MWK | Term fee: 2,000 MWK</p>
+                <p className="text-xs text-amber-700 mt-1">Your membership will expire on <strong>{memberData.expiryDate}</strong>. Contact admin to renew.</p>
+              </div>
             </div>
 
             <p className="text-center text-sm text-muted-foreground bg-muted p-3 rounded-lg">Please save or screenshot your registration number <strong className="text-primary">{regNumber}</strong> for your records.</p>
@@ -388,6 +404,14 @@ const Register = () => {
                 <label className="block text-sm font-medium mb-1.5">Branch Name</label>
                 <input value={form.branchName} onChange={e => setForm({ ...form, branchName: e.target.value })} className={inputClass} maxLength={100} />
               </div>
+            </div>
+
+            {/* Membership term info */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-1">
+              <p className="text-sm font-bold text-blue-800">Membership Information</p>
+              <p className="text-xs text-blue-700">Registration fee: <strong>1,000 MWK</strong> | Term fee: <strong>2,000 MWK</strong></p>
+              <p className="text-xs text-blue-700">Membership term: <strong>3 months</strong> from the date of registration</p>
+              <p className="text-xs text-blue-700">Your membership will expire on: <strong>{(() => { const d = new Date(); d.setMonth(d.getMonth() + 3); return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); })()}</strong></p>
             </div>
 
             <Button type="button" onClick={handleSubmit} size="lg" className="w-full bg-primary hover:bg-primary/90 text-white font-bold rounded-lg" disabled={submitting}>

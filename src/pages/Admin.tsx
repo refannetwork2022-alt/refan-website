@@ -8,6 +8,8 @@ import {
   UserPlus, Copy, Camera, Upload, Shield, ChevronUp, ChevronDown, Type, ImagePlus, Video, Pencil, Save, Loader2, Settings, Globe, Power
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "@/integrations/firebase/client";
 import { useAuth } from "@/hooks/useAuth";
 import ImageUpload from "@/components/ImageUpload";
 import RichTextEditor from "@/components/RichTextEditor";
@@ -357,7 +359,8 @@ const Admin = () => {
         dateOfBirth: dob, familySize: Number(memberForm.familySize) || 0,
         photo: compressedPhoto, document: compressedDoc,
         paymentCurrency: memberForm.paymentCurrency, paymentAmount: Number(memberForm.paymentAmount) || 0,
-        registrationDate: new Date().toISOString(), expiryDate: memberForm.expiryDate,
+        registrationDate: new Date().toISOString(),
+        expiryDate: memberForm.expiryDate || (() => { const d = new Date(); d.setMonth(d.getMonth() + 3); return d.toISOString().split('T')[0]; })(),
         branchName: memberForm.branchName.trim(), username: memberForm.username.trim(),
       });
       if (result) {
@@ -768,8 +771,27 @@ const Admin = () => {
                         <td className="py-3 px-3 text-xs">{m.username}</td>
                         <td className="py-3 px-3 text-xs">{m.branchName}</td>
                         <td className="py-3 px-3 text-xs">{m.registrationDate ? new Date(m.registrationDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase() : ''}</td>
-                        <td className="py-3 px-3 text-xs">{m.expiryDate ? new Date(m.expiryDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase() : ''}</td>
-                        <td className="py-3 px-3">
+                        <td className={`py-3 px-3 text-xs ${m.expiryDate && new Date(m.expiryDate) < new Date() ? 'text-red-600 font-bold' : ''}`}>
+                          {m.expiryDate ? new Date(m.expiryDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase() : ''}
+                          {m.expiryDate && new Date(m.expiryDate) < new Date() && <span className="block text-[10px]">EXPIRED</span>}
+                        </td>
+                        <td className="py-3 px-3 flex gap-1">
+                          <Button variant="outline" size="sm" title="Renew Membership" onClick={() => {
+                            const newExpiry = new Date(); newExpiry.setMonth(newExpiry.getMonth() + 3);
+                            const expiryStr = newExpiry.toISOString().split('T')[0];
+                            const name = `${m.firstName} ${m.surname}`;
+                            const subject = `ReFAN Membership Renewal - ${name}`;
+                            const body = `Dear ${name},\n\nYour ReFAN membership has been renewed.\n\nNew Expiry Date: ${newExpiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}\nReg Number: ${m.regNumber}\nTerm Fee: 2,000 MWK\n\nThank you for being a member of ReFAN.\n\nBest regards,\nReFAN Admin`;
+                            if (m.email) {
+                              window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(m.email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+                            }
+                            updateDoc(doc(db, "members", m.id), { expiryDate: expiryStr }).then(() => {
+                              loadData();
+                              toast({ title: `Membership renewed for ${name} until ${newExpiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}` });
+                            });
+                          }}>
+                            <Mail className="h-3 w-3" /> Renew
+                          </Button>
                           <Button variant="ghost" size="icon" onClick={() => deleteMember(m.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                         </td>
                       </tr>
