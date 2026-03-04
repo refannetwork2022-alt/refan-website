@@ -372,7 +372,7 @@ const Admin = () => {
         photo: compressedPhoto, document: compressedDoc,
         paymentCurrency: memberForm.paymentCurrency, paymentAmount: Number(memberForm.paymentAmount) || 0,
         registrationDate: new Date().toISOString(),
-        expiryDate: memberForm.expiryDate || (() => { const d = new Date(); d.setMonth(d.getMonth() + 3); return d.toISOString().split('T')[0]; })(),
+        expiryDate: (() => { const d = new Date(); d.setMonth(d.getMonth() + 3); return d.toISOString().split('T')[0]; })(),
         branchName: memberForm.branchName.trim(), username: memberForm.username.trim(),
       });
       if (result) {
