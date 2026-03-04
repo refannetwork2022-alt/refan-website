@@ -721,9 +721,9 @@ const Admin = () => {
                   <input placeholder="Username" value={memberForm.username} onChange={e => setMemberForm({ ...memberForm, username: e.target.value })} className={inputClass} maxLength={50} />
                   <input placeholder="Branch Name" value={memberForm.branchName} onChange={e => setMemberForm({ ...memberForm, branchName: e.target.value })} className={inputClass} maxLength={100} />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Expiry Date</label>
-                  <input type="date" value={memberForm.expiryDate} onChange={e => setMemberForm({ ...memberForm, expiryDate: e.target.value })} className={inputClass} />
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex gap-6 text-sm">
+                  <div><span className="text-blue-600 font-medium">Registration Date:</span> <strong>{new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</strong></div>
+                  <div><span className="text-blue-600 font-medium">Expiry Date:</span> <strong>{(() => { const d = new Date(); d.setMonth(d.getMonth() + 3); return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); })()}</strong></div>
                 </div>
                 <div className="flex gap-4">
                   <div>
