@@ -472,8 +472,9 @@ const Admin = () => {
     exportCSV(data as unknown as Record<string, unknown>[], "refan-members");
   };
 
+  const COMPANY_EMAIL = "refannetwork2022@gmail.com";
   const openGmail = (emails: string[], subject: string, body: string) => {
-    const mailto = `https://mail.google.com/mail/?view=cm&fs=1&bcc=${encodeURIComponent(emails.join(','))}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const mailto = `https://mail.google.com/mail/u/?authuser=${encodeURIComponent(COMPANY_EMAIL)}&view=cm&fs=1&bcc=${encodeURIComponent(emails.join(','))}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(mailto, '_blank');
   };
 
@@ -814,7 +815,7 @@ const Admin = () => {
                             const subject = `ReFAN Membership Renewal - ${name}`;
                             const body = `Dear ${name},\n\nYour ReFAN membership has been renewed.\n\nNew Expiry Date: ${newExpiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}\nReg Number: ${m.regNumber}\nTerm Fee: 2,000 MWK\n\nThank you for being a member of ReFAN.\n\nBest regards,\nReFAN Admin`;
                             if (m.email) {
-                              window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(m.email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+                              window.open(`https://mail.google.com/mail/u/?authuser=${encodeURIComponent(COMPANY_EMAIL)}&view=cm&fs=1&to=${encodeURIComponent(m.email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
                             }
                             updateDoc(doc(db, "members", m.id), { expiryDate: expiryStr }).then(() => {
                               loadData();
