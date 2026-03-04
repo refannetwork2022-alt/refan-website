@@ -121,6 +121,18 @@ const Admin = () => {
     ]);
     setAnnouncements(a); setStories(s); setBlogs(b); setGallery(g);
     setVolunteers(v); setDonations(d); setSubscribers(sub); setMessages(msg); setMembers(mem);
+    // Auto-backfill missing expiry dates
+    for (const m of mem) {
+      if (!m.expiryDate || !m.expiryDate.match(/^\d{4}-\d{2}-\d{2}/)) {
+        let base = m.registrationDate ? new Date(m.registrationDate) : new Date();
+        if (isNaN(base.getTime())) base = new Date();
+        base.setMonth(base.getMonth() + 3);
+        const expiryStr = base.toISOString().split('T')[0];
+        await updateDoc(doc(db, "members", m.id), { expiryDate: expiryStr });
+        m.expiryDate = expiryStr;
+      }
+    }
+    setMembers([...mem]);
     const footerData = await store.getFooterSettings();
     if (footerData) setFooterForm(prev => ({ ...prev, ...footerData }));
     const heroData = await store.getHeroSettings();
