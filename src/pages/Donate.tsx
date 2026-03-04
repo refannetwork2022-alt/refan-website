@@ -1,9 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Heart, Shield, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { store } from "@/lib/store";
+import { store, DonateSettings } from "@/lib/store";
+
+const DONATE_DEFAULTS: DonateSettings = {
+  pageTitle: 'Make a <span class="text-primary">Donation</span>',
+  pageSubtitle: "Your generosity transforms the lives of orphaned children and widows in Dzaleka Refugee Camp. Every contribution goes directly to education, community resilience, and bereavement support.",
+};
 
 const currencies = [
   { code: "MWK", label: "MWK (Malawi Kwacha)" },
@@ -28,6 +33,12 @@ const inputClass = "w-full px-4 py-3 rounded-lg border border-input bg-backgroun
 
 const Donate = () => {
   const { toast } = useToast();
+  const [d, setPageD] = useState<DonateSettings>(DONATE_DEFAULTS);
+  useEffect(() => {
+    store.getPageSettings<DonateSettings>("donate").then((data) => {
+      if (data) setPageD({ ...DONATE_DEFAULTS, ...data });
+    });
+  }, []);
   const [currency, setCurrency] = useState("MWK");
   const [amount, setAmount] = useState("");
   const [name, setName] = useState("");
@@ -66,10 +77,8 @@ const Donate = () => {
     <Layout>
       <section className="container pt-12 pb-8 text-center">
         <Heart className="h-12 w-12 text-primary mx-auto mb-4" />
-        <h1 className="font-heading text-3xl lg:text-5xl font-extrabold mb-3">Make a <span className="text-primary">Donation</span></h1>
-        <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-          Your generosity transforms the lives of orphaned children and widows in Dzaleka Refugee Camp. Every contribution goes directly to education, community resilience, and bereavement support.
-        </p>
+        <h1 className="font-heading text-3xl lg:text-5xl font-extrabold mb-3" dangerouslySetInnerHTML={{ __html: d.pageTitle }} />
+        <div className="text-lg text-muted-foreground max-w-xl mx-auto" dangerouslySetInnerHTML={{ __html: d.pageSubtitle }} />
       </section>
 
       <section className="container py-12">

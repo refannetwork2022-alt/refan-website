@@ -1,18 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { store, type Story, type BlogPost, type GalleryItem, type NewsletterSubscriber, type ContactMessage, type Announcement, type Member, type FooterSettings, type HeroSettings } from "@/lib/store";
+import { store, type Story, type BlogPost, type GalleryItem, type NewsletterSubscriber, type ContactMessage, type Announcement, type Member, type FooterSettings, type HeroSettings, type SiteSettings, type AboutSettings, type ProgramsSettings, type HomeSettings, type ContactPageSettings, type DonateSettings, type GetInvolvedSettings } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import {
   LayoutDashboard, FileText, Image, Megaphone, Users, Heart,
   Plus, Trash2, ArrowLeft, LogOut, Download, Mail, Send, MessageSquare, KeyRound,
-  UserPlus, Copy, Camera, Upload, Shield, ChevronUp, ChevronDown, Type, ImagePlus, Video, Pencil, Save, Loader2, Settings
+  UserPlus, Copy, Camera, Upload, Shield, ChevronUp, ChevronDown, Type, ImagePlus, Video, Pencil, Save, Loader2, Settings, Globe, Power
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import ImageUpload from "@/components/ImageUpload";
 import RichTextEditor from "@/components/RichTextEditor";
 
-type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'sponsors' | 'donations' | 'subscribers' | 'messages' | 'members' | 'footer' | 'hero';
+type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'sponsors' | 'donations' | 'subscribers' | 'messages' | 'members' | 'footer' | 'hero' | 'site' | 'pages';
 
 const countries = [
   "Afghanistan", "Albania", "Algeria", "Angola", "Argentina", "Australia", "Austria", "Bangladesh",
@@ -79,6 +79,38 @@ const Admin = () => {
     title: "From Loss to Legacy: Continuity of Care",
     subtitle: "Self-funded by refugees, powered by hope. Join us in turning grief into resilience for Dzaleka's most vulnerable.",
   });
+  const [siteForm, setSiteForm] = useState<SiteSettings>({ maintenanceMode: false, maintenanceMessage: "" });
+  const [aboutForm, setAboutForm] = useState<AboutSettings>({
+    heroTitle: "Our Heart, Our Mission", heroSubtitle: "Dedicated to holistic continuity of care for orphans and widows in Dzaleka Refugee Camp since 2022.",
+    heroImage: "", whoWeAreTitle: "A Refugee-Led Force for Community Wellness", whoWeAreBody: "", whoWeAreImage1: "", whoWeAreImage2: "/wg5r.png",
+    missionQuote: "Holistic Continuity of Care", missionBody: "", ctaHeading: "Be the change you want to see.", ctaBody: "",
+    leaders: [
+      { name: "Goreth Niyibigira", title: "Président", quote: "", image: "/Goreth Niyibigira - Président.jpg", email: "refannetwork2022@gmail.com" },
+      { name: "Lydia Igiraneza", title: "Général Secretary", quote: "", image: "/Lydia Igiraneza - Général Secretary.jpg", email: "refannetwork2022@gmail.com" },
+    ],
+    values: [{ title: "Compassion", description: "" }, { title: "Integrity", description: "" }, { title: "Sustainability", description: "" }, { title: "Collaboration", description: "" }],
+  });
+  const [programsForm, setProgramsForm] = useState<ProgramsSettings>({
+    pageTitle: "Our Programs", pageSubtitle: "",
+    programs: [{ title: "Education Support", description: "", stats: "100+ orphans supported", image: "" }, { title: "Community Resilience", description: "", stats: "50+ widows empowered", image: "" }, { title: "Bereavement Support", description: "", stats: "Ongoing community care", image: "" }],
+  });
+  const [homeForm, setHomeForm] = useState<HomeSettings>({
+    impactStats: [{ number: 2022, label: "Founded", suffix: "" }, { number: 100, label: "Orphans Supported", suffix: "+" }, { number: 50, label: "Widows Empowered", suffix: "+" }],
+    programs: [{ title: "Education Support", desc: "", image: "" }, { title: "Community Resilience", desc: "", image: "" }, { title: "Bereavement Support", desc: "", image: "" }],
+    testimonials: [{ quote: "", name: "Marie K.", role: "Widow & Mother of 3" }, { quote: "", name: "Emmanuel T.", role: "Orphan, Age 16" }, { quote: "", name: "Esperance N.", role: "Widow & Workshop Leader" }],
+    values: [{ title: "Refugee-Led", desc: "" }, { title: "Women-Led", desc: "" }, { title: "Self-Funded", desc: "" }],
+    ctaHeading: "How will you help today?", ctaBody: "", ctaImage: "/modam_teach.jpg",
+  });
+  const [contactForm2, setContactForm2] = useState<ContactPageSettings>({
+    pageTitle: "", pageSubtitle: "", email: "refannetwork2022@gmail.com", emailSub: "support@refan.org",
+    phone: "+265 997 561 852", phoneSub: "Monday - Friday, 8am - 5pm CAT", location: "Dzaleka Refugee Camp, Dowa District", locationSub: "P.O. Box 16, Dowa, Malawi",
+  });
+  const [donateForm2, setDonateForm2] = useState<DonateSettings>({ pageTitle: "", pageSubtitle: "" });
+  const [giForm, setGiForm] = useState<GetInvolvedSettings>({
+    pageTitle: "", pageSubtitle: "",
+    ways: [{ title: "Donate", desc: "", cta: "Donate Now" }, { title: "Volunteer", desc: "", cta: "Sign Up" }, { title: "Sponsor", desc: "", cta: "Become a Sponsor" }, { title: "Become a Member", desc: "", cta: "Register Now" }],
+  });
+  const [pageTab, setPageTab] = useState<'about' | 'programs' | 'home' | 'contact' | 'donate' | 'getinvolved'>('about');
 
   const loadData = async () => {
     const [a, s, b, g, v, d, sub, msg, mem] = await Promise.all([
@@ -91,6 +123,20 @@ const Admin = () => {
     if (footerData) setFooterForm(prev => ({ ...prev, ...footerData }));
     const heroData = await store.getHeroSettings();
     if (heroData) setHeroForm(prev => ({ ...prev, ...heroData }));
+    const siteData = await store.getSiteSettings();
+    if (siteData) setSiteForm(prev => ({ ...prev, ...siteData }));
+    const aboutData = await store.getPageSettings<AboutSettings>("about");
+    if (aboutData) setAboutForm(prev => ({ ...prev, ...aboutData }));
+    const programsData = await store.getPageSettings<ProgramsSettings>("programs");
+    if (programsData) setProgramsForm(prev => ({ ...prev, ...programsData }));
+    const homeData = await store.getPageSettings<HomeSettings>("home");
+    if (homeData) setHomeForm(prev => ({ ...prev, ...homeData }));
+    const contactData = await store.getPageSettings<ContactPageSettings>("contact");
+    if (contactData) setContactForm2(prev => ({ ...prev, ...contactData }));
+    const donateData = await store.getPageSettings<DonateSettings>("donate");
+    if (donateData) setDonateForm2(prev => ({ ...prev, ...donateData }));
+    const giData = await store.getPageSettings<GetInvolvedSettings>("getinvolved");
+    if (giData) setGiForm(prev => ({ ...prev, ...giData }));
   };
 
   useEffect(() => {
@@ -437,6 +483,8 @@ const Admin = () => {
     { id: 'messages', label: 'Messages', icon: MessageSquare },
     { id: 'footer', label: 'Footer Settings', icon: Settings },
     { id: 'hero', label: 'Hero Settings', icon: ImagePlus },
+    { id: 'pages', label: 'Page Content', icon: Globe },
+    { id: 'site', label: 'Site Settings', icon: Power },
   ];
 
   const inputClass = "w-full px-4 py-2.5 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring outline-none text-sm";
@@ -1358,6 +1406,244 @@ const Admin = () => {
                 </Button>
               </div>
             </div>
+          </div>
+        )}
+
+        {tab === 'site' && (
+          <div>
+            <h1 className="font-heading text-2xl font-bold mb-8">Site Settings</h1>
+            <div className="bg-card rounded-xl p-6 shadow-soft space-y-6">
+              <div className="flex items-center justify-between p-4 rounded-lg border border-border">
+                <div>
+                  <h3 className="font-bold text-sm">Maintenance Mode</h3>
+                  <p className="text-xs text-muted-foreground">When enabled, visitors see a maintenance page. Only you (admin) can access the site.</p>
+                </div>
+                <button
+                  onClick={() => setSiteForm({ ...siteForm, maintenanceMode: !siteForm.maintenanceMode })}
+                  className={`relative w-12 h-6 rounded-full transition-colors ${siteForm.maintenanceMode ? 'bg-red-500' : 'bg-gray-300'}`}
+                >
+                  <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${siteForm.maintenanceMode ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                </button>
+              </div>
+              {siteForm.maintenanceMode && (
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground">Maintenance Message (shown to visitors)</label>
+                  <RichTextEditor value={siteForm.maintenanceMessage} onChange={(v) => setSiteForm({ ...siteForm, maintenanceMessage: v })} placeholder="We are currently updating our website..." rows={3} />
+                </div>
+              )}
+              <Button variant="default" size="sm" disabled={saving} onClick={async () => {
+                setSaving(true);
+                const ok = await store.saveSiteSettings(siteForm);
+                setSaving(false);
+                toast({ title: ok ? "Site settings saved!" : "Failed to save" });
+              }}>
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save Site Settings
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {tab === 'pages' && (
+          <div>
+            <h1 className="font-heading text-2xl font-bold mb-4">Edit Page Content</h1>
+            <div className="flex flex-wrap gap-2 mb-6">
+              {([['about', 'About'], ['programs', 'Programs'], ['home', 'Home Page'], ['contact', 'Contact'], ['donate', 'Donate'], ['getinvolved', 'Get Involved']] as const).map(([k, l]) => (
+                <button key={k} onClick={() => setPageTab(k)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${pageTab === k ? 'bg-primary text-white' : 'bg-card border border-border hover:bg-accent'}`}>{l}</button>
+              ))}
+            </div>
+
+            {pageTab === 'about' && (
+              <div className="bg-card rounded-xl p-6 shadow-soft space-y-4">
+                <h3 className="font-bold">About Page</h3>
+                <div><label className="text-xs font-semibold text-muted-foreground">Hero Title</label>
+                  <RichTextEditor value={aboutForm.heroTitle} onChange={(v) => setAboutForm({ ...aboutForm, heroTitle: v })} rows={2} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">Hero Subtitle</label>
+                  <RichTextEditor value={aboutForm.heroSubtitle} onChange={(v) => setAboutForm({ ...aboutForm, heroSubtitle: v })} rows={2} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">Hero Background Image</label>
+                  <ImageUpload label="Upload" onUploaded={(url) => setAboutForm({ ...aboutForm, heroImage: url })} />
+                  <input value={aboutForm.heroImage} onChange={(e) => setAboutForm({ ...aboutForm, heroImage: e.target.value })} className={inputClass} placeholder="URL or leave empty for default" /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">Who We Are Title</label>
+                  <RichTextEditor value={aboutForm.whoWeAreTitle} onChange={(v) => setAboutForm({ ...aboutForm, whoWeAreTitle: v })} rows={2} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">Who We Are Body</label>
+                  <RichTextEditor value={aboutForm.whoWeAreBody} onChange={(v) => setAboutForm({ ...aboutForm, whoWeAreBody: v })} rows={4} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">Team Photo</label>
+                  <ImageUpload label="Upload" onUploaded={(url) => setAboutForm({ ...aboutForm, whoWeAreImage1: url })} />
+                  <input value={aboutForm.whoWeAreImage1} onChange={(e) => setAboutForm({ ...aboutForm, whoWeAreImage1: e.target.value })} className={inputClass} placeholder="URL or leave empty for default" /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">Founder Photo</label>
+                  <ImageUpload label="Upload" onUploaded={(url) => setAboutForm({ ...aboutForm, whoWeAreImage2: url })} />
+                  <input value={aboutForm.whoWeAreImage2} onChange={(e) => setAboutForm({ ...aboutForm, whoWeAreImage2: e.target.value })} className={inputClass} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">Mission Quote</label>
+                  <input value={aboutForm.missionQuote} onChange={(e) => setAboutForm({ ...aboutForm, missionQuote: e.target.value })} className={inputClass} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">Mission Body</label>
+                  <RichTextEditor value={aboutForm.missionBody} onChange={(v) => setAboutForm({ ...aboutForm, missionBody: v })} rows={3} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">CTA Heading</label>
+                  <RichTextEditor value={aboutForm.ctaHeading} onChange={(v) => setAboutForm({ ...aboutForm, ctaHeading: v })} rows={2} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">CTA Body</label>
+                  <RichTextEditor value={aboutForm.ctaBody} onChange={(v) => setAboutForm({ ...aboutForm, ctaBody: v })} rows={3} /></div>
+                <h4 className="font-bold text-sm mt-4">Leadership Team</h4>
+                {aboutForm.leaders.map((l, i) => (
+                  <div key={i} className="border border-border rounded-lg p-4 space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input placeholder="Name" value={l.name} onChange={(e) => { const arr = [...aboutForm.leaders]; arr[i] = { ...l, name: e.target.value }; setAboutForm({ ...aboutForm, leaders: arr }); }} className={inputClass} />
+                      <input placeholder="Title" value={l.title} onChange={(e) => { const arr = [...aboutForm.leaders]; arr[i] = { ...l, title: e.target.value }; setAboutForm({ ...aboutForm, leaders: arr }); }} className={inputClass} />
+                    </div>
+                    <input placeholder="Quote" value={l.quote} onChange={(e) => { const arr = [...aboutForm.leaders]; arr[i] = { ...l, quote: e.target.value }; setAboutForm({ ...aboutForm, leaders: arr }); }} className={inputClass} />
+                    <input placeholder="Email" value={l.email} onChange={(e) => { const arr = [...aboutForm.leaders]; arr[i] = { ...l, email: e.target.value }; setAboutForm({ ...aboutForm, leaders: arr }); }} className={inputClass} />
+                    <ImageUpload label="Photo" onUploaded={(url) => { const arr = [...aboutForm.leaders]; arr[i] = { ...l, image: url }; setAboutForm({ ...aboutForm, leaders: arr }); }} />
+                    <input placeholder="Photo URL" value={l.image} onChange={(e) => { const arr = [...aboutForm.leaders]; arr[i] = { ...l, image: e.target.value }; setAboutForm({ ...aboutForm, leaders: arr }); }} className={inputClass} />
+                    {aboutForm.leaders.length > 1 && <Button variant="destructive" size="sm" onClick={() => setAboutForm({ ...aboutForm, leaders: aboutForm.leaders.filter((_, j) => j !== i) })}><Trash2 className="h-3 w-3" /> Remove</Button>}
+                  </div>
+                ))}
+                <Button variant="outline" size="sm" onClick={() => setAboutForm({ ...aboutForm, leaders: [...aboutForm.leaders, { name: "", title: "", quote: "", image: "", email: "" }] })}><Plus className="h-3 w-3" /> Add Leader</Button>
+                <h4 className="font-bold text-sm mt-4">Values</h4>
+                {aboutForm.values.map((v, i) => (
+                  <div key={i} className="flex gap-2">
+                    <input placeholder="Title" value={v.title} onChange={(e) => { const arr = [...aboutForm.values]; arr[i] = { ...v, title: e.target.value }; setAboutForm({ ...aboutForm, values: arr }); }} className={inputClass} />
+                    <input placeholder="Description" value={v.description} onChange={(e) => { const arr = [...aboutForm.values]; arr[i] = { ...v, description: e.target.value }; setAboutForm({ ...aboutForm, values: arr }); }} className={inputClass} />
+                    {aboutForm.values.length > 1 && <Button variant="destructive" size="sm" onClick={() => setAboutForm({ ...aboutForm, values: aboutForm.values.filter((_, j) => j !== i) })}><Trash2 className="h-3 w-3" /></Button>}
+                  </div>
+                ))}
+                <Button variant="outline" size="sm" onClick={() => setAboutForm({ ...aboutForm, values: [...aboutForm.values, { title: "", description: "" }] })}><Plus className="h-3 w-3" /> Add Value</Button>
+                <Button variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("about", aboutForm); setSaving(false); toast({ title: ok ? "About page saved!" : "Failed" }); }}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save About Page
+                </Button>
+              </div>
+            )}
+
+            {pageTab === 'programs' && (
+              <div className="bg-card rounded-xl p-6 shadow-soft space-y-4">
+                <h3 className="font-bold">Programs Page</h3>
+                <div><label className="text-xs font-semibold text-muted-foreground">Page Title</label>
+                  <RichTextEditor value={programsForm.pageTitle} onChange={(v) => setProgramsForm({ ...programsForm, pageTitle: v })} rows={2} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">Page Subtitle</label>
+                  <RichTextEditor value={programsForm.pageSubtitle} onChange={(v) => setProgramsForm({ ...programsForm, pageSubtitle: v })} rows={2} /></div>
+                <h4 className="font-bold text-sm">Programs</h4>
+                {programsForm.programs.map((p, i) => (
+                  <div key={i} className="border border-border rounded-lg p-4 space-y-2">
+                    <input placeholder="Title" value={p.title} onChange={(e) => { const arr = [...programsForm.programs]; arr[i] = { ...p, title: e.target.value }; setProgramsForm({ ...programsForm, programs: arr }); }} className={inputClass} />
+                    <RichTextEditor value={p.description} onChange={(v) => { const arr = [...programsForm.programs]; arr[i] = { ...p, description: v }; setProgramsForm({ ...programsForm, programs: arr }); }} placeholder="Description" rows={3} />
+                    <input placeholder="Stats (e.g. 100+ orphans supported)" value={p.stats} onChange={(e) => { const arr = [...programsForm.programs]; arr[i] = { ...p, stats: e.target.value }; setProgramsForm({ ...programsForm, programs: arr }); }} className={inputClass} />
+                    <ImageUpload label="Image" onUploaded={(url) => { const arr = [...programsForm.programs]; arr[i] = { ...p, image: url }; setProgramsForm({ ...programsForm, programs: arr }); }} />
+                    {p.image && <img src={p.image} alt="" className="w-full max-h-32 object-contain rounded bg-muted" />}
+                    {programsForm.programs.length > 1 && <Button variant="destructive" size="sm" onClick={() => setProgramsForm({ ...programsForm, programs: programsForm.programs.filter((_, j) => j !== i) })}><Trash2 className="h-3 w-3" /> Remove</Button>}
+                  </div>
+                ))}
+                <Button variant="outline" size="sm" onClick={() => setProgramsForm({ ...programsForm, programs: [...programsForm.programs, { title: "", description: "", stats: "", image: "" }] })}><Plus className="h-3 w-3" /> Add Program</Button>
+                <Button variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("programs", programsForm); setSaving(false); toast({ title: ok ? "Programs page saved!" : "Failed" }); }}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Programs Page
+                </Button>
+              </div>
+            )}
+
+            {pageTab === 'home' && (
+              <div className="bg-card rounded-xl p-6 shadow-soft space-y-4">
+                <h3 className="font-bold">Home Page Content</h3>
+                <h4 className="font-bold text-sm">Impact Stats</h4>
+                {homeForm.impactStats.map((s, i) => (
+                  <div key={i} className="flex gap-2">
+                    <input type="number" placeholder="Number" value={s.number} onChange={(e) => { const arr = [...homeForm.impactStats]; arr[i] = { ...s, number: Number(e.target.value) }; setHomeForm({ ...homeForm, impactStats: arr }); }} className={inputClass + " w-24"} />
+                    <input placeholder="Label" value={s.label} onChange={(e) => { const arr = [...homeForm.impactStats]; arr[i] = { ...s, label: e.target.value }; setHomeForm({ ...homeForm, impactStats: arr }); }} className={inputClass} />
+                    <input placeholder="Suffix (+)" value={s.suffix} onChange={(e) => { const arr = [...homeForm.impactStats]; arr[i] = { ...s, suffix: e.target.value }; setHomeForm({ ...homeForm, impactStats: arr }); }} className={inputClass + " w-16"} />
+                  </div>
+                ))}
+                <h4 className="font-bold text-sm">Home Programs</h4>
+                {homeForm.programs.map((p, i) => (
+                  <div key={i} className="border border-border rounded-lg p-3 space-y-2">
+                    <input placeholder="Title" value={p.title} onChange={(e) => { const arr = [...homeForm.programs]; arr[i] = { ...p, title: e.target.value }; setHomeForm({ ...homeForm, programs: arr }); }} className={inputClass} />
+                    <RichTextEditor value={p.desc} onChange={(v) => { const arr = [...homeForm.programs]; arr[i] = { ...p, desc: v }; setHomeForm({ ...homeForm, programs: arr }); }} placeholder="Short description" rows={2} />
+                    <ImageUpload label="Image" onUploaded={(url) => { const arr = [...homeForm.programs]; arr[i] = { ...p, image: url }; setHomeForm({ ...homeForm, programs: arr }); }} />
+                  </div>
+                ))}
+                <h4 className="font-bold text-sm">Testimonials</h4>
+                {homeForm.testimonials.map((t, i) => (
+                  <div key={i} className="border border-border rounded-lg p-3 space-y-2">
+                    <textarea placeholder="Quote" value={t.quote} onChange={(e) => { const arr = [...homeForm.testimonials]; arr[i] = { ...t, quote: e.target.value }; setHomeForm({ ...homeForm, testimonials: arr }); }} className={inputClass + " resize-none"} rows={2} />
+                    <div className="flex gap-2">
+                      <input placeholder="Name" value={t.name} onChange={(e) => { const arr = [...homeForm.testimonials]; arr[i] = { ...t, name: e.target.value }; setHomeForm({ ...homeForm, testimonials: arr }); }} className={inputClass} />
+                      <input placeholder="Role" value={t.role} onChange={(e) => { const arr = [...homeForm.testimonials]; arr[i] = { ...t, role: e.target.value }; setHomeForm({ ...homeForm, testimonials: arr }); }} className={inputClass} />
+                    </div>
+                    {homeForm.testimonials.length > 1 && <Button variant="destructive" size="sm" onClick={() => setHomeForm({ ...homeForm, testimonials: homeForm.testimonials.filter((_, j) => j !== i) })}><Trash2 className="h-3 w-3" /> Remove</Button>}
+                  </div>
+                ))}
+                <Button variant="outline" size="sm" onClick={() => setHomeForm({ ...homeForm, testimonials: [...homeForm.testimonials, { quote: "", name: "", role: "" }] })}><Plus className="h-3 w-3" /> Add Testimonial</Button>
+                <h4 className="font-bold text-sm">Why ReFAN Values</h4>
+                {homeForm.values.map((v, i) => (
+                  <div key={i} className="flex gap-2">
+                    <input placeholder="Title" value={v.title} onChange={(e) => { const arr = [...homeForm.values]; arr[i] = { ...v, title: e.target.value }; setHomeForm({ ...homeForm, values: arr }); }} className={inputClass} />
+                    <input placeholder="Description" value={v.desc} onChange={(e) => { const arr = [...homeForm.values]; arr[i] = { ...v, desc: e.target.value }; setHomeForm({ ...homeForm, values: arr }); }} className={inputClass} />
+                  </div>
+                ))}
+                <h4 className="font-bold text-sm">CTA Section</h4>
+                <div><label className="text-xs font-semibold text-muted-foreground">CTA Heading</label>
+                  <RichTextEditor value={homeForm.ctaHeading} onChange={(v) => setHomeForm({ ...homeForm, ctaHeading: v })} rows={2} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">CTA Body</label>
+                  <RichTextEditor value={homeForm.ctaBody} onChange={(v) => setHomeForm({ ...homeForm, ctaBody: v })} rows={2} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">CTA Background Image</label>
+                  <ImageUpload label="Upload" onUploaded={(url) => setHomeForm({ ...homeForm, ctaImage: url })} />
+                  <input value={homeForm.ctaImage} onChange={(e) => setHomeForm({ ...homeForm, ctaImage: e.target.value })} className={inputClass} /></div>
+                <Button variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("home", homeForm); setSaving(false); toast({ title: ok ? "Home page saved!" : "Failed" }); }}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Home Page
+                </Button>
+              </div>
+            )}
+
+            {pageTab === 'contact' && (
+              <div className="bg-card rounded-xl p-6 shadow-soft space-y-4">
+                <h3 className="font-bold">Contact Page</h3>
+                <div><label className="text-xs font-semibold text-muted-foreground">Page Title</label>
+                  <RichTextEditor value={contactForm2.pageTitle} onChange={(v) => setContactForm2({ ...contactForm2, pageTitle: v })} rows={2} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">Page Subtitle</label>
+                  <RichTextEditor value={contactForm2.pageSubtitle} onChange={(v) => setContactForm2({ ...contactForm2, pageSubtitle: v })} rows={2} /></div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div><label className="text-xs font-semibold text-muted-foreground">Email</label><input value={contactForm2.email} onChange={(e) => setContactForm2({ ...contactForm2, email: e.target.value })} className={inputClass} /></div>
+                  <div><label className="text-xs font-semibold text-muted-foreground">Email Sub-text</label><input value={contactForm2.emailSub} onChange={(e) => setContactForm2({ ...contactForm2, emailSub: e.target.value })} className={inputClass} /></div>
+                  <div><label className="text-xs font-semibold text-muted-foreground">Phone</label><input value={contactForm2.phone} onChange={(e) => setContactForm2({ ...contactForm2, phone: e.target.value })} className={inputClass} /></div>
+                  <div><label className="text-xs font-semibold text-muted-foreground">Phone Sub-text</label><input value={contactForm2.phoneSub} onChange={(e) => setContactForm2({ ...contactForm2, phoneSub: e.target.value })} className={inputClass} /></div>
+                  <div><label className="text-xs font-semibold text-muted-foreground">Location</label><input value={contactForm2.location} onChange={(e) => setContactForm2({ ...contactForm2, location: e.target.value })} className={inputClass} /></div>
+                  <div><label className="text-xs font-semibold text-muted-foreground">Location Sub-text</label><input value={contactForm2.locationSub} onChange={(e) => setContactForm2({ ...contactForm2, locationSub: e.target.value })} className={inputClass} /></div>
+                </div>
+                <Button variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("contact", contactForm2); setSaving(false); toast({ title: ok ? "Contact page saved!" : "Failed" }); }}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Contact Page
+                </Button>
+              </div>
+            )}
+
+            {pageTab === 'donate' && (
+              <div className="bg-card rounded-xl p-6 shadow-soft space-y-4">
+                <h3 className="font-bold">Donate Page</h3>
+                <div><label className="text-xs font-semibold text-muted-foreground">Page Title</label>
+                  <RichTextEditor value={donateForm2.pageTitle} onChange={(v) => setDonateForm2({ ...donateForm2, pageTitle: v })} rows={2} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">Page Subtitle</label>
+                  <RichTextEditor value={donateForm2.pageSubtitle} onChange={(v) => setDonateForm2({ ...donateForm2, pageSubtitle: v })} rows={3} /></div>
+                <Button variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("donate", donateForm2); setSaving(false); toast({ title: ok ? "Donate page saved!" : "Failed" }); }}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Donate Page
+                </Button>
+              </div>
+            )}
+
+            {pageTab === 'getinvolved' && (
+              <div className="bg-card rounded-xl p-6 shadow-soft space-y-4">
+                <h3 className="font-bold">Get Involved Page</h3>
+                <div><label className="text-xs font-semibold text-muted-foreground">Page Title</label>
+                  <RichTextEditor value={giForm.pageTitle} onChange={(v) => setGiForm({ ...giForm, pageTitle: v })} rows={2} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">Page Subtitle</label>
+                  <RichTextEditor value={giForm.pageSubtitle} onChange={(v) => setGiForm({ ...giForm, pageSubtitle: v })} rows={2} /></div>
+                <h4 className="font-bold text-sm">Ways to Get Involved</h4>
+                {giForm.ways.map((w, i) => (
+                  <div key={i} className="border border-border rounded-lg p-3 space-y-2">
+                    <div className="flex gap-2">
+                      <input placeholder="Title" value={w.title} onChange={(e) => { const arr = [...giForm.ways]; arr[i] = { ...w, title: e.target.value }; setGiForm({ ...giForm, ways: arr }); }} className={inputClass} />
+                      <input placeholder="CTA button" value={w.cta} onChange={(e) => { const arr = [...giForm.ways]; arr[i] = { ...w, cta: e.target.value }; setGiForm({ ...giForm, ways: arr }); }} className={inputClass + " w-40"} />
+                    </div>
+                    <textarea placeholder="Description" value={w.desc} onChange={(e) => { const arr = [...giForm.ways]; arr[i] = { ...w, desc: e.target.value }; setGiForm({ ...giForm, ways: arr }); }} className={inputClass + " resize-none"} rows={2} />
+                  </div>
+                ))}
+                <Button variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("getinvolved", giForm); setSaving(false); toast({ title: ok ? "Get Involved page saved!" : "Failed" }); }}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Get Involved Page
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </main>

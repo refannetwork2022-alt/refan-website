@@ -1,16 +1,34 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Mail, Phone, MapPin, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { store } from "@/lib/store";
+import { store, ContactPageSettings } from "@/lib/store";
 
 const WEB3FORMS_KEY = "2b77a360-efe4-4f8c-926e-a6a7a8e05895";
+
+const CONTACT_DEFAULTS: ContactPageSettings = {
+  pageTitle: 'Get in <span class="text-secondary">Touch</span> with <span class="text-primary">ReFAN</span>',
+  pageSubtitle: "Have questions about our initiatives in Dzaleka? We're here to help and would love to hear from you.",
+  email: "refannetwork2022@gmail.com",
+  emailSub: "support@refan.org",
+  phone: "+265 997 561 852",
+  phoneSub: "Monday - Friday, 8am - 5pm CAT",
+  location: "Dzaleka Refugee Camp, Dowa District",
+  locationSub: "P.O. Box 16, Dowa, Malawi",
+};
 
 const Contact = () => {
   const { toast } = useToast();
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
+  const [d, setD] = useState<ContactPageSettings>(CONTACT_DEFAULTS);
+
+  useEffect(() => {
+    store.getPageSettings<ContactPageSettings>("contact").then((data) => {
+      if (data) setD({ ...CONTACT_DEFAULTS, ...data });
+    });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,8 +81,8 @@ const Contact = () => {
     <Layout>
       <section className="container pt-12 pb-8">
         <p className="text-sm text-muted-foreground mb-2">Home &gt; Contact Us</p>
-        <h1 className="font-heading text-3xl lg:text-5xl font-extrabold mb-3">Get in <span className="text-secondary">Touch</span> with <span className="text-primary">ReFAN</span></h1>
-        <p className="text-lg text-muted-foreground max-w-2xl">Have questions about our initiatives in Dzaleka? We're here to help and would love to hear from you.</p>
+        <h1 className="font-heading text-3xl lg:text-5xl font-extrabold mb-3" dangerouslySetInnerHTML={{ __html: d.pageTitle }} />
+        <div className="text-lg text-muted-foreground max-w-2xl" dangerouslySetInnerHTML={{ __html: d.pageSubtitle }} />
       </section>
 
       <section className="container py-12">
@@ -72,9 +90,9 @@ const Contact = () => {
           {/* Contact info */}
           <div className="space-y-6">
             {[
-              { icon: Mail, label: "Email Us", value: "refannetwork2022@gmail.com", sub: "support@refan.org" },
-              { icon: Phone, label: "Call Us", value: "+265 997 561 852", sub: "Monday - Friday, 8am - 5pm CAT" },
-              { icon: MapPin, label: "Our Location", value: "Dzaleka Refugee Camp, Dowa District", sub: "P.O. Box 16, Dowa, Malawi" },
+              { icon: Mail, label: "Email Us", value: d.email, sub: d.emailSub },
+              { icon: Phone, label: "Call Us", value: d.phone, sub: d.phoneSub },
+              { icon: MapPin, label: "Our Location", value: d.location, sub: d.locationSub },
             ].map((item) => (
               <div key={item.label} className="flex items-start gap-4 p-4 rounded-xl border border-border bg-card">
                 <div className="p-3 rounded-full bg-primary/10 shrink-0">

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Heart, Users, BookOpen, ArrowRight, Target, Globe, Shield, Baby, User, Home, Grid3X3, Quote, Megaphone, X, Share2, Facebook, Twitter, Link2 } from "lucide-react";
-import { store, Announcement, HeroSettings } from "@/lib/store";
+import { store, Announcement, HeroSettings, HomeSettings } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 const heroBg = "/holi.jpg";
 import educationImg from "@/assets/programs-education.jpg";
@@ -130,6 +130,34 @@ const HERO_DEFAULTS: HeroSettings = {
   subtitle: "Self-funded by refugees, powered by hope. Join us in turning grief into resilience for Dzaleka's most vulnerable.",
 };
 
+const HOME_DEFAULTS: HomeSettings = {
+  impactStats: [
+    { number: 2022, label: "Founded", suffix: "" },
+    { number: 100, label: "Orphans Supported", suffix: "+" },
+    { number: 50, label: "Widows Empowered", suffix: "+" },
+  ],
+  programs: [
+    { title: "Education Support", desc: "Providing education support to all orphaned children in Dzaleka Refugee Camp, ensuring every child has access to learning.", image: "" },
+    { title: "Community Resilience", desc: "Empowering widows and orphan youths through community-based programs that build self-reliance and hope.", image: "" },
+    { title: "Bereavement Support", desc: "Walking alongside grieving families with compassionate care, turning grief into resilience and growth.", image: "" },
+  ],
+  testimonials: [
+    { quote: "ReFAN gave my children hope when we had nothing. They provided school fees and emotional support that changed our lives forever.", name: "Marie K.", role: "Widow & Mother of 3" },
+    { quote: "Thanks to the education program, I can now dream of becoming a doctor. ReFAN believes in us even when the world forgets.", name: "Emmanuel T.", role: "Orphan, Age 16" },
+    { quote: "The community resilience workshops taught me skills to support my family. I went from grieving alone to leading others.", name: "Esperance N.", role: "Widow & Workshop Leader" },
+  ],
+  values: [
+    { title: "Refugee-Led", desc: "Founded and run by refugees themselves — we understand the needs because we live them." },
+    { title: "Women-Led", desc: "Led by Président Goreth from Burundi, empowering women and children at every level." },
+    { title: "Self-Funded", desc: "Built from the ground up with our own resources, powered by hope and community spirit." },
+  ],
+  ctaHeading: "How will you help today?",
+  ctaBody: "Every donation goes directly toward empowering children and widows in Dzaleka. We are 100% refugee-run and transparent in our mission.",
+  ctaImage: "/modam_teach.jpg",
+};
+
+const defaultProgramImages = [educationImg, healthImg, livelihoodImg];
+
 const Index = () => {
   const { toast } = useToast();
   const [statsInView, setStatsInView] = useState(false);
@@ -137,6 +165,7 @@ const Index = () => {
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [hero, setHero] = useState<HeroSettings>(HERO_DEFAULTS);
+  const [home, setHome] = useState<HomeSettings>(HOME_DEFAULTS);
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const copyLink = () => { navigator.clipboard.writeText(shareUrl); toast({ title: "Link copied!" }); };
 
@@ -146,6 +175,9 @@ const Index = () => {
     }).catch(() => setAnnouncements(sampleAnnouncements));
     store.getHeroSettings().then((data) => {
       if (data) setHero({ ...HERO_DEFAULTS, ...data });
+    });
+    store.getPageSettings<HomeSettings>("home").then((data) => {
+      if (data) setHome({ ...HOME_DEFAULTS, ...data });
     });
   }, []);
 
@@ -193,8 +225,8 @@ const Index = () => {
       {/* Impact stats with animation */}
       <section className="container py-12" ref={statsRef}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {impactStats.map((stat) => (
-            <StatCard key={stat.label} stat={stat} inView={statsInView} />
+          {home.impactStats.map((stat, i) => (
+            <StatCard key={i} stat={{ ...stat, icon: [Home, Baby, User][i % 3] }} inView={statsInView} />
           ))}
         </div>
       </section>
@@ -253,22 +285,26 @@ const Index = () => {
           </Button>
         </div>
         <div className="grid md:grid-cols-3 gap-8">
-          {programs.map((prog) => (
-            <div key={prog.title} className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col group hover:shadow-elevated transition-all">
-              <div className="aspect-[3/4] overflow-hidden">
-                <img src={prog.image} alt={prog.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-              </div>
-              <div className="p-6 flex flex-col flex-1">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <prog.icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <h3 className="font-heading text-lg font-bold group-hover:text-primary transition-colors">{prog.title}</h3>
+          {home.programs.map((prog, i) => {
+            const Icon = [BookOpen, Users, Heart][i % 3];
+            const img = prog.image || defaultProgramImages[i % defaultProgramImages.length];
+            return (
+              <div key={i} className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col group hover:shadow-elevated transition-all">
+                <div className="aspect-[3/4] overflow-hidden">
+                  <img src={img} alt={prog.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">{prog.desc}</p>
+                <div className="p-6 flex flex-col flex-1">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <Icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <h3 className="font-heading text-lg font-bold group-hover:text-primary transition-colors">{prog.title}</h3>
+                  </div>
+                  <div className="text-sm text-muted-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: prog.desc }} />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -279,8 +315,8 @@ const Index = () => {
         </h2>
         <p className="text-muted-foreground text-center mb-10">Real stories from those whose lives have been transformed.</p>
         <div className="grid md:grid-cols-3 gap-8">
-          {testimonials.map((t) => (
-            <div key={t.name} className="bg-card rounded-2xl p-8 border border-border hover:border-primary/30 hover:shadow-card transition-all relative">
+          {home.testimonials.map((t, i) => (
+            <div key={i} className="bg-card rounded-2xl p-8 border border-border hover:border-primary/30 hover:shadow-card transition-all relative">
               <Quote className="h-8 w-8 text-primary/20 absolute top-6 right-6" />
               <p className="text-muted-foreground leading-relaxed mb-6 italic">"{t.quote}"</p>
               <div className="flex items-center gap-3 border-t border-border pt-4">
@@ -302,15 +338,18 @@ const Index = () => {
         <div className="bg-secondary rounded-3xl p-10 lg:p-20 text-white">
           <h2 className="font-heading text-3xl font-extrabold mb-12 text-center">Why <span className="text-primary">ReFA</span><span className="text-white">N</span>?</h2>
           <div className="grid md:grid-cols-3 gap-8">
-            {values.map((v) => (
-              <div key={v.title} className="flex flex-col gap-4 bg-white/5 p-8 rounded-2xl border border-white/10 backdrop-blur-sm text-center hover:bg-white/10 transition-colors">
-                <div className="mx-auto w-14 h-14 rounded-full bg-white/10 flex items-center justify-center">
-                  <v.icon className="h-6 w-6 text-primary" />
+            {home.values.map((v, i) => {
+              const Icon = [Target, Globe, Shield][i % 3];
+              return (
+                <div key={i} className="flex flex-col gap-4 bg-white/5 p-8 rounded-2xl border border-white/10 backdrop-blur-sm text-center hover:bg-white/10 transition-colors">
+                  <div className="mx-auto w-14 h-14 rounded-full bg-white/10 flex items-center justify-center">
+                    <Icon className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="font-heading font-bold text-lg">{v.title}</h3>
+                  <p className="text-sm text-white/70">{v.desc}</p>
                 </div>
-                <h3 className="font-heading font-bold text-lg">{v.title}</h3>
-                <p className="text-sm text-white/70">{v.desc}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -344,14 +383,12 @@ const Index = () => {
       <section className="container py-12 pb-20">
         <div className="relative rounded-[2rem] overflow-hidden p-12 lg:p-20 text-center text-white shadow-elevated">
           <div className="absolute inset-0">
-            <img src="/modam_teach.jpg" alt="ReFAN Teaching" className="w-full h-full object-cover" />
+            <img src={home.ctaImage} alt="ReFAN Teaching" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-black/50" />
           </div>
           <div className="relative z-10 max-w-2xl mx-auto flex flex-col items-center gap-6">
-            <h2 className="font-heading text-3xl lg:text-5xl font-extrabold">How will you help today?</h2>
-            <p className="text-white/90 text-lg leading-relaxed">
-              Every donation goes directly toward empowering children and widows in Dzaleka. We are 100% refugee-run and transparent in our mission.
-            </p>
+            <h2 className="font-heading text-3xl lg:text-5xl font-extrabold" dangerouslySetInnerHTML={{ __html: home.ctaHeading }} />
+            <div className="text-white/90 text-lg leading-relaxed" dangerouslySetInnerHTML={{ __html: home.ctaBody }} />
             <div className="flex flex-wrap justify-center gap-4 mt-4">
               <Button asChild size="lg" className="btn-hover bg-primary text-white hover:bg-primary/90 font-extrabold text-lg px-10 py-6 rounded-2xl shadow-xl">
                 <Link to="/donate">Partner With Us</Link>

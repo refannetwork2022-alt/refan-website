@@ -1,23 +1,37 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Heart, Users, Handshake, ArrowRight, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { store } from "@/lib/store";
+import { store, GetInvolvedSettings } from "@/lib/store";
 import CountrySearch from "@/components/CountrySearch";
 
-const ways = [
-  { icon: Heart, title: "Donate", desc: "Help fund education, community resilience, and bereavement support for orphans and widows in Dzaleka.", link: "/donate", cta: "Donate Now" },
-  { icon: Users, title: "Volunteer", desc: "Support ReFAN on the ground in Dzaleka or remotely with skills like teaching, mentoring, or advocacy.", link: "#form", cta: "Sign Up" },
-  { icon: Handshake, title: "Sponsor", desc: "Partner with ReFAN to sponsor a child's education or fund a specific program in the camp.", link: "#form", cta: "Become a Sponsor" },
-  { icon: UserPlus, title: "Become a Member", desc: "Register as a ReFAN member. Join our community and be part of lasting change in Dzaleka.", link: "/register", cta: "Register Now" },
+const waysDefault = [
+  { title: "Donate", desc: "Help fund education, community resilience, and bereavement support for orphans and widows in Dzaleka.", cta: "Donate Now" },
+  { title: "Volunteer", desc: "Support ReFAN on the ground in Dzaleka or remotely with skills like teaching, mentoring, or advocacy.", cta: "Sign Up" },
+  { title: "Sponsor", desc: "Partner with ReFAN to sponsor a child's education or fund a specific program in the camp.", cta: "Become a Sponsor" },
+  { title: "Become a Member", desc: "Register as a ReFAN member. Join our community and be part of lasting change in Dzaleka.", cta: "Register Now" },
 ];
+const waysLinks = ["/donate", "#form", "#form", "/register"];
+const waysIcons = [Heart, Users, Handshake, UserPlus];
+
+const GI_DEFAULTS: GetInvolvedSettings = {
+  pageTitle: 'Join the <span class="text-primary">Movement</span>',
+  pageSubtitle: "Together, we can create lasting change. Your support empowers communities and transforms lives. Choose your path to make an impact today.",
+  ways: waysDefault,
+};
 
 const inputClass = "w-full px-4 py-3 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring outline-none";
 
 const GetInvolved = () => {
   const { toast } = useToast();
+  const [gd, setGd] = useState<GetInvolvedSettings>(GI_DEFAULTS);
+  useEffect(() => {
+    store.getPageSettings<GetInvolvedSettings>("getinvolved").then((data) => {
+      if (data) setGd({ ...GI_DEFAULTS, ...data });
+    });
+  }, []);
   const phoneCodes = [
     { code: "+265", country: "MW" }, { code: "+1", country: "US" }, { code: "+44", country: "GB" },
     { code: "+254", country: "KE" }, { code: "+255", country: "TZ" }, { code: "+256", country: "UG" },
@@ -59,8 +73,8 @@ const GetInvolved = () => {
   return (
     <Layout>
       <section className="container pt-12 pb-8 text-center">
-        <h1 className="font-heading text-3xl lg:text-5xl font-extrabold italic mb-3">Join the <span className="text-primary">Movement</span></h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">Together, we can create lasting change. Your support empowers communities and transforms lives. Choose your path to make an impact today.</p>
+        <h1 className="font-heading text-3xl lg:text-5xl font-extrabold italic mb-3" dangerouslySetInnerHTML={{ __html: gd.pageTitle }} />
+        <div className="text-lg text-muted-foreground max-w-2xl mx-auto" dangerouslySetInnerHTML={{ __html: gd.pageSubtitle }} />
         <div className="flex flex-wrap justify-center gap-4 mt-6">
           <Button asChild className="btn-hover bg-primary hover:bg-primary/90 text-white font-bold rounded-full px-8">
             <Link to="/about">View Our Impact</Link>
@@ -73,16 +87,19 @@ const GetInvolved = () => {
 
       <section className="container py-12">
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {ways.map((w) => (
-            <div key={w.title} className="bg-card rounded-xl p-8 border border-border text-center hover:border-primary/50 hover:shadow-card transition-all">
+          {gd.ways.map((w, i) => {
+            const Icon = waysIcons[i % waysIcons.length];
+            const link = waysLinks[i % waysLinks.length];
+            return (
+            <div key={i} className="bg-card rounded-xl p-8 border border-border text-center hover:border-primary/50 hover:shadow-card transition-all">
               <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <w.icon className="h-6 w-6 text-primary" />
+                <Icon className="h-6 w-6 text-primary" />
               </div>
               <h3 className="font-heading font-bold text-lg mb-2">{w.title}</h3>
               <p className="text-sm text-muted-foreground mb-4">{w.desc}</p>
-              {w.link.startsWith('/') ? (
+              {link.startsWith('/') ? (
                 <Button asChild variant="outline" size="sm" className="btn-hover">
-                  <Link to={w.link}>{w.cta} <ArrowRight className="h-4 w-4" /></Link>
+                  <Link to={link}>{w.cta} <ArrowRight className="h-4 w-4" /></Link>
                 </Button>
               ) : (
                 <Button variant="outline" size="sm" className="btn-hover" onClick={() => document.getElementById('registration-form')?.scrollIntoView({ behavior: 'smooth' })}>
@@ -90,7 +107,8 @@ const GetInvolved = () => {
                 </Button>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 

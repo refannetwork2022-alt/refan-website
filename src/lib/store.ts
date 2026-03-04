@@ -115,6 +115,65 @@ export interface HeroSettings {
   subtitle: string;
 }
 
+export interface SiteSettings {
+  maintenanceMode: boolean;
+  maintenanceMessage: string;
+}
+
+export interface AboutSettings {
+  heroTitle: string;
+  heroSubtitle: string;
+  heroImage: string;
+  whoWeAreTitle: string;
+  whoWeAreBody: string;
+  whoWeAreImage1: string;
+  whoWeAreImage2: string;
+  missionQuote: string;
+  missionBody: string;
+  ctaHeading: string;
+  ctaBody: string;
+  leaders: Array<{ name: string; title: string; quote: string; image: string; email: string }>;
+  values: Array<{ title: string; description: string }>;
+}
+
+export interface ProgramsSettings {
+  pageTitle: string;
+  pageSubtitle: string;
+  programs: Array<{ title: string; description: string; stats: string; image: string }>;
+}
+
+export interface HomeSettings {
+  impactStats: Array<{ number: number; label: string; suffix: string }>;
+  programs: Array<{ title: string; desc: string; image: string }>;
+  testimonials: Array<{ quote: string; name: string; role: string }>;
+  values: Array<{ title: string; desc: string }>;
+  ctaHeading: string;
+  ctaBody: string;
+  ctaImage: string;
+}
+
+export interface ContactPageSettings {
+  pageTitle: string;
+  pageSubtitle: string;
+  email: string;
+  emailSub: string;
+  phone: string;
+  phoneSub: string;
+  location: string;
+  locationSub: string;
+}
+
+export interface DonateSettings {
+  pageTitle: string;
+  pageSubtitle: string;
+}
+
+export interface GetInvolvedSettings {
+  pageTitle: string;
+  pageSubtitle: string;
+  ways: Array<{ title: string; desc: string; cta: string }>;
+}
+
 export interface ContactMessage {
   id: string;
   name: string;
@@ -479,5 +538,31 @@ export const store = {
       await setDoc(doc(db, "settings", "hero"), settings);
       return true;
     } catch (e) { console.error("saveHeroSettings:", e); return false; }
+  },
+
+  // ─── Site Settings (maintenance mode) ─────
+  getSiteSettings: async (): Promise<SiteSettings | null> => {
+    try {
+      const snap = await getDoc(doc(db, "settings", "site"));
+      if (snap.exists()) return snap.data() as SiteSettings;
+      return null;
+    } catch (e) { console.error("getSiteSettings:", e); return null; }
+  },
+  saveSiteSettings: async (settings: SiteSettings): Promise<boolean> => {
+    try { await setDoc(doc(db, "settings", "site"), settings); return true; }
+    catch (e) { console.error("saveSiteSettings:", e); return false; }
+  },
+
+  // ─── Page Settings (generic get/save) ─────
+  getPageSettings: async <T>(page: string): Promise<T | null> => {
+    try {
+      const snap = await getDoc(doc(db, "settings", page));
+      if (snap.exists()) return snap.data() as T;
+      return null;
+    } catch (e) { console.error(`get ${page} settings:`, e); return null; }
+  },
+  savePageSettings: async (page: string, settings: Record<string, any>): Promise<boolean> => {
+    try { await setDoc(doc(db, "settings", page), settings); return true; }
+    catch (e) { console.error(`save ${page} settings:`, e); return false; }
   },
 };
