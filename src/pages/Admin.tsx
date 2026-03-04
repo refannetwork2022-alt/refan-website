@@ -401,12 +401,12 @@ const Admin = () => {
       "Phone": `${m.phoneCode} ${m.phone}`,
       "Gender": m.gender,
       "Marital Status": m.maritalStatus,
-      "Date of Birth": m.dateOfBirth ? new Date(m.dateOfBirth + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
+      "Date of Birth": m.dateOfBirth ? m.dateOfBirth : '',
       "Family Size": m.familySize,
       "Branch": m.branchName,
       "Username": m.username,
-      "Registration Date": m.registrationDate ? new Date(m.registrationDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
-      "Expiry Date": m.expiryDate ? new Date(m.expiryDate + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
+      "Registration Date": m.registrationDate ? m.registrationDate.split('T')[0] : '',
+      "Expiry Date": m.expiryDate ? m.expiryDate.split('T')[0] : '',
     }));
     exportCSV(data as unknown as Record<string, unknown>[], "refan-members");
   };
@@ -1284,7 +1284,7 @@ const Admin = () => {
               <div className="space-y-4">
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground">Description</label>
-                  <textarea value={footerForm.description} onChange={(e) => setFooterForm({ ...footerForm, description: e.target.value })} className={inputClass + " resize-none"} rows={3} maxLength={500} />
+                  <RichTextEditor value={footerForm.description} onChange={(v) => setFooterForm({ ...footerForm, description: v })} placeholder="Footer description..." rows={3} />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground">Email</label>
@@ -1337,15 +1337,15 @@ const Admin = () => {
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground">Tagline (large text at top)</label>
-                  <input value={heroForm.tagline} onChange={(e) => setHeroForm({ ...heroForm, tagline: e.target.value })} className={inputClass} maxLength={100} />
+                  <RichTextEditor value={heroForm.tagline} onChange={(v) => setHeroForm({ ...heroForm, tagline: v })} placeholder="Tagline..." rows={2} />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground">Title</label>
-                  <input value={heroForm.title} onChange={(e) => setHeroForm({ ...heroForm, title: e.target.value })} className={inputClass} maxLength={200} />
+                  <RichTextEditor value={heroForm.title} onChange={(v) => setHeroForm({ ...heroForm, title: v })} placeholder="Title..." rows={2} />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground">Subtitle</label>
-                  <textarea value={heroForm.subtitle} onChange={(e) => setHeroForm({ ...heroForm, subtitle: e.target.value })} className={inputClass + " resize-none"} rows={3} maxLength={500} />
+                  <RichTextEditor value={heroForm.subtitle} onChange={(v) => setHeroForm({ ...heroForm, subtitle: v })} placeholder="Subtitle..." rows={3} />
                 </div>
                 <Button variant="default" size="sm" disabled={saving} onClick={async () => {
                   setSaving(true);

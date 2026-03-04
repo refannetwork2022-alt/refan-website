@@ -27,9 +27,7 @@ const Footer = () => {
       <div className="container pt-4 pb-16">
         {/* Top: Description */}
         <div className="text-center mb-10">
-          <p className="text-white/60 text-sm leading-relaxed max-w-lg mx-auto">
-            {info.description}
-          </p>
+          <div className="text-white/60 text-sm leading-relaxed max-w-lg mx-auto" dangerouslySetInnerHTML={{ __html: info.description }} />
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 items-start">

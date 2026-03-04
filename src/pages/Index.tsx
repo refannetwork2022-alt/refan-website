@@ -169,21 +169,15 @@ const Index = () => {
           </div>
           {/* Tagline - full width horizontal across the top */}
           <div className="relative z-10 w-full text-center pt-6 sm:pt-8 lg:pt-10 px-4">
-            <h2 className="font-heading text-xl sm:text-4xl lg:text-7xl font-extrabold text-white tracking-wider uppercase leading-tight">
-              {hero.tagline}
-            </h2>
+            <h2 className="font-heading text-xl sm:text-4xl lg:text-7xl font-extrabold text-white tracking-wider uppercase leading-tight" dangerouslySetInnerHTML={{ __html: hero.tagline }} />
           </div>
           {/* Main content - pinned to left */}
           <div className="absolute z-10 top-[7rem] sm:top-36 lg:top-40 left-6 lg:left-10 max-w-xl flex flex-col gap-3">
             <span className="inline-flex items-center gap-2 w-fit px-3 py-1 rounded-full bg-primary/20 backdrop-blur-md text-primary font-bold text-xs uppercase tracking-widest border border-primary/30">
               Refugee-Led Initiative
             </span>
-            <h1 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight">
-              {hero.title}
-            </h1>
-            <p className="text-base text-gray-200 leading-relaxed max-w-md">
-              {hero.subtitle}
-            </p>
+            <h1 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight" dangerouslySetInnerHTML={{ __html: hero.title }} />
+            <div className="text-base text-gray-200 leading-relaxed max-w-md" dangerouslySetInnerHTML={{ __html: hero.subtitle }} />
             <div className="flex flex-wrap gap-3 mt-1">
               <Button asChild size="lg" className="btn-hover bg-primary hover:bg-primary/90 text-white font-bold shadow-lg px-8">
                 <Link to="/donate"><Heart className="h-5 w-5" /> Donate Now</Link>
