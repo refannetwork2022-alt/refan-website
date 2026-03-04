@@ -116,7 +116,7 @@ const About = () => {
 
       <section className="container py-16">
         <div className="text-center mb-16">
-          <h2 className="font-heading text-3xl md:text-4xl font-extrabold mb-4"><span className="text-secondary">Leadership</span> Team</h2>
+          <h2 className="font-heading text-3xl md:text-4xl font-extrabold mb-4"><span className="text-secondary">Our</span> Board</h2>
           <p className="text-muted-foreground max-w-xl mx-auto">The visionary leaders steering ReFAN toward a brighter, healthier future for all.</p>
         </div>
         <div className="grid md:grid-cols-2 gap-12 max-w-4xl mx-auto">

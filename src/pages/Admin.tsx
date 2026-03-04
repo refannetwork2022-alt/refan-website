@@ -622,6 +622,25 @@ const Admin = () => {
                 {members.length > 0 && (
                   <>
                     <Button variant="outline" size="sm" onClick={exportMembersCSV}><Download className="h-4 w-4" /> Export CSV</Button>
+                    <Button variant="outline" size="sm" onClick={async () => {
+                      let fixed = 0;
+                      for (const m of members) {
+                        if (!m.expiryDate || !m.expiryDate.match(/^\d{4}-\d{2}-\d{2}/)) {
+                          let base = m.registrationDate ? new Date(m.registrationDate) : new Date();
+                          if (isNaN(base.getTime())) base = new Date();
+                          base.setMonth(base.getMonth() + 3);
+                          const expiryStr = base.toISOString().split('T')[0];
+                          await updateDoc(doc(db, "members", m.id), { expiryDate: expiryStr });
+                          fixed++;
+                        }
+                      }
+                      if (fixed > 0) {
+                        loadData();
+                        toast({ title: `Fixed expiry dates for ${fixed} member${fixed > 1 ? 's' : ''}` });
+                      } else {
+                        toast({ title: 'All members already have valid expiry dates' });
+                      }
+                    }}><Settings className="h-4 w-4" /> Fix Expiry Dates</Button>
                     <Button variant="destructive" size="sm" onClick={removeDuplicateMembers}><Trash2 className="h-4 w-4" /> Remove Duplicates</Button>
                   </>
                 )}
@@ -771,9 +790,9 @@ const Admin = () => {
                         <td className="py-3 px-3 text-xs">{m.username}</td>
                         <td className="py-3 px-3 text-xs">{m.branchName}</td>
                         <td className="py-3 px-3 text-xs">{m.registrationDate ? new Date(m.registrationDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase() : ''}</td>
-                        <td className={`py-3 px-3 text-xs ${m.expiryDate && new Date(m.expiryDate) < new Date() ? 'text-red-600 font-bold' : ''}`}>
-                          {m.expiryDate ? new Date(m.expiryDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase() : ''}
-                          {m.expiryDate && new Date(m.expiryDate) < new Date() && <span className="block text-[10px]">EXPIRED</span>}
+                        <td className={`py-3 px-3 text-xs ${m.expiryDate && new Date(m.expiryDate).getTime() < Date.now() ? 'text-red-600 font-bold' : ''}`}>
+                          {m.expiryDate ? (() => { const dt = new Date(m.expiryDate); return isNaN(dt.getTime()) ? m.expiryDate : dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase(); })() : <span className="text-amber-500">NO EXPIRY</span>}
+                          {m.expiryDate && new Date(m.expiryDate).getTime() < Date.now() && !isNaN(new Date(m.expiryDate).getTime()) && <span className="block text-[10px]">EXPIRED</span>}
                         </td>
                         <td className="py-3 px-3 flex gap-1">
                           <Button variant="outline" size="sm" title="Renew Membership" onClick={() => {
