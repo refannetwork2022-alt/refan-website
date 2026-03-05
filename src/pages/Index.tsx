@@ -111,7 +111,7 @@ function useCountUp(target: number, inView: boolean) {
 }
 
 const StatCard = ({ stat, inView }: { stat: typeof impactStats[0]; inView: boolean }) => {
-  const count = useCountUp(stat.number, inView);
+  const count = useCountUp(Number(stat.number) || 0, inView);
   return (
     <div className="bg-card p-8 rounded-2xl border border-border flex flex-col items-center text-center group hover:border-primary hover:shadow-card transition-all">
       <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-4 group-hover:scale-110 transition-transform">
@@ -177,7 +177,16 @@ const Index = () => {
       if (data) setHero({ ...HERO_DEFAULTS, ...data });
     });
     store.getPageSettings<HomeSettings>("home").then((data) => {
-      if (data) setHome({ ...HOME_DEFAULTS, ...data });
+      if (data) {
+        if (data.impactStats) {
+          data.impactStats = data.impactStats.map((s, i) => ({
+            ...HOME_DEFAULTS.impactStats[i],
+            ...s,
+            number: Number(s.number) || HOME_DEFAULTS.impactStats[i]?.number || 0,
+          }));
+        }
+        setHome({ ...HOME_DEFAULTS, ...data });
+      }
     });
   }, []);
 
