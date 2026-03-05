@@ -87,9 +87,15 @@ const testimonials = [
 function useCountUp(target: number, inView: boolean) {
   const [count, setCount] = useState(0);
   const hasAnimated = useRef(false);
+  const lastTarget = useRef(0);
 
   useEffect(() => {
-    if (!inView || hasAnimated.current) return;
+    // Reset if target changed (data loaded from Firestore)
+    if (target !== lastTarget.current) {
+      hasAnimated.current = false;
+      lastTarget.current = target;
+    }
+    if (!inView || hasAnimated.current || target <= 0) return;
     hasAnimated.current = true;
     const duration = 2000;
     const steps = 60;
