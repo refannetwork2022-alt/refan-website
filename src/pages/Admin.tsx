@@ -191,11 +191,11 @@ const Admin = () => {
   const photoRef = useRef<HTMLInputElement>(null);
   const docRef = useRef<HTMLInputElement>(null);
 
-  const [storyForm, setStoryForm] = useState({ title: '', excerpt: '', content: '', image: '', video: '', category: 'story' as 'story' | 'announcement' });
+  const [storyForm, setStoryForm] = useState({ title: '', subtitle: '', excerpt: '', content: '', image: '', video: '', category: 'story' as 'story' | 'announcement', donationCount: 0 });
   const [blogForm, setBlogForm] = useState({ title: '', excerpt: '', image: '', author: 'ReFAN Team', tags: '' });
   const [contentBlocks, setContentBlocks] = useState<Array<{ type: 'text' | 'image' | 'video'; value?: string; url?: string; caption?: string }>>([{ type: 'text', value: '' }]);
   const [galleryForm, setGalleryForm] = useState({ title: '', url: '', type: 'photo' as 'photo' | 'video' });
-  const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', image: '', video: '', donationCount: 0 });
+  const [announcementForm, setAnnouncementForm] = useState({ title: '', subtitle: '', content: '', image: '', video: '', donationCount: 0 });
   const [editingAnnouncement, setEditingAnnouncement] = useState<string | null>(null);
   const [editingStory, setEditingStory] = useState<string | null>(null);
   const [editingBlog, setEditingBlog] = useState<string | null>(null);
@@ -234,12 +234,12 @@ const Admin = () => {
       toast({ title: "Announcement added!" });
     }
     setAnnouncements(await store.getAnnouncements());
-    setAnnouncementForm({ title: '', content: '', image: '', video: '', donationCount: 0 });
+    setAnnouncementForm({ title: '', subtitle: '', content: '', image: '', video: '', donationCount: 0 });
     setSaving(false);
   };
 
   const startEditAnnouncement = (a: Announcement) => {
-    setAnnouncementForm({ title: a.title, content: a.content, image: a.image || '', video: a.video || '', donationCount: a.donationCount || 0 });
+    setAnnouncementForm({ title: a.title, subtitle: a.subtitle || '', content: a.content, image: a.image || '', video: a.video || '', donationCount: a.donationCount || 0 });
     setEditingAnnouncement(a.id);
   };
 
@@ -262,12 +262,12 @@ const Admin = () => {
       toast({ title: "Story added!" });
     }
     setStories(await store.getStories());
-    setStoryForm({ title: '', excerpt: '', content: '', image: '', video: '', category: 'story' });
+    setStoryForm({ title: '', subtitle: '', excerpt: '', content: '', image: '', video: '', category: 'story', donationCount: 0 });
     setSaving(false);
   };
 
   const startEditStory = (s: Story) => {
-    setStoryForm({ title: s.title, excerpt: s.excerpt, content: s.content, image: s.image || '', video: s.video || '', category: s.category });
+    setStoryForm({ title: s.title, subtitle: s.subtitle || '', excerpt: s.excerpt, content: s.content, image: s.image || '', video: s.video || '', category: s.category, donationCount: s.donationCount || 0 });
     setEditingStory(s.id);
   };
 
@@ -586,17 +586,17 @@ const Admin = () => {
             <h1 className="font-heading text-2xl font-bold mb-8">Dashboard Overview</h1>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
-                { label: 'Members', count: members.length, icon: UserPlus },
-                { label: 'Stories', count: stories.length, icon: Megaphone },
-                { label: 'Blog Posts', count: blogs.length, icon: FileText },
-                { label: 'Gallery Items', count: gallery.length, icon: Image },
-                { label: 'Volunteers', count: volunteers.filter(v => v.type === 'volunteer').length, icon: Users },
-                { label: 'Sponsors', count: volunteers.filter(v => v.type === 'sponsor').length, icon: Heart },
-                { label: 'Subscribers', count: subscribers.length, icon: Mail },
-                { label: 'Messages', count: messages.length, icon: MessageSquare },
-                { label: 'Donations', count: donations.length, icon: Heart },
+                { label: 'Members', count: members.length, icon: UserPlus, tab: 'members' as Tab },
+                { label: 'Stories', count: stories.length, icon: Megaphone, tab: 'stories' as Tab },
+                { label: 'Blog Posts', count: blogs.length, icon: FileText, tab: 'blogs' as Tab },
+                { label: 'Gallery Items', count: gallery.length, icon: Image, tab: 'gallery' as Tab },
+                { label: 'Volunteers', count: volunteers.filter(v => v.type === 'volunteer').length, icon: Users, tab: 'volunteers' as Tab },
+                { label: 'Sponsors', count: volunteers.filter(v => v.type === 'sponsor').length, icon: Heart, tab: 'sponsors' as Tab },
+                { label: 'Subscribers', count: subscribers.length, icon: Mail, tab: 'subscribers' as Tab },
+                { label: 'Messages', count: messages.length, icon: MessageSquare, tab: 'messages' as Tab },
+                { label: 'Donations', count: donations.length, icon: Heart, tab: 'donations' as Tab },
               ].map((s) => (
-                <div key={s.label} className="bg-card rounded-xl p-6 shadow-soft">
+                <div key={s.label} className="bg-card rounded-xl p-6 shadow-soft cursor-pointer hover:shadow-elevated hover:border-primary transition-all" onClick={() => setTab(s.tab)}>
                   <div className="flex items-center justify-between mb-2">
                     <s.icon className="h-5 w-5 text-primary" />
                   </div>
@@ -873,6 +873,7 @@ const Admin = () => {
               <h3 className="font-heading font-bold mb-4">{editingAnnouncement ? 'Edit Announcement' : 'Add New Announcement'}</h3>
               <div className="space-y-3">
                 <input placeholder="Title" value={announcementForm.title} onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })} className={inputClass} maxLength={200} />
+                <input placeholder="Subtitle (Name of person)" value={announcementForm.subtitle} onChange={(e) => setAnnouncementForm({ ...announcementForm, subtitle: e.target.value })} className={inputClass} maxLength={200} />
                 <RichTextEditor value={announcementForm.content} onChange={(v) => setAnnouncementForm({ ...announcementForm, content: v })} placeholder="Content (description)" rows={4} />
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-muted-foreground">Image</label>
@@ -886,7 +887,7 @@ const Admin = () => {
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingAnnouncement ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                     {editingAnnouncement ? 'Update' : 'Add Announcement'}
                   </Button>
-                  {editingAnnouncement && <Button variant="ghost" size="sm" onClick={() => { setEditingAnnouncement(null); setAnnouncementForm({ title: '', content: '', image: '', video: '', donationCount: 0 }); }}>Cancel</Button>}
+                  {editingAnnouncement && <Button variant="ghost" size="sm" onClick={() => { setEditingAnnouncement(null); setAnnouncementForm({ title: '', subtitle: '', content: '', image: '', video: '', donationCount: 0 }); }}>Cancel</Button>}
                 </div>
               </div>
             </div>
@@ -918,6 +919,7 @@ const Admin = () => {
               <h3 className="font-heading font-bold mb-4">{editingStory ? 'Edit Story' : 'Add New'}</h3>
               <div className="space-y-3">
                 <input placeholder="Title" value={storyForm.title} onChange={(e) => setStoryForm({ ...storyForm, title: e.target.value })} className={inputClass} maxLength={200} />
+                <input placeholder="Subtitle (Name of person)" value={storyForm.subtitle} onChange={(e) => setStoryForm({ ...storyForm, subtitle: e.target.value })} className={inputClass} maxLength={200} />
                 <input placeholder="Excerpt" value={storyForm.excerpt} onChange={(e) => setStoryForm({ ...storyForm, excerpt: e.target.value })} className={inputClass} maxLength={300} />
                 <RichTextEditor value={storyForm.content} onChange={(v) => setStoryForm({ ...storyForm, content: v })} placeholder="Write content here..." rows={4} />
                 <div className="space-y-1">
@@ -930,12 +932,13 @@ const Admin = () => {
                   <option value="story">Story</option>
                   <option value="announcement">Announcement</option>
                 </select>
+                <input type="number" placeholder="Donation Count" value={storyForm.donationCount} onChange={(e) => setStoryForm({ ...storyForm, donationCount: Number(e.target.value) || 0 })} className={inputClass + " w-48"} min={0} />
                 <div className="flex gap-2">
                   <Button onClick={addStory} variant="default" size="sm" disabled={saving}>
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingStory ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                     {editingStory ? 'Update' : 'Add Story'}
                   </Button>
-                  {editingStory && <Button variant="ghost" size="sm" onClick={() => { setEditingStory(null); setStoryForm({ title: '', excerpt: '', content: '', image: '', video: '', category: 'story' }); }}>Cancel</Button>}
+                  {editingStory && <Button variant="ghost" size="sm" onClick={() => { setEditingStory(null); setStoryForm({ title: '', subtitle: '', excerpt: '', content: '', image: '', video: '', category: 'story', donationCount: 0 }); }}>Cancel</Button>}
                 </div>
               </div>
             </div>
