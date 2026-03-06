@@ -84,35 +84,34 @@ const testimonials = [
   },
 ];
 
-// Animated counter hook
-function useCountUp(target: number, inView: boolean) {
+const StatCard = ({ stat }: { stat: typeof impactStats[0] }) => {
   const [count, setCount] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!inView || target <= 0) return;
-    let current = 0;
-    const duration = 2000;
-    const steps = 60;
-    const increment = target / steps;
-    const timer = setInterval(() => {
-      current += increment;
-      if (current >= target) {
-        setCount(target);
-        clearInterval(timer);
-      } else {
-        setCount(Math.floor(current));
-      }
-    }, duration / steps);
-    return () => clearInterval(timer);
-  }, [inView]);
+    const el = ref.current;
+    if (!el) return;
+    let done = false;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting || done) return;
+      done = true;
+      observer.disconnect();
+      const start = performance.now();
+      const duration = 2000;
+      const animate = (now: number) => {
+        const progress = Math.min((now - start) / duration, 1);
+        setCount(Math.floor(progress * stat.number));
+        if (progress < 1) requestAnimationFrame(animate);
+        else setCount(stat.number);
+      };
+      requestAnimationFrame(animate);
+    }, { threshold: 0.1 });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [stat.number]);
 
-  return count;
-}
-
-const StatCard = ({ stat, inView }: { stat: typeof impactStats[0]; inView: boolean }) => {
-  const count = useCountUp(stat.number, inView);
   return (
-    <div className="bg-card p-8 rounded-2xl border border-border flex flex-col items-center text-center group hover:border-primary hover:shadow-card transition-all">
+    <div ref={ref} className="bg-card p-8 rounded-2xl border border-border flex flex-col items-center text-center group hover:border-primary hover:shadow-card transition-all">
       <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-4 group-hover:scale-110 transition-transform">
         <stat.icon className="h-7 w-7" />
       </div>
@@ -159,8 +158,6 @@ const defaultProgramImages = [educationImg, healthImg, livelihoodImg];
 
 const Index = () => {
   const { toast } = useToast();
-  const [statsInView, setStatsInView] = useState(false);
-  const statsRef = useRef<HTMLDivElement>(null);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [hero, setHero] = useState<HeroSettings>(HERO_DEFAULTS);
@@ -180,14 +177,6 @@ const Index = () => {
     });
   }, []);
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setStatsInView(true); },
-      { threshold: 0.3 }
-    );
-    if (statsRef.current) observer.observe(statsRef.current);
-    return () => observer.disconnect();
-  }, []);
 
   return (
     <Layout>
@@ -222,10 +211,10 @@ const Index = () => {
       </section>
 
       {/* Impact stats with animation */}
-      <section className="container py-12" ref={statsRef}>
+      <section className="container py-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {impactStats.map((stat, i) => (
-            <StatCard key={i} stat={stat} inView={statsInView} />
+            <StatCard key={i} stat={stat} />
           ))}
         </div>
       </section>
