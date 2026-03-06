@@ -20,6 +20,7 @@ const impactStats = [
   { number: 2022, label: "Founded", icon: Home, suffix: "" },
   { number: 100, label: "Orphans Supported", icon: Baby, suffix: "+" },
   { number: 50, label: "Widows Empowered", icon: User, suffix: "+" },
+  { number: 30, label: "Bereaved Families Supported", icon: Heart, suffix: "+" },
 ];
 
 const programs = [
@@ -86,21 +87,13 @@ const testimonials = [
 // Animated counter hook
 function useCountUp(target: number, inView: boolean) {
   const [count, setCount] = useState(0);
-  const hasAnimated = useRef(false);
-  const lastTarget = useRef(0);
 
   useEffect(() => {
-    // Reset if target changed (data loaded from Firestore)
-    if (target !== lastTarget.current) {
-      hasAnimated.current = false;
-      lastTarget.current = target;
-    }
-    if (!inView || hasAnimated.current || target <= 0) return;
-    hasAnimated.current = true;
+    if (!inView || target <= 0) return;
+    let current = 0;
     const duration = 2000;
     const steps = 60;
     const increment = target / steps;
-    let current = 0;
     const timer = setInterval(() => {
       current += increment;
       if (current >= target) {
@@ -111,13 +104,13 @@ function useCountUp(target: number, inView: boolean) {
       }
     }, duration / steps);
     return () => clearInterval(timer);
-  }, [target, inView]);
+  }, [inView]);
 
   return count;
 }
 
 const StatCard = ({ stat, inView }: { stat: typeof impactStats[0]; inView: boolean }) => {
-  const count = useCountUp(Number(stat.number) || 0, inView);
+  const count = useCountUp(stat.number, inView);
   return (
     <div className="bg-card p-8 rounded-2xl border border-border flex flex-col items-center text-center group hover:border-primary hover:shadow-card transition-all">
       <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-4 group-hover:scale-110 transition-transform">
@@ -183,16 +176,7 @@ const Index = () => {
       if (data) setHero({ ...HERO_DEFAULTS, ...data });
     });
     store.getPageSettings<HomeSettings>("home").then((data) => {
-      if (data) {
-        if (data.impactStats) {
-          data.impactStats = data.impactStats.map((s, i) => ({
-            ...HOME_DEFAULTS.impactStats[i],
-            ...s,
-            number: Number(s.number) || HOME_DEFAULTS.impactStats[i]?.number || 0,
-          }));
-        }
-        setHome({ ...HOME_DEFAULTS, ...data });
-      }
+      if (data) setHome({ ...HOME_DEFAULTS, ...data });
     });
   }, []);
 
@@ -239,9 +223,9 @@ const Index = () => {
 
       {/* Impact stats with animation */}
       <section className="container py-12" ref={statsRef}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {home.impactStats.map((stat, i) => (
-            <StatCard key={i} stat={{ ...stat, icon: [Home, Baby, User][i % 3] }} inView={statsInView} />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {impactStats.map((stat, i) => (
+            <StatCard key={i} stat={stat} inView={statsInView} />
           ))}
         </div>
       </section>
