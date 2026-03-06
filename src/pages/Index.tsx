@@ -16,12 +16,13 @@ const galleryPreview = [
   { src: "/gallery-children-playing.jpg", alt: "Children playing" },
 ];
 
-const impactStats = [
+const STATS_DEFAULTS = [
   { number: 2022, label: "Founded", icon: Home, suffix: "" },
   { number: 100, label: "Orphans Supported", icon: Baby, suffix: "+" },
   { number: 50, label: "Widows Empowered", icon: User, suffix: "+" },
   { number: 30, label: "Bereaved Families Supported", icon: Heart, suffix: "+" },
 ];
+const STATS_ICONS = [Home, Baby, User, Heart];
 
 const programs = [
   { title: "Education Support", desc: "Providing education support to all orphaned children in Dzaleka Refugee Camp, ensuring every child has access to learning.", icon: BookOpen, image: educationImg },
@@ -84,7 +85,7 @@ const testimonials = [
   },
 ];
 
-const StatCard = ({ stat }: { stat: typeof impactStats[0] }) => {
+const StatCard = ({ stat }: { stat: typeof STATS_DEFAULTS[0] }) => {
   const [count, setCount] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -162,6 +163,7 @@ const Index = () => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [hero, setHero] = useState<HeroSettings>(HERO_DEFAULTS);
   const [home, setHome] = useState<HomeSettings>(HOME_DEFAULTS);
+  const [stats, setStats] = useState(STATS_DEFAULTS);
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const copyLink = () => { navigator.clipboard.writeText(shareUrl); toast({ title: "Link copied!" }); };
 
@@ -173,7 +175,18 @@ const Index = () => {
       if (data) setHero({ ...HERO_DEFAULTS, ...data });
     });
     store.getPageSettings<HomeSettings>("home").then((data) => {
-      if (data) setHome({ ...HOME_DEFAULTS, ...data });
+      if (data) {
+        setHome({ ...HOME_DEFAULTS, ...data });
+        if (data.impactStats && data.impactStats.length > 0) {
+          setStats(data.impactStats.map((s, i) => ({
+            ...STATS_DEFAULTS[i] || STATS_DEFAULTS[0],
+            label: s.label || STATS_DEFAULTS[i]?.label || '',
+            suffix: s.suffix ?? STATS_DEFAULTS[i]?.suffix ?? '',
+            number: Number(s.number) > 0 ? Number(s.number) : STATS_DEFAULTS[i]?.number || 0,
+            icon: STATS_ICONS[i % STATS_ICONS.length],
+          })));
+        }
+      }
     });
   }, []);
 
@@ -213,8 +226,8 @@ const Index = () => {
       {/* Impact stats with animation */}
       <section className="container py-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {impactStats.map((stat, i) => (
-            <StatCard key={i} stat={stat} />
+          {stats.map((stat, i) => (
+            <StatCard key={`${i}-${stat.number}`} stat={stat} />
           ))}
         </div>
       </section>

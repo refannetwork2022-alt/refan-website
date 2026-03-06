@@ -97,7 +97,7 @@ const Admin = () => {
     programs: [{ title: "Education Support", description: "", stats: "100+ orphans supported", image: "" }, { title: "Community Resilience", description: "", stats: "50+ widows empowered", image: "" }, { title: "Bereavement Support", description: "", stats: "Ongoing community care", image: "" }],
   });
   const [homeForm, setHomeForm] = useState<HomeSettings>({
-    impactStats: [{ number: 2022, label: "Founded", suffix: "" }, { number: 100, label: "Orphans Supported", suffix: "+" }, { number: 50, label: "Widows Empowered", suffix: "+" }],
+    impactStats: [{ number: 2022, label: "Founded", suffix: "" }, { number: 100, label: "Orphans Supported", suffix: "+" }, { number: 50, label: "Widows Empowered", suffix: "+" }, { number: 30, label: "Bereaved Families Supported", suffix: "+" }],
     programs: [{ title: "Education Support", desc: "", image: "" }, { title: "Community Resilience", desc: "", image: "" }, { title: "Bereavement Support", desc: "", image: "" }],
     testimonials: [{ quote: "", name: "Marie K.", role: "Widow & Mother of 3" }, { quote: "", name: "Emmanuel T.", role: "Orphan, Age 16" }, { quote: "", name: "Esperance N.", role: "Widow & Workshop Leader" }],
     values: [{ title: "Refugee-Led", desc: "" }, { title: "Women-Led", desc: "" }, { title: "Self-Funded", desc: "" }],
