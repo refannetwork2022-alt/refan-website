@@ -177,15 +177,18 @@ const Index = () => {
     store.getPageSettings<HomeSettings>("home").then((data) => {
       if (data) {
         setHome({ ...HOME_DEFAULTS, ...data });
-        if (data.impactStats && data.impactStats.length > 0) {
-          setStats(data.impactStats.map((s, i) => ({
-            ...STATS_DEFAULTS[i] || STATS_DEFAULTS[0],
-            label: s.label || STATS_DEFAULTS[i]?.label || '',
-            suffix: s.suffix ?? STATS_DEFAULTS[i]?.suffix ?? '',
-            number: Number(s.number) > 0 ? Number(s.number) : STATS_DEFAULTS[i]?.number || 0,
+        const savedStats = data.impactStats || [];
+        setStats(STATS_DEFAULTS.map((def, i) => {
+          const s = savedStats[i];
+          if (!s) return def;
+          return {
+            ...def,
+            label: s.label || def.label,
+            suffix: s.suffix ?? def.suffix,
+            number: Number(s.number) > 0 ? Number(s.number) : def.number,
             icon: STATS_ICONS[i % STATS_ICONS.length],
-          })));
-        }
+          };
+        }));
       }
     });
   }, []);

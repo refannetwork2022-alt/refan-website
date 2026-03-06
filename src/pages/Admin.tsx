@@ -144,7 +144,12 @@ const Admin = () => {
     const programsData = await store.getPageSettings<ProgramsSettings>("programs");
     if (programsData) setProgramsForm(prev => ({ ...prev, ...programsData }));
     const homeData = await store.getPageSettings<HomeSettings>("home");
-    if (homeData) setHomeForm(prev => ({ ...prev, ...homeData }));
+    if (homeData) {
+      const defaultStats = [{ number: 2022, label: "Founded", suffix: "" }, { number: 100, label: "Orphans Supported", suffix: "+" }, { number: 50, label: "Widows Empowered", suffix: "+" }, { number: 30, label: "Bereaved Families Supported", suffix: "+" }];
+      const savedStats = homeData.impactStats || [];
+      const mergedStats = defaultStats.map((def, i) => savedStats[i] ? { ...def, ...savedStats[i], number: Number(savedStats[i].number) || def.number } : def);
+      setHomeForm(prev => ({ ...prev, ...homeData, impactStats: mergedStats }));
+    }
     const contactData = await store.getPageSettings<ContactPageSettings>("contact");
     if (contactData) setContactForm2(prev => ({ ...prev, ...contactData }));
     const donateData = await store.getPageSettings<DonateSettings>("donate");
@@ -181,7 +186,7 @@ const Admin = () => {
   const [blogForm, setBlogForm] = useState({ title: '', excerpt: '', image: '', author: 'ReFAN Team', tags: '' });
   const [contentBlocks, setContentBlocks] = useState<Array<{ type: 'text' | 'image' | 'video'; value?: string; url?: string; caption?: string }>>([{ type: 'text', value: '' }]);
   const [galleryForm, setGalleryForm] = useState({ title: '', url: '', type: 'photo' as 'photo' | 'video' });
-  const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', image: '', video: '' });
+  const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', image: '', video: '', donationCount: 0 });
   const [editingAnnouncement, setEditingAnnouncement] = useState<string | null>(null);
   const [editingStory, setEditingStory] = useState<string | null>(null);
   const [editingBlog, setEditingBlog] = useState<string | null>(null);
@@ -216,16 +221,16 @@ const Admin = () => {
       setEditingAnnouncement(null);
       toast({ title: "Announcement updated!" });
     } else {
-      await store.addAnnouncement({ ...announcementForm, donationCount: 0 });
+      await store.addAnnouncement({ ...announcementForm, donationCount: announcementForm.donationCount || 0 });
       toast({ title: "Announcement added!" });
     }
     setAnnouncements(await store.getAnnouncements());
-    setAnnouncementForm({ title: '', content: '', image: '', video: '' });
+    setAnnouncementForm({ title: '', content: '', image: '', video: '', donationCount: 0 });
     setSaving(false);
   };
 
   const startEditAnnouncement = (a: Announcement) => {
-    setAnnouncementForm({ title: a.title, content: a.content, image: a.image || '', video: a.video || '' });
+    setAnnouncementForm({ title: a.title, content: a.content, image: a.image || '', video: a.video || '', donationCount: a.donationCount || 0 });
     setEditingAnnouncement(a.id);
   };
 
@@ -866,12 +871,13 @@ const Admin = () => {
                   <input placeholder="Or paste Image URL" value={announcementForm.image} onChange={(e) => setAnnouncementForm({ ...announcementForm, image: e.target.value })} className={inputClass} maxLength={500} />
                 </div>
                 <input placeholder="Video URL (YouTube, Vimeo, etc.)" value={announcementForm.video} onChange={(e) => setAnnouncementForm({ ...announcementForm, video: e.target.value })} className={inputClass} maxLength={500} />
+                <input type="number" placeholder="Donation Count" value={announcementForm.donationCount} onChange={(e) => setAnnouncementForm({ ...announcementForm, donationCount: Number(e.target.value) || 0 })} className={inputClass + " w-48"} min={0} />
                 <div className="flex gap-2">
                   <Button onClick={addAnnouncement} variant="default" size="sm" disabled={saving}>
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingAnnouncement ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                     {editingAnnouncement ? 'Update' : 'Add Announcement'}
                   </Button>
-                  {editingAnnouncement && <Button variant="ghost" size="sm" onClick={() => { setEditingAnnouncement(null); setAnnouncementForm({ title: '', content: '', image: '', video: '' }); }}>Cancel</Button>}
+                  {editingAnnouncement && <Button variant="ghost" size="sm" onClick={() => { setEditingAnnouncement(null); setAnnouncementForm({ title: '', content: '', image: '', video: '', donationCount: 0 }); }}>Cancel</Button>}
                 </div>
               </div>
             </div>
