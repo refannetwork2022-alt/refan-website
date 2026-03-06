@@ -112,7 +112,10 @@ const Admin = () => {
     pageTitle: "", pageSubtitle: "",
     ways: [{ title: "Donate", desc: "", cta: "Donate Now" }, { title: "Volunteer", desc: "", cta: "Sign Up" }, { title: "Sponsor", desc: "", cta: "Become a Sponsor" }, { title: "Become a Member", desc: "", cta: "Register Now" }],
   });
-  const [pageTab, setPageTab] = useState<'about' | 'programs' | 'home' | 'contact' | 'donate' | 'getinvolved'>('about');
+  const [pageTab, setPageTab] = useState<'about' | 'programs' | 'home' | 'contact' | 'donate' | 'getinvolved' | 'stories' | 'gallery' | 'blog'>('about');
+  const [storiesPageForm, setStoriesPageForm] = useState({ pageTitle: '<span class="text-secondary">Stories</span> & <span class="text-primary">Announcements</span>', pageSubtitle: 'Real impact stories from the communities we serve in Dzaleka.' });
+  const [galleryPageForm, setGalleryPageForm] = useState({ pageTitle: '<span class="text-primary">Life</span> in <span class="text-secondary">Dzaleka</span>', pageSubtitle: 'Capturing moments of growth, joy, and community action.' });
+  const [blogPageForm, setBlogPageForm] = useState({ pageTitle: '<span class="text-primary">Blog</span> & <span class="text-secondary">News</span>', pageSubtitle: 'Insights, updates, and perspectives on community development.' });
 
   const loadData = async () => {
     const [a, s, b, g, v, d, sub, msg, mem] = await Promise.all([
@@ -156,6 +159,12 @@ const Admin = () => {
     if (donateData) setDonateForm2(prev => ({ ...prev, ...donateData }));
     const giData = await store.getPageSettings<GetInvolvedSettings>("getinvolved");
     if (giData) setGiForm(prev => ({ ...prev, ...giData }));
+    const storiesPage = await store.getPageSettings<{ pageTitle: string; pageSubtitle: string }>("storiespage");
+    if (storiesPage) setStoriesPageForm(prev => ({ ...prev, ...storiesPage }));
+    const galleryPage = await store.getPageSettings<{ pageTitle: string; pageSubtitle: string }>("gallerypage");
+    if (galleryPage) setGalleryPageForm(prev => ({ ...prev, ...galleryPage }));
+    const blogPage = await store.getPageSettings<{ pageTitle: string; pageSubtitle: string }>("blogpage");
+    if (blogPage) setBlogPageForm(prev => ({ ...prev, ...blogPage }));
   };
 
   useEffect(() => {
@@ -1508,7 +1517,7 @@ const Admin = () => {
           <div>
             <h1 className="font-heading text-2xl font-bold mb-4">Edit Page Content</h1>
             <div className="flex flex-wrap gap-2 mb-6">
-              {([['about', 'About'], ['programs', 'Programs'], ['home', 'Home Page'], ['contact', 'Contact'], ['donate', 'Donate'], ['getinvolved', 'Get Involved']] as const).map(([k, l]) => (
+              {([['home', 'Home Page'], ['programs', 'Programs'], ['stories', 'Stories'], ['gallery', 'Gallery'], ['blog', 'Blog'], ['getinvolved', 'Get Involved'], ['about', 'About'], ['contact', 'Contact'], ['donate', 'Donate']] as const).map(([k, l]) => (
                 <button key={k} onClick={() => setPageTab(k)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${pageTab === k ? 'bg-primary text-white' : 'bg-card border border-border hover:bg-accent'}`}>{l}</button>
               ))}
             </div>
@@ -1701,6 +1710,42 @@ const Admin = () => {
                 ))}
                 <Button variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("getinvolved", giForm); setSaving(false); toast({ title: ok ? "Get Involved page saved!" : "Failed" }); }}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Get Involved Page
+                </Button>
+              </div>
+            )}
+            {pageTab === 'stories' && (
+              <div className="bg-card rounded-xl p-6 shadow-soft space-y-4">
+                <h3 className="font-bold">Stories & Announcements Page</h3>
+                <div><label className="text-xs font-semibold text-muted-foreground">Page Title</label>
+                  <RichTextEditor value={storiesPageForm.pageTitle} onChange={(v) => setStoriesPageForm({ ...storiesPageForm, pageTitle: v })} rows={2} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">Page Subtitle</label>
+                  <RichTextEditor value={storiesPageForm.pageSubtitle} onChange={(v) => setStoriesPageForm({ ...storiesPageForm, pageSubtitle: v })} rows={2} /></div>
+                <Button variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("storiespage", storiesPageForm); setSaving(false); toast({ title: ok ? "Stories page saved!" : "Failed" }); }}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Stories Page
+                </Button>
+              </div>
+            )}
+            {pageTab === 'gallery' && (
+              <div className="bg-card rounded-xl p-6 shadow-soft space-y-4">
+                <h3 className="font-bold">Gallery Page</h3>
+                <div><label className="text-xs font-semibold text-muted-foreground">Page Title</label>
+                  <RichTextEditor value={galleryPageForm.pageTitle} onChange={(v) => setGalleryPageForm({ ...galleryPageForm, pageTitle: v })} rows={2} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">Page Subtitle</label>
+                  <RichTextEditor value={galleryPageForm.pageSubtitle} onChange={(v) => setGalleryPageForm({ ...galleryPageForm, pageSubtitle: v })} rows={2} /></div>
+                <Button variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("gallerypage", galleryPageForm); setSaving(false); toast({ title: ok ? "Gallery page saved!" : "Failed" }); }}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Gallery Page
+                </Button>
+              </div>
+            )}
+            {pageTab === 'blog' && (
+              <div className="bg-card rounded-xl p-6 shadow-soft space-y-4">
+                <h3 className="font-bold">Blog & News Page</h3>
+                <div><label className="text-xs font-semibold text-muted-foreground">Page Title</label>
+                  <RichTextEditor value={blogPageForm.pageTitle} onChange={(v) => setBlogPageForm({ ...blogPageForm, pageTitle: v })} rows={2} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">Page Subtitle</label>
+                  <RichTextEditor value={blogPageForm.pageSubtitle} onChange={(v) => setBlogPageForm({ ...blogPageForm, pageSubtitle: v })} rows={2} /></div>
+                <Button variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("blogpage", blogPageForm); setSaving(false); toast({ title: ok ? "Blog page saved!" : "Failed" }); }}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Blog Page
                 </Button>
               </div>
             )}

@@ -19,6 +19,11 @@ const getEmbedUrl = (url: string): string | null => {
   return null;
 };
 
+const STORIES_DEFAULTS = {
+  pageTitle: '<span class="text-secondary">Stories</span> & <span class="text-primary">Announcements</span>',
+  pageSubtitle: 'Real impact stories from the communities we serve in Dzaleka.',
+};
+
 const Stories = () => {
   const { toast } = useToast();
   const [filter, setFilter] = useState<'all' | 'story' | 'announcement'>('all');
@@ -26,10 +31,12 @@ const Stories = () => {
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
   const [stories, setStories] = useState<Story[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [pg, setPg] = useState(STORIES_DEFAULTS);
 
   useEffect(() => {
     store.getStories().then(setStories);
     store.getAnnouncements().then(setAnnouncements);
+    store.getPageSettings<typeof STORIES_DEFAULTS>("storiespage").then((d) => { if (d) setPg({ ...STORIES_DEFAULTS, ...d }); });
   }, []);
 
   const filteredStories = filter === 'all' || filter === 'story' ? stories : [];
@@ -43,10 +50,8 @@ const Stories = () => {
   return (
     <Layout>
       <section className="container pt-12 pb-8">
-        <h1 className="font-heading text-3xl lg:text-5xl font-extrabold mb-3">
-          <span className="text-secondary">Stories</span> & <span className="text-primary">Announcements</span>
-        </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl">Real impact stories from the communities we serve in Dzaleka.</p>
+        <h1 className="font-heading text-3xl lg:text-5xl font-extrabold mb-3" dangerouslySetInnerHTML={{ __html: pg.pageTitle }} />
+        <div className="text-lg text-muted-foreground max-w-2xl" dangerouslySetInnerHTML={{ __html: pg.pageSubtitle }} />
       </section>
 
       <section className="container py-8 pb-20">

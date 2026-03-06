@@ -78,15 +78,22 @@ const sampleBlogPosts: BlogPost[] = [
   },
 ];
 
+const BLOG_DEFAULTS = {
+  pageTitle: '<span class="text-primary">Blog</span> & <span class="text-secondary">News</span>',
+  pageSubtitle: 'Insights, updates, and perspectives on community development.',
+};
+
 const Blog = () => {
   const { toast } = useToast();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [selected, setSelected] = useState<BlogPost | null>(null);
+  const [pg, setPg] = useState(BLOG_DEFAULTS);
 
   useEffect(() => {
     store.getBlogs().then((data) => {
       setPosts(data.length > 0 ? data : sampleBlogPosts);
     }).catch(() => setPosts(sampleBlogPosts));
+    store.getPageSettings<typeof BLOG_DEFAULTS>("blogpage").then((d) => { if (d) setPg({ ...BLOG_DEFAULTS, ...d }); });
   }, []);
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
@@ -95,10 +102,8 @@ const Blog = () => {
   return (
     <Layout>
       <section className="container pt-12 pb-8">
-        <h1 className="font-heading text-3xl lg:text-5xl font-extrabold mb-3">
-          <span className="text-primary">Blog</span> & <span className="text-secondary">News</span>
-        </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl">Insights, updates, and perspectives on community development.</p>
+        <h1 className="font-heading text-3xl lg:text-5xl font-extrabold mb-3" dangerouslySetInnerHTML={{ __html: pg.pageTitle }} />
+        <div className="text-lg text-muted-foreground max-w-2xl" dangerouslySetInnerHTML={{ __html: pg.pageSubtitle }} />
       </section>
 
       <section className="container py-8 pb-20">

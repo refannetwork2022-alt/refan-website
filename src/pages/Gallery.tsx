@@ -33,16 +33,22 @@ const sampleGalleryItems: GalleryItem[] = [
   { id: "g20", title: "Teaching Program", url: "/modam_teach.jpg", type: "photo", date: "2026-02-01" },
 ];
 
+const GALLERY_DEFAULTS = {
+  pageTitle: '<span class="text-primary">Life</span> in <span class="text-secondary">Dzaleka</span>',
+  pageSubtitle: 'Capturing moments of growth, joy, and community action.',
+};
+
 const Gallery = () => {
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+  const [pg, setPg] = useState(GALLERY_DEFAULTS);
 
   useEffect(() => {
     store.getGallery().then((data) => {
-      // Combine Firestore uploads with sample photos (Firestore first)
       const combined = [...data, ...sampleGalleryItems];
       setItems(combined);
     }).catch(() => setItems(sampleGalleryItems));
+    store.getPageSettings<typeof GALLERY_DEFAULTS>("gallerypage").then((d) => { if (d) setPg({ ...GALLERY_DEFAULTS, ...d }); });
   }, []);
 
   const getImageUrl = (item: GalleryItem, idx: number) => item.url || fallbackImages[idx % fallbackImages.length];
@@ -72,10 +78,8 @@ const Gallery = () => {
   return (
     <Layout>
       <section className="container pt-12 pb-8">
-        <h1 className="font-heading text-3xl lg:text-5xl font-extrabold mb-3">
-          <span className="text-primary">Life</span> in <span className="text-secondary">Dzaleka</span>
-        </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl">Capturing moments of growth, joy, and community action.</p>
+        <h1 className="font-heading text-3xl lg:text-5xl font-extrabold mb-3" dangerouslySetInnerHTML={{ __html: pg.pageTitle }} />
+        <div className="text-lg text-muted-foreground max-w-2xl" dangerouslySetInnerHTML={{ __html: pg.pageSubtitle }} />
       </section>
 
       <section className="container py-8 pb-20">
