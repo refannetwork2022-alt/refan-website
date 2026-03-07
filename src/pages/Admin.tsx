@@ -2033,9 +2033,6 @@ const Admin = () => {
                                   <a href={`https://wa.me/?text=${encodeURIComponent(msg)}`} target="_blank" rel="noopener noreferrer">
                                     <Button size="sm" variant="outline" className="text-xs h-7 text-green-600 border-green-200 hover:bg-green-50"><Send className="h-3 w-3" /> WhatsApp</Button>
                                   </a>
-                                  <a href={`mailto:${sa.email}?subject=Your ReFAN Admin Access&body=${encodeURIComponent(msg)}`}>
-                                    <Button size="sm" variant="outline" className="text-xs h-7"><Mail className="h-3 w-3" /> Email</Button>
-                                  </a>
                                 </div>
                               </div>
                             );
