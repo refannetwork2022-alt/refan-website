@@ -1871,10 +1871,7 @@ const Admin = () => {
                 createdAt: new Date().toISOString(),
               });
               if (result) {
-                const link = `${window.location.origin}${window.location.pathname}#/admin-access/${token}`;
-                const info = `Link: ${link}\nPassword: ${password}`;
-                navigator.clipboard.writeText(info);
-                toast({ title: "Sub-admin created! Link & password copied to clipboard." });
+                toast({ title: `Sub-admin created! Password: ${password}` });
               }
             }
             setSubAdmins(await store.getSubAdmins());
@@ -1882,11 +1879,10 @@ const Admin = () => {
             setSaving(false);
           };
 
-          const copyInviteLink = (sa: SubAdmin) => {
+          const copyLink = (sa: SubAdmin) => {
             const link = `${window.location.origin}${window.location.pathname}#/admin-access/${sa.token}`;
-            const info = `Link: ${link}\nPassword: ${sa.password}`;
-            navigator.clipboard.writeText(info);
-            toast({ title: "Link & password copied!" });
+            navigator.clipboard.writeText(link);
+            toast({ title: "Link copied!" });
           };
 
           const copyPassword = (pw: string) => {
@@ -1899,9 +1895,7 @@ const Admin = () => {
             const password = generatePassword();
             await store.updateSubAdmin(sa.id, { token, password });
             setSubAdmins(await store.getSubAdmins());
-            const link = `${window.location.origin}${window.location.pathname}#/admin-access/${token}`;
-            navigator.clipboard.writeText(`Link: ${link}\nPassword: ${password}`);
-            toast({ title: "Link & password generated and copied!" });
+            toast({ title: `Generated! Password: ${password}` });
           };
 
           const toggleActive = async (sa: SubAdmin) => {
@@ -2010,7 +2004,7 @@ const Admin = () => {
                             </p>
                           </div>
                           <div className="flex gap-1 shrink-0">
-                            <Button size="sm" variant="ghost" onClick={() => copyInviteLink(sa)} title="Copy link & password"><Link2 className="h-3.5 w-3.5" /></Button>
+                            <Button size="sm" variant="ghost" onClick={() => copyLink(sa)} title="Copy link & password"><Link2 className="h-3.5 w-3.5" /></Button>
                             <Button size="sm" variant="ghost" onClick={() => toggleActive(sa)} title={isActive ? 'Disable access' : 'Enable access'}>
                               <Power className={`h-3.5 w-3.5 ${isActive ? 'text-green-600' : 'text-red-500'}`} />
                             </Button>
@@ -2029,7 +2023,7 @@ const Admin = () => {
                               <div className="flex items-center gap-2">
                                 <span className="text-xs font-semibold text-muted-foreground">Link:</span>
                                 <span className="text-xs text-muted-foreground break-all flex-1">{`${window.location.origin}${window.location.pathname}#/admin-access/${sa.token}`}</span>
-                                <Button size="sm" variant="ghost" className="h-6 px-2 text-xs shrink-0" onClick={() => copyInviteLink(sa)}><Copy className="h-3 w-3" /> Copy</Button>
+                                <Button size="sm" variant="ghost" className="h-6 px-2 text-xs shrink-0" onClick={() => copyLink(sa)}><Copy className="h-3 w-3" /> Copy</Button>
                               </div>
                             </div>
                           ) : (
