@@ -97,7 +97,8 @@ const Stories = () => {
                       )}
                       <div className="p-5 flex flex-col flex-1 min-w-0">
                         <span className="inline-block w-fit px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-2">Announcement</span>
-                        <h3 className="font-heading text-sm font-bold mb-2 group-hover:text-primary transition-colors leading-snug">{item.title}</h3>
+                        <h3 className="font-heading text-sm font-bold mb-1 group-hover:text-primary transition-colors leading-snug">{item.title}</h3>
+                        {item.subtitle && <p className="text-xs text-primary font-medium mb-2">{item.subtitle}</p>}
                         <p className="text-xs text-muted-foreground leading-relaxed flex-1">{item.content.length > 150 ? item.content.slice(0, 150) + '...' : item.content}</p>
                         <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
                           <span className="text-primary text-xs font-semibold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -134,16 +135,15 @@ const Stories = () => {
                       )}
                       <div className="p-5 flex flex-col flex-1 min-w-0">
                         <span className="inline-block w-fit px-2.5 py-0.5 rounded-full bg-secondary/10 text-secondary text-xs font-semibold mb-2">Story</span>
-                        <h3 className="font-heading text-sm font-bold mb-2 group-hover:text-primary transition-colors leading-snug">{story.title}</h3>
+                        <h3 className="font-heading text-sm font-bold mb-1 group-hover:text-primary transition-colors leading-snug">{story.title}</h3>
+                        {story.subtitle && <p className="text-xs text-primary font-medium mb-2">{story.subtitle}</p>}
                         <p className="text-xs text-muted-foreground leading-relaxed flex-1">{story.excerpt.length > 150 ? story.excerpt.slice(0, 150) + '...' : story.excerpt}</p>
                         <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Calendar className="h-3.5 w-3.5" />
                             {new Date(story.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                           </div>
-                          <span className="text-primary text-xs font-semibold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            Read more <ChevronRight className="h-3 w-3" />
-                          </span>
+                          <span className="text-xs text-muted-foreground font-medium">Donations ({story.donationCount || 0})</span>
                         </div>
                       </div>
                     </div>

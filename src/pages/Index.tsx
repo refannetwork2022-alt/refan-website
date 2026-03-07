@@ -255,7 +255,8 @@ const Index = () => {
                 </div>
               )}
               <div className="p-5 flex flex-col flex-1 min-w-0">
-                <h3 className="font-heading text-sm font-bold mb-2 group-hover:text-primary transition-colors leading-snug">{item.title}</h3>
+                <h3 className="font-heading text-sm font-bold mb-1 group-hover:text-primary transition-colors leading-snug">{item.title}</h3>
+                {item.subtitle && <p className="text-xs text-primary font-medium mb-2">{item.subtitle}</p>}
                 <p className="text-xs text-muted-foreground leading-relaxed flex-1">{item.content.length > 150 ? item.content.slice(0, 150) + '...' : item.content}</p>
                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
                   <Button asChild size="sm" className="bg-primary hover:bg-primary/90 text-white font-bold text-xs px-4" onClick={(e) => e.stopPropagation()}>

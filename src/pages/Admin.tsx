@@ -881,7 +881,7 @@ const Admin = () => {
                   <input placeholder="Or paste Image URL" value={announcementForm.image} onChange={(e) => setAnnouncementForm({ ...announcementForm, image: e.target.value })} className={inputClass} maxLength={500} />
                 </div>
                 <input placeholder="Video URL (YouTube, Vimeo, etc.)" value={announcementForm.video} onChange={(e) => setAnnouncementForm({ ...announcementForm, video: e.target.value })} className={inputClass} maxLength={500} />
-                <input type="number" placeholder="Donation Count" value={announcementForm.donationCount} onChange={(e) => setAnnouncementForm({ ...announcementForm, donationCount: Number(e.target.value) || 0 })} className={inputClass + " w-48"} min={0} />
+                <input type="number" placeholder="Donation Count" value={announcementForm.donationCount || ''} onChange={(e) => setAnnouncementForm({ ...announcementForm, donationCount: e.target.value === '' ? 0 : Number(e.target.value) })} className={inputClass + " w-48"} min={0} />
                 <div className="flex gap-2">
                   <Button onClick={addAnnouncement} variant="default" size="sm" disabled={saving}>
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingAnnouncement ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
@@ -932,7 +932,7 @@ const Admin = () => {
                   <option value="story">Story</option>
                   <option value="announcement">Announcement</option>
                 </select>
-                <input type="number" placeholder="Donation Count" value={storyForm.donationCount} onChange={(e) => setStoryForm({ ...storyForm, donationCount: Number(e.target.value) || 0 })} className={inputClass + " w-48"} min={0} />
+                <input type="number" placeholder="Donation Count" value={storyForm.donationCount || ''} onChange={(e) => setStoryForm({ ...storyForm, donationCount: e.target.value === '' ? 0 : Number(e.target.value) })} className={inputClass + " w-48"} min={0} />
                 <div className="flex gap-2">
                   <Button onClick={addStory} variant="default" size="sm" disabled={saving}>
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingStory ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
