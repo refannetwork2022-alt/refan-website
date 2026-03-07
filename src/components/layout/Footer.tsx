@@ -82,9 +82,21 @@ const Footer = () => {
       </div>
       <div className="border-t border-white/10">
         <div className="container py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/40">
-          <p>&copy; 2026 ReFAN. All rights reserved.</p>
+          <p
+            className="cursor-default select-none"
+            onClick={() => {
+              const now = Date.now();
+              const key = '__ataps';
+              const prev = JSON.parse(sessionStorage.getItem(key) || '[]') as number[];
+              const taps = [...prev, now].filter(t => now - t < 3000);
+              sessionStorage.setItem(key, JSON.stringify(taps));
+              if (taps.length >= 5) {
+                sessionStorage.removeItem(key);
+                window.location.hash = '/admin-login';
+              }
+            }}
+          >&copy; 2026 ReFAN. All rights reserved.</p>
           <div className="flex gap-6">
-            <Link to="/admin-login" className="hover:text-white/60 transition-colors">Admin</Link>
             <a href={info.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-white/60 transition-colors uppercase font-bold tracking-widest">LinkedIn</a>
           </div>
         </div>
