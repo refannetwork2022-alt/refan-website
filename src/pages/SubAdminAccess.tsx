@@ -59,7 +59,7 @@ const SubAdminAccess = () => {
   useEffect(() => {
     if (!token) { setLoading(false); return; }
     store.getSubAdminByToken(token).then((sa) => {
-      if (!sa || !sa.active) {
+      if (!sa || sa.active === false) {
         setProfile(null);
       } else {
         setProfile(sa);

@@ -1890,9 +1890,10 @@ const Admin = () => {
           };
 
           const toggleActive = async (sa: SubAdmin) => {
-            await store.updateSubAdmin(sa.id, { active: !sa.active });
+            const isActive = sa.active !== false;
+            await store.updateSubAdmin(sa.id, { active: !isActive });
             setSubAdmins(await store.getSubAdmins());
-            toast({ title: sa.active ? "Access disabled" : "Access enabled" });
+            toast({ title: isActive ? "Access disabled" : "Access enabled" });
           };
 
           const startEdit = (sa: SubAdmin) => {
@@ -1974,31 +1975,40 @@ const Admin = () => {
                 <div className="space-y-3">
                   {subAdmins.map((sa) => {
                     const permCount = Object.values(sa.permissions).filter(p => p !== 'hidden').length;
+                    const isActive = sa.active !== false;
                     return (
-                      <div key={sa.id} className={`bg-card rounded-lg p-4 shadow-soft flex justify-between items-start gap-4 ${!sa.active ? 'opacity-50' : ''}`}>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-bold text-sm">{sa.name}</p>
-                            {!sa.active && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-semibold">Disabled</span>}
+                      <div key={sa.id} className={`bg-card rounded-lg p-4 shadow-soft ${!isActive ? 'opacity-50' : ''}`}>
+                        <div className="flex justify-between items-start gap-4">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold text-sm">{sa.name}</p>
+                              {!isActive && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-semibold">Disabled</span>}
+                            </div>
+                            <p className="text-xs text-muted-foreground">@{sa.username || '—'} · {sa.email || '—'}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Access to {permCount} section{permCount !== 1 ? 's' : ''}: {
+                                Object.entries(sa.permissions)
+                                  .filter(([, p]) => p !== 'hidden')
+                                  .map(([k, p]) => `${k} (${p})`)
+                                  .join(', ') || 'none'
+                              }
+                            </p>
                           </div>
-                          <p className="text-xs text-muted-foreground">@{sa.username || '—'} · {sa.email || '—'}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Access to {permCount} section{permCount !== 1 ? 's' : ''}: {
-                              Object.entries(sa.permissions)
-                                .filter(([, p]) => p !== 'hidden')
-                                .map(([k, p]) => `${k} (${p})`)
-                                .join(', ') || 'none'
-                            }
-                          </p>
+                          <div className="flex gap-1 shrink-0">
+                            <Button size="sm" variant="ghost" onClick={() => copyInviteLink(sa)} title="Copy link & password"><Link2 className="h-3.5 w-3.5" /></Button>
+                            <Button size="sm" variant="ghost" onClick={() => toggleActive(sa)} title={isActive ? 'Disable access' : 'Enable access'}>
+                              <Power className={`h-3.5 w-3.5 ${isActive ? 'text-green-600' : 'text-red-500'}`} />
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => startEdit(sa)}><Pencil className="h-3.5 w-3.5" /></Button>
+                            <Button size="sm" variant="ghost" className="text-red-500" onClick={() => deleteSA(sa.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                          </div>
                         </div>
-                        <div className="flex gap-1 shrink-0">
-                          <Button size="sm" variant="ghost" onClick={() => copyInviteLink(sa)} title="Copy link & password"><Link2 className="h-3.5 w-3.5" /></Button>
-                          <Button size="sm" variant="ghost" onClick={() => toggleActive(sa)} title={sa.active ? 'Disable access' : 'Enable access'}>
-                            <Power className={`h-3.5 w-3.5 ${sa.active ? 'text-green-600' : 'text-red-500'}`} />
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={() => startEdit(sa)}><Pencil className="h-3.5 w-3.5" /></Button>
-                          <Button size="sm" variant="ghost" className="text-red-500" onClick={() => deleteSA(sa.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
-                        </div>
+                        {sa.token && sa.password && (
+                          <div className="mt-3 pt-3 border-t border-border space-y-1">
+                            <p className="text-xs text-muted-foreground"><span className="font-semibold">Password:</span> <code className="bg-muted px-1.5 py-0.5 rounded text-foreground">{sa.password}</code></p>
+                            <p className="text-xs text-muted-foreground break-all"><span className="font-semibold">Link:</span> {`${window.location.origin}${window.location.pathname}#/admin-access/${sa.token}`}</p>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
