@@ -111,8 +111,8 @@ const Programs = () => {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="h-2 rounded-t-2xl bg-gradient-to-r from-primary to-secondary" />
-              <div className="w-full h-64 md:h-80 overflow-hidden">
-                <img src={img} alt={selected.title} className="w-full h-full object-cover" />
+              <div className="w-full overflow-hidden">
+                <img src={img} alt={selected.title} className="w-full max-h-96 object-contain bg-muted" />
               </div>
               <div className="sticky top-0 bg-card border-b border-border px-8 py-6 flex items-start justify-between">
                 <div>

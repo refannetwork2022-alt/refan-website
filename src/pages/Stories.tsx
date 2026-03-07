@@ -177,8 +177,8 @@ const Stories = () => {
           >
             <div className={`h-2 rounded-t-2xl ${selectedStory.category === 'story' ? 'bg-secondary' : 'bg-primary'}`} />
             {selectedStory.image && (
-              <div className="w-full h-64 md:h-80 overflow-hidden">
-                <img src={selectedStory.image} alt={selectedStory.title} className="w-full h-full object-cover" />
+              <div className="w-full overflow-hidden">
+                <img src={selectedStory.image} alt={selectedStory.title} className="w-full max-h-96 object-contain bg-muted" />
               </div>
             )}
             {selectedStory.video && getEmbedUrl(selectedStory.video) && (
@@ -236,8 +236,8 @@ const Stories = () => {
           >
             <div className="h-2 rounded-t-2xl bg-gradient-to-r from-primary to-secondary" />
             {selectedAnnouncement.image && (
-              <div className="w-full h-64 md:h-80 overflow-hidden">
-                <img src={selectedAnnouncement.image} alt={selectedAnnouncement.title} className="w-full h-full object-cover" />
+              <div className="w-full overflow-hidden">
+                <img src={selectedAnnouncement.image} alt={selectedAnnouncement.title} className="w-full max-h-96 object-contain bg-muted" />
               </div>
             )}
             {selectedAnnouncement.video && getEmbedUrl(selectedAnnouncement.video) && (
