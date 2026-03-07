@@ -101,9 +101,16 @@ const Stories = () => {
                         {item.subtitle && <p className="text-xs text-primary font-medium mb-2">{item.subtitle}</p>}
                         <p className="text-xs text-muted-foreground leading-relaxed flex-1">{item.content.length > 150 ? item.content.slice(0, 150) + '...' : item.content}</p>
                         <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
-                          <span className="text-primary text-xs font-semibold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            Read more <ChevronRight className="h-3 w-3" />
-                          </span>
+                          {item.showDate !== false && item.date ? (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Calendar className="h-3.5 w-3.5" />
+                              {new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </div>
+                          ) : (
+                            <span className="text-primary text-xs font-semibold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              Read more <ChevronRight className="h-3 w-3" />
+                            </span>
+                          )}
                           <span className="text-xs text-muted-foreground font-medium">Donations ({item.donationCount})</span>
                         </div>
                       </div>
@@ -139,10 +146,16 @@ const Stories = () => {
                         {story.subtitle && <p className="text-xs text-primary font-medium mb-2">{story.subtitle}</p>}
                         <p className="text-xs text-muted-foreground leading-relaxed flex-1">{story.excerpt.length > 150 ? story.excerpt.slice(0, 150) + '...' : story.excerpt}</p>
                         <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Calendar className="h-3.5 w-3.5" />
-                            {new Date(story.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                          </div>
+                          {story.showDate !== false && story.date ? (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Calendar className="h-3.5 w-3.5" />
+                              {new Date(story.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </div>
+                          ) : (
+                            <span className="text-secondary text-xs font-semibold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              Read more <ChevronRight className="h-3 w-3" />
+                            </span>
+                          )}
                           <span className="text-xs text-muted-foreground font-medium">Donations ({story.donationCount || 0})</span>
                         </div>
                       </div>
@@ -181,10 +194,12 @@ const Stories = () => {
                   {selectedStory.category === 'story' ? 'Story' : 'Announcement'}
                 </span>
                 <h2 className="font-heading text-2xl lg:text-3xl font-bold">{selectedStory.title}</h2>
-                <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
-                  <Calendar className="h-3.5 w-3.5" />
-                  {new Date(selectedStory.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                </p>
+                {selectedStory.showDate !== false && selectedStory.date && (
+                  <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
+                    <Calendar className="h-3.5 w-3.5" />
+                    {new Date(selectedStory.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  </p>
+                )}
               </div>
               <button onClick={() => setSelectedStory(null)} className="p-2 rounded-lg hover:bg-muted transition-colors shrink-0">
                 <X className="h-5 w-5" />
@@ -195,7 +210,12 @@ const Stories = () => {
               <div className="text-foreground/80 text-lg leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: selectedStory.content }} />
             </div>
             <div className="px-8 pb-6 flex items-center justify-between border-t border-border pt-4">
-              <Button onClick={() => setSelectedStory(null)} variant="outline" className="btn-hover">Close</Button>
+              <div className="flex items-center gap-3">
+                <Button onClick={() => setSelectedStory(null)} variant="outline" className="btn-hover">Close</Button>
+                <Button asChild className="bg-primary hover:bg-primary/90 text-white font-bold">
+                  <Link to="/donate"><Heart className="h-4 w-4" /> Donate</Link>
+                </Button>
+              </div>
               <div className="flex items-center gap-1">
                 <Share2 className="h-4 w-4 text-muted-foreground mr-1" />
                 <button onClick={copyLink} className="p-2 rounded-lg hover:bg-muted transition-colors" title="Copy link"><Link2 className="h-4 w-4" /></button>
@@ -229,6 +249,12 @@ const Stories = () => {
               <div>
                 <span className="inline-block px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold mb-2">Announcement</span>
                 <h2 className="font-heading text-2xl lg:text-3xl font-bold">{selectedAnnouncement.title}</h2>
+                {selectedAnnouncement.showDate !== false && selectedAnnouncement.date && (
+                  <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
+                    <Calendar className="h-3.5 w-3.5" />
+                    {new Date(selectedAnnouncement.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  </p>
+                )}
               </div>
               <button onClick={() => setSelectedAnnouncement(null)} className="p-2 rounded-lg hover:bg-muted transition-colors shrink-0">
                 <X className="h-5 w-5" />

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { store, type Story, type BlogPost, type GalleryItem, type NewsletterSubscriber, type ContactMessage, type Announcement, type Member, type FooterSettings, type HeroSettings, type SiteSettings, type AboutSettings, type ProgramsSettings, type HomeSettings, type ContactPageSettings, type DonateSettings, type GetInvolvedSettings } from "@/lib/store";
+import { store, type Story, type BlogPost, type GalleryItem, type NewsletterSubscriber, type ContactMessage, type Announcement, type Member, type FooterSettings, type HeroSettings, type SiteSettings, type AboutSettings, type ProgramsSettings, type HomeSettings, type ContactPageSettings, type DonateSettings, type GetInvolvedSettings, type SubAdmin, type TabPermission } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import {
   LayoutDashboard, FileText, Image, Megaphone, Users, Heart,
@@ -14,7 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import ImageUpload from "@/components/ImageUpload";
 import RichTextEditor from "@/components/RichTextEditor";
 
-type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'sponsors' | 'donations' | 'subscribers' | 'messages' | 'members' | 'footer' | 'hero' | 'site' | 'pages';
+type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'sponsors' | 'donations' | 'subscribers' | 'messages' | 'members' | 'footer' | 'hero' | 'site' | 'pages' | 'admins';
 
 const countries = [
   "Afghanistan", "Albania", "Algeria", "Angola", "Argentina", "Australia", "Austria", "Bangladesh",
@@ -58,7 +58,7 @@ const phoneCodes = [
 
 const Admin = () => {
   const { toast } = useToast();
-  const { signOut, changePassword } = useAuth();
+  const { signOut, changePassword, isSuperAdmin, canEdit, canView, shouldHideExisting } = useAuth();
   const [tab, setTab] = useState<Tab>('dashboard');
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [stories, setStories] = useState<Story[]>([]);
@@ -69,6 +69,9 @@ const Admin = () => {
   const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
+  const [subAdmins, setSubAdmins] = useState<SubAdmin[]>([]);
+  const [subAdminForm, setSubAdminForm] = useState({ name: '', email: '', permissions: {} as Record<string, TabPermission>, hideExistingData: {} as Record<string, boolean> });
+  const [editingSubAdmin, setEditingSubAdmin] = useState<string | null>(null);
   const [footerForm, setFooterForm] = useState<FooterSettings>({
     email: "refannetwork2022@gmail.com", phone: "+265 997 561 852",
     address: "Dzaleka Refugee Camp, Dowa District, Malawi", whatsapp: "265997561852",
@@ -124,6 +127,7 @@ const Admin = () => {
     ]);
     setAnnouncements(a); setStories(s); setBlogs(b); setGallery(g);
     setVolunteers(v); setDonations(d); setSubscribers(sub); setMessages(msg); setMembers(mem);
+    if (isSuperAdmin) { store.getSubAdmins().then(setSubAdmins); }
     // Auto-backfill missing expiry dates
     for (const m of mem) {
       if (!m.expiryDate || !m.expiryDate.match(/^\d{4}-\d{2}-\d{2}/)) {
@@ -191,11 +195,11 @@ const Admin = () => {
   const photoRef = useRef<HTMLInputElement>(null);
   const docRef = useRef<HTMLInputElement>(null);
 
-  const [storyForm, setStoryForm] = useState({ title: '', subtitle: '', excerpt: '', content: '', image: '', video: '', category: 'story' as 'story' | 'announcement', donationCount: 0 });
+  const [storyForm, setStoryForm] = useState({ title: '', subtitle: '', excerpt: '', content: '', image: '', video: '', category: 'story' as 'story' | 'announcement', donationCount: 0, date: new Date().toISOString().split('T')[0], showDate: true });
   const [blogForm, setBlogForm] = useState({ title: '', excerpt: '', image: '', author: 'ReFAN Team', tags: '' });
   const [contentBlocks, setContentBlocks] = useState<Array<{ type: 'text' | 'image' | 'video'; value?: string; url?: string; caption?: string }>>([{ type: 'text', value: '' }]);
   const [galleryForm, setGalleryForm] = useState({ title: '', url: '', type: 'photo' as 'photo' | 'video' });
-  const [announcementForm, setAnnouncementForm] = useState({ title: '', subtitle: '', content: '', image: '', video: '', donationCount: 0 });
+  const [announcementForm, setAnnouncementForm] = useState({ title: '', subtitle: '', content: '', image: '', video: '', donationCount: 0, date: new Date().toISOString().split('T')[0], showDate: true });
   const [editingAnnouncement, setEditingAnnouncement] = useState<string | null>(null);
   const [editingStory, setEditingStory] = useState<string | null>(null);
   const [editingBlog, setEditingBlog] = useState<string | null>(null);
@@ -234,12 +238,12 @@ const Admin = () => {
       toast({ title: "Announcement added!" });
     }
     setAnnouncements(await store.getAnnouncements());
-    setAnnouncementForm({ title: '', subtitle: '', content: '', image: '', video: '', donationCount: 0 });
+    setAnnouncementForm({ title: '', subtitle: '', content: '', image: '', video: '', donationCount: 0, date: new Date().toISOString().split('T')[0], showDate: true });
     setSaving(false);
   };
 
   const startEditAnnouncement = (a: Announcement) => {
-    setAnnouncementForm({ title: a.title, subtitle: a.subtitle || '', content: a.content, image: a.image || '', video: a.video || '', donationCount: a.donationCount || 0 });
+    setAnnouncementForm({ title: a.title, subtitle: a.subtitle || '', content: a.content, image: a.image || '', video: a.video || '', donationCount: a.donationCount || 0, date: a.date ? a.date.split('T')[0] : '', showDate: (a as any).showDate !== false });
     setEditingAnnouncement(a.id);
   };
 
@@ -258,16 +262,16 @@ const Admin = () => {
       setEditingStory(null);
       toast({ title: "Story updated!" });
     } else {
-      await store.addStory({ ...storyForm, date: new Date().toISOString() });
+      await store.addStory({ ...storyForm, date: storyForm.date || new Date().toISOString().split('T')[0] });
       toast({ title: "Story added!" });
     }
     setStories(await store.getStories());
-    setStoryForm({ title: '', subtitle: '', excerpt: '', content: '', image: '', video: '', category: 'story', donationCount: 0 });
+    setStoryForm({ title: '', subtitle: '', excerpt: '', content: '', image: '', video: '', category: 'story', donationCount: 0, date: new Date().toISOString().split('T')[0], showDate: true });
     setSaving(false);
   };
 
   const startEditStory = (s: Story) => {
-    setStoryForm({ title: s.title, subtitle: s.subtitle || '', excerpt: s.excerpt, content: s.content, image: s.image || '', video: s.video || '', category: s.category, donationCount: s.donationCount || 0 });
+    setStoryForm({ title: s.title, subtitle: s.subtitle || '', excerpt: s.excerpt, content: s.content, image: s.image || '', video: s.video || '', category: s.category, donationCount: s.donationCount || 0, date: s.date ? s.date.split('T')[0] : '', showDate: s.showDate !== false });
     setEditingStory(s.id);
   };
 
@@ -515,9 +519,20 @@ const Admin = () => {
     { id: 'hero', label: 'Hero Settings', icon: ImagePlus },
     { id: 'pages', label: 'Page Content', icon: Globe },
     { id: 'site', label: 'Site Settings', icon: Power },
+    ...(isSuperAdmin ? [{ id: 'admins' as Tab, label: 'Manage Admins', icon: Shield }] : []),
   ];
 
+  const visibleSidebar = sidebarItems.filter(item => {
+    if (isSuperAdmin) return true;
+    if (item.id === 'admins') return false;
+    return canView(item.id);
+  });
+
   const inputClass = "w-full px-4 py-2.5 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring outline-none text-sm";
+
+  // Permission helpers for current tab
+  const isViewOnly = !isSuperAdmin && !canEdit(tab);
+  const hideExisting = !isSuperAdmin && shouldHideExisting(tab);
 
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const currentYear = new Date().getFullYear();
@@ -532,7 +547,7 @@ const Admin = () => {
           <h2 className="font-heading text-xl font-extrabold"><span className="text-primary">ReFA</span><span className="text-white">N</span> Admin</h2>
         </div>
         <nav className="flex-1 px-3 space-y-1">
-          {sidebarItems.map((item) => (
+          {visibleSidebar.map((item) => (
             <button
               key={item.id}
               onClick={() => setTab(item.id)}
@@ -564,7 +579,7 @@ const Admin = () => {
       {/* Mobile nav */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-secondary z-50 border-t border-sidebar-border safe-bottom">
         <div className="flex overflow-x-auto scrollbar-hide gap-0.5 px-1">
-          {sidebarItems.map((item) => (
+          {visibleSidebar.map((item) => (
             <button
               key={item.id}
               onClick={() => setTab(item.id)}
@@ -581,6 +596,11 @@ const Admin = () => {
 
       {/* Main content */}
       <main className="flex-1 p-6 lg:p-10 pb-24 md:pb-10 overflow-auto">
+        {!isSuperAdmin && !canEdit(tab) && canView(tab) && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-4 py-2 mb-4 text-sm font-medium">
+            View only — you cannot make changes to this section.
+          </div>
+        )}
         {tab === 'dashboard' && (
           <div>
             <h1 className="font-heading text-2xl font-bold mb-8">Dashboard Overview</h1>
@@ -644,8 +664,8 @@ const Admin = () => {
                 <p className="text-sm text-muted-foreground">Total: {members.length} member{members.length !== 1 ? 's' : ''}</p>
               </div>
               <div className="flex gap-2 flex-wrap">
-                <Button variant="outline" size="sm" onClick={copyRegLink}><Copy className="h-4 w-4" /> Copy Registration Link</Button>
-                <Button variant="default" size="sm" onClick={() => setShowMemberForm(!showMemberForm)}><Plus className="h-4 w-4" /> Add Member</Button>
+                {!isViewOnly && <Button variant="outline" size="sm" onClick={copyRegLink}><Copy className="h-4 w-4" /> Copy Registration Link</Button>}
+                {!isViewOnly && <Button variant="default" size="sm" onClick={() => setShowMemberForm(!showMemberForm)}><Plus className="h-4 w-4" /> Add Member</Button>}
                 {members.length > 0 && (
                   <>
                     <Button variant="outline" size="sm" onClick={exportMembersCSV}><Download className="h-4 w-4" /> Export CSV</Button>
@@ -761,7 +781,9 @@ const Admin = () => {
             )}
 
             {/* Members Table */}
-            {members.length === 0 ? <p className="text-muted-foreground">No members registered yet.</p> : (
+            {hideExisting ? (
+              <p className="text-muted-foreground text-center py-8">Existing member data is hidden for your account.</p>
+            ) : members.length === 0 ? <p className="text-muted-foreground">No members registered yet.</p> : (
               <>
               <div className="flex items-center gap-4 mb-4">
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
@@ -869,7 +891,7 @@ const Admin = () => {
         {tab === 'announcements' && (
           <div>
             <h1 className="font-heading text-2xl font-bold mb-8">Manage Announcements</h1>
-            <div className="bg-card rounded-xl p-6 shadow-soft mb-8">
+            {!isViewOnly && <div className="bg-card rounded-xl p-6 shadow-soft mb-8">
               <h3 className="font-heading font-bold mb-4">{editingAnnouncement ? 'Edit Announcement' : 'Add New Announcement'}</h3>
               <div className="space-y-3">
                 <input placeholder="Title" value={announcementForm.title} onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })} className={inputClass} maxLength={200} />
@@ -881,17 +903,27 @@ const Admin = () => {
                   <input placeholder="Or paste Image URL" value={announcementForm.image} onChange={(e) => setAnnouncementForm({ ...announcementForm, image: e.target.value })} className={inputClass} maxLength={500} />
                 </div>
                 <input placeholder="Video URL (YouTube, Vimeo, etc.)" value={announcementForm.video} onChange={(e) => setAnnouncementForm({ ...announcementForm, video: e.target.value })} className={inputClass} maxLength={500} />
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-muted-foreground">Date</label>
+                    <input type="date" value={announcementForm.date} onChange={(e) => setAnnouncementForm({ ...announcementForm, date: e.target.value })} className={inputClass + " w-48"} />
+                  </div>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer mt-5">
+                    <input type="checkbox" checked={announcementForm.showDate} onChange={(e) => setAnnouncementForm({ ...announcementForm, showDate: e.target.checked })} className="rounded" />
+                    Show date on website
+                  </label>
+                </div>
                 <input type="number" placeholder="Donation Count" value={announcementForm.donationCount || ''} onChange={(e) => setAnnouncementForm({ ...announcementForm, donationCount: e.target.value === '' ? 0 : Number(e.target.value) })} className={inputClass + " w-48"} min={0} />
                 <div className="flex gap-2">
                   <Button onClick={addAnnouncement} variant="default" size="sm" disabled={saving}>
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingAnnouncement ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                     {editingAnnouncement ? 'Update' : 'Add Announcement'}
                   </Button>
-                  {editingAnnouncement && <Button variant="ghost" size="sm" onClick={() => { setEditingAnnouncement(null); setAnnouncementForm({ title: '', subtitle: '', content: '', image: '', video: '', donationCount: 0 }); }}>Cancel</Button>}
+                  {editingAnnouncement && <Button variant="ghost" size="sm" onClick={() => { setEditingAnnouncement(null); setAnnouncementForm({ title: '', subtitle: '', content: '', image: '', video: '', donationCount: 0, date: new Date().toISOString().split('T')[0], showDate: true }); }}>Cancel</Button>}
                 </div>
               </div>
-            </div>
-            <div className="grid sm:grid-cols-2 gap-4">
+            </div>}
+            {!hideExisting && <div className="grid sm:grid-cols-2 gap-4">
               {announcements.map((a) => (
                 <div key={a.id} className="bg-card rounded-lg p-4 shadow-soft">
                   <div className="flex justify-between items-start gap-2">
@@ -908,14 +940,15 @@ const Admin = () => {
                   </div>
                 </div>
               ))}
-            </div>
+            </div>}
+            {hideExisting && <p className="text-muted-foreground text-center py-8">Existing data is hidden for your account.</p>}
           </div>
         )}
 
         {tab === 'stories' && (
           <div>
             <h1 className="font-heading text-2xl font-bold mb-8">Manage Stories & Announcements</h1>
-            <div className="bg-card rounded-xl p-6 shadow-soft mb-8">
+            {!isViewOnly && <div className="bg-card rounded-xl p-6 shadow-soft mb-8">
               <h3 className="font-heading font-bold mb-4">{editingStory ? 'Edit Story' : 'Add New'}</h3>
               <div className="space-y-3">
                 <input placeholder="Title" value={storyForm.title} onChange={(e) => setStoryForm({ ...storyForm, title: e.target.value })} className={inputClass} maxLength={200} />
@@ -932,17 +965,27 @@ const Admin = () => {
                   <option value="story">Story</option>
                   <option value="announcement">Announcement</option>
                 </select>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-muted-foreground">Date</label>
+                    <input type="date" value={storyForm.date} onChange={(e) => setStoryForm({ ...storyForm, date: e.target.value })} className={inputClass + " w-48"} />
+                  </div>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer mt-5">
+                    <input type="checkbox" checked={storyForm.showDate} onChange={(e) => setStoryForm({ ...storyForm, showDate: e.target.checked })} className="rounded" />
+                    Show date on website
+                  </label>
+                </div>
                 <input type="number" placeholder="Donation Count" value={storyForm.donationCount || ''} onChange={(e) => setStoryForm({ ...storyForm, donationCount: e.target.value === '' ? 0 : Number(e.target.value) })} className={inputClass + " w-48"} min={0} />
                 <div className="flex gap-2">
                   <Button onClick={addStory} variant="default" size="sm" disabled={saving}>
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingStory ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                     {editingStory ? 'Update' : 'Add Story'}
                   </Button>
-                  {editingStory && <Button variant="ghost" size="sm" onClick={() => { setEditingStory(null); setStoryForm({ title: '', subtitle: '', excerpt: '', content: '', image: '', video: '', category: 'story', donationCount: 0 }); }}>Cancel</Button>}
+                  {editingStory && <Button variant="ghost" size="sm" onClick={() => { setEditingStory(null); setStoryForm({ title: '', subtitle: '', excerpt: '', content: '', image: '', video: '', category: 'story', donationCount: 0, date: new Date().toISOString().split('T')[0], showDate: true }); }}>Cancel</Button>}
                 </div>
               </div>
-            </div>
-            <div className="space-y-3">
+            </div>}
+            {!hideExisting ? <div className="space-y-3">
               {stories.map((s) => (
                 <div key={s.id} className="bg-card rounded-lg p-4 shadow-soft flex justify-between items-start gap-4">
                   <div>
@@ -956,7 +999,7 @@ const Admin = () => {
                   </div>
                 </div>
               ))}
-            </div>
+            </div> : <p className="text-muted-foreground text-center py-8">Existing data is hidden for your account.</p>}
           </div>
         )}
 
@@ -1754,6 +1797,164 @@ const Admin = () => {
             )}
           </div>
         )}
+        {tab === 'admins' && isSuperAdmin && (() => {
+          const ALL_TABS: { id: string; label: string }[] = [
+            { id: 'dashboard', label: 'Dashboard' },
+            { id: 'members', label: 'Members' },
+            { id: 'announcements', label: 'Announcements' },
+            { id: 'stories', label: 'Stories' },
+            { id: 'blogs', label: 'Blog Posts' },
+            { id: 'gallery', label: 'Gallery' },
+            { id: 'volunteers', label: 'Volunteers' },
+            { id: 'sponsors', label: 'Sponsors' },
+            { id: 'donations', label: 'Donations' },
+            { id: 'subscribers', label: 'Subscribers' },
+            { id: 'messages', label: 'Messages' },
+            { id: 'footer', label: 'Footer Settings' },
+            { id: 'hero', label: 'Hero Settings' },
+            { id: 'pages', label: 'Page Content' },
+            { id: 'site', label: 'Site Settings' },
+          ];
+
+          const resetForm = () => {
+            setSubAdminForm({ name: '', email: '', permissions: {}, hideExistingData: {} });
+            setEditingSubAdmin(null);
+          };
+
+          const saveSubAdmin = async () => {
+            if (!subAdminForm.name.trim() || !subAdminForm.email.trim()) {
+              toast({ title: "Name and email are required", variant: "destructive" });
+              return;
+            }
+            setSaving(true);
+            if (editingSubAdmin) {
+              await store.updateSubAdmin(editingSubAdmin, {
+                name: subAdminForm.name,
+                email: subAdminForm.email.toLowerCase(),
+                permissions: subAdminForm.permissions,
+                hideExistingData: subAdminForm.hideExistingData,
+              });
+              toast({ title: "Sub-admin updated!" });
+            } else {
+              await store.addSubAdmin({
+                name: subAdminForm.name,
+                email: subAdminForm.email.toLowerCase(),
+                permissions: subAdminForm.permissions,
+                hideExistingData: subAdminForm.hideExistingData,
+                createdAt: new Date().toISOString(),
+              });
+              toast({ title: "Sub-admin added!" });
+            }
+            setSubAdmins(await store.getSubAdmins());
+            resetForm();
+            setSaving(false);
+          };
+
+          const startEdit = (sa: SubAdmin) => {
+            setSubAdminForm({ name: sa.name, email: sa.email, permissions: { ...sa.permissions }, hideExistingData: { ...sa.hideExistingData } });
+            setEditingSubAdmin(sa.id);
+          };
+
+          const deleteSA = async (id: string) => {
+            if (!confirm("Delete this sub-admin?")) return;
+            await store.deleteSubAdmin(id);
+            setSubAdmins(await store.getSubAdmins());
+            toast({ title: "Sub-admin deleted" });
+          };
+
+          const setPerm = (tabId: string, perm: TabPermission) => {
+            setSubAdminForm(prev => ({ ...prev, permissions: { ...prev.permissions, [tabId]: perm } }));
+          };
+
+          const toggleHide = (tabId: string) => {
+            setSubAdminForm(prev => ({ ...prev, hideExistingData: { ...prev.hideExistingData, [tabId]: !prev.hideExistingData[tabId] } }));
+          };
+
+          return (
+            <div>
+              <h1 className="font-heading text-2xl font-bold mb-8">Manage Sub-Admins</h1>
+              <div className="bg-card rounded-xl p-6 shadow-soft mb-8">
+                <h3 className="font-heading font-bold mb-4">{editingSubAdmin ? 'Edit Sub-Admin' : 'Add New Sub-Admin'}</h3>
+                <div className="space-y-4">
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <input placeholder="Name" value={subAdminForm.name} onChange={(e) => setSubAdminForm({ ...subAdminForm, name: e.target.value })} className={inputClass} />
+                    <input placeholder="Email (must have Firebase account)" value={subAdminForm.email} onChange={(e) => setSubAdminForm({ ...subAdminForm, email: e.target.value })} className={inputClass} type="email" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold mb-3">Tab Permissions</h4>
+                    <div className="border border-border rounded-lg overflow-hidden">
+                      <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-0 text-xs font-semibold bg-muted px-3 py-2">
+                        <span>Section</span>
+                        <span className="w-16 text-center">Hidden</span>
+                        <span className="w-16 text-center">View</span>
+                        <span className="w-16 text-center">Edit</span>
+                        <span className="w-20 text-center">Hide Data</span>
+                      </div>
+                      {ALL_TABS.map((t) => {
+                        const perm = subAdminForm.permissions[t.id] || 'hidden';
+                        const hideData = subAdminForm.hideExistingData[t.id] || false;
+                        return (
+                          <div key={t.id} className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-0 px-3 py-2 border-t border-border items-center text-sm">
+                            <span className="font-medium">{t.label}</span>
+                            {(['hidden', 'view', 'edit'] as TabPermission[]).map(p => (
+                              <label key={p} className="w-16 flex justify-center cursor-pointer">
+                                <input type="radio" name={`perm-${t.id}`} checked={perm === p} onChange={() => setPerm(t.id, p)} className="accent-primary" />
+                              </label>
+                            ))}
+                            <label className="w-20 flex justify-center cursor-pointer">
+                              <input type="checkbox" checked={hideData} onChange={() => toggleHide(t.id)} disabled={perm === 'hidden'} className="accent-primary" />
+                            </label>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      <strong>Hidden</strong> = tab not visible. <strong>View</strong> = can see data but not edit. <strong>Edit</strong> = full access. <strong>Hide Data</strong> = can add new items but cannot see existing records.
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={saveSubAdmin} variant="default" size="sm" disabled={saving}>
+                      {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingSubAdmin ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                      {editingSubAdmin ? 'Update' : 'Add Sub-Admin'}
+                    </Button>
+                    {editingSubAdmin && <Button variant="ghost" size="sm" onClick={resetForm}>Cancel</Button>}
+                  </div>
+                </div>
+              </div>
+
+              {subAdmins.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">No sub-admins yet. Add one above.</p>
+              ) : (
+                <div className="space-y-3">
+                  {subAdmins.map((sa) => {
+                    const permCount = Object.values(sa.permissions).filter(p => p !== 'hidden').length;
+                    return (
+                      <div key={sa.id} className="bg-card rounded-lg p-4 shadow-soft flex justify-between items-start gap-4">
+                        <div>
+                          <p className="font-bold text-sm">{sa.name}</p>
+                          <p className="text-xs text-muted-foreground">{sa.email}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Access to {permCount} section{permCount !== 1 ? 's' : ''}: {
+                              Object.entries(sa.permissions)
+                                .filter(([, p]) => p !== 'hidden')
+                                .map(([k, p]) => `${k} (${p})`)
+                                .join(', ') || 'none'
+                            }
+                          </p>
+                        </div>
+                        <div className="flex gap-1 shrink-0">
+                          <Button size="sm" variant="ghost" onClick={() => startEdit(sa)}><Pencil className="h-3.5 w-3.5" /></Button>
+                          <Button size="sm" variant="ghost" className="text-red-500" onClick={() => deleteSA(sa.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
       </main>
 
       {/* Change Password Modal */}

@@ -13,6 +13,7 @@ import {
   type User,
 } from "firebase/auth";
 import { collection, query, where, getDocs } from "firebase/firestore";
+import { store, type SubAdmin, type TabPermission } from "@/lib/store";
 
 interface AdminUser {
   email: string;
@@ -21,22 +22,33 @@ interface AdminUser {
 interface AuthContext {
   user: AdminUser | null;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
+  subAdminProfile: SubAdmin | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signInWithGoogle: () => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<{ error: string | null }>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
+  getTabPermission: (tab: string) => TabPermission;
+  canEdit: (tab: string) => boolean;
+  canView: (tab: string) => boolean;
+  shouldHideExisting: (tab: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContext | undefined>(undefined);
 
 const ADMIN_EMAIL = (import.meta.env.VITE_ADMIN_EMAIL || "").toLowerCase();
 
-const checkAdminRole = async (firebaseUser: User): Promise<boolean> => {
-  // Check whitelist first
-  if (firebaseUser.email?.toLowerCase() === ADMIN_EMAIL) return true;
-  // Then check Firestore user_roles collection
+const checkAdminRole = async (firebaseUser: User): Promise<{ isAdmin: boolean; isSuperAdmin: boolean; subAdminProfile: SubAdmin | null }> => {
+  const email = firebaseUser.email?.toLowerCase() || '';
+
+  // Check super admin first
+  if (email === ADMIN_EMAIL) {
+    return { isAdmin: true, isSuperAdmin: true, subAdminProfile: null };
+  }
+
+  // Check Firestore user_roles collection
   try {
     const q = query(
       collection(db, "user_roles"),
@@ -44,29 +56,45 @@ const checkAdminRole = async (firebaseUser: User): Promise<boolean> => {
       where("role", "==", "admin")
     );
     const snap = await getDocs(q);
-    return !snap.empty;
-  } catch { return false; }
+    if (!snap.empty) return { isAdmin: true, isSuperAdmin: true, subAdminProfile: null };
+  } catch {}
+
+  // Check sub-admin collection
+  const subAdmin = await store.getSubAdminByEmail(email);
+  if (subAdmin) {
+    return { isAdmin: true, isSuperAdmin: false, subAdminProfile: subAdmin };
+  }
+
+  return { isAdmin: false, isSuperAdmin: false, subAdminProfile: null };
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AdminUser | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [subAdminProfile, setSubAdminProfile] = useState<SubAdmin | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const admin = await checkAdminRole(firebaseUser);
+        const result = await checkAdminRole(firebaseUser);
         setUser({ email: firebaseUser.email || '' });
-        setIsAdmin(admin);
-        if (!admin) {
+        setIsAdmin(result.isAdmin);
+        setIsSuperAdmin(result.isSuperAdmin);
+        setSubAdminProfile(result.subAdminProfile);
+        if (!result.isAdmin) {
           await firebaseSignOut(auth);
           setUser(null);
           setIsAdmin(false);
+          setIsSuperAdmin(false);
+          setSubAdminProfile(null);
         }
       } else {
         setUser(null);
         setIsAdmin(false);
+        setIsSuperAdmin(false);
+        setSubAdminProfile(null);
       }
       setLoading(false);
     });
@@ -76,13 +104,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signIn = async (email: string, password: string) => {
     try {
       const result = await signInWithEmailAndPassword(auth, email.trim(), password);
-      const admin = await checkAdminRole(result.user);
-      if (!admin) {
+      const adminCheck = await checkAdminRole(result.user);
+      if (!adminCheck.isAdmin) {
         await firebaseSignOut(auth);
         return { error: "Not authorized. Only admin accounts can access this area." };
       }
       setUser({ email: result.user.email || '' });
       setIsAdmin(true);
+      setIsSuperAdmin(adminCheck.isSuperAdmin);
+      setSubAdminProfile(adminCheck.subAdminProfile);
       return { error: null };
     } catch (e: any) {
       const msg = e.code === 'auth/invalid-credential' ? 'Invalid email or password.'
@@ -98,13 +128,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      const admin = await checkAdminRole(result.user);
-      if (!admin) {
+      const adminCheck = await checkAdminRole(result.user);
+      if (!adminCheck.isAdmin) {
         await firebaseSignOut(auth);
         return { error: "Not authorized. Only admin accounts can access this area." };
       }
       setUser({ email: result.user.email || '' });
       setIsAdmin(true);
+      setIsSuperAdmin(adminCheck.isSuperAdmin);
+      setSubAdminProfile(adminCheck.subAdminProfile);
       return { error: null };
     } catch (e: any) {
       if (e.code === 'auth/popup-closed-by-user') return { error: null };
@@ -116,6 +148,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await firebaseSignOut(auth);
     setUser(null);
     setIsAdmin(false);
+    setIsSuperAdmin(false);
+    setSubAdminProfile(null);
   };
 
   const changePassword = async (currentPassword: string, newPassword: string) => {
@@ -150,8 +184,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Permission helpers
+  const getTabPermission = (tab: string): TabPermission => {
+    if (isSuperAdmin) return 'edit';
+    if (!subAdminProfile) return 'hidden';
+    return subAdminProfile.permissions[tab] || 'hidden';
+  };
+
+  const canEdit = (tab: string): boolean => getTabPermission(tab) === 'edit';
+  const canView = (tab: string): boolean => {
+    const p = getTabPermission(tab);
+    return p === 'edit' || p === 'view';
+  };
+  const shouldHideExisting = (tab: string): boolean => {
+    if (isSuperAdmin) return false;
+    if (!subAdminProfile) return true;
+    return subAdminProfile.hideExistingData[tab] === true;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isAdmin, loading, signIn, signInWithGoogle, signOut, changePassword, resetPassword }}>
+    <AuthContext.Provider value={{ user, isAdmin, isSuperAdmin, subAdminProfile, loading, signIn, signInWithGoogle, signOut, changePassword, resetPassword, getTabPermission, canEdit, canView, shouldHideExisting }}>
       {children}
     </AuthContext.Provider>
   );

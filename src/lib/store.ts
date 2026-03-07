@@ -15,6 +15,8 @@ export interface Announcement {
   image?: string;
   video?: string;
   donationCount: number;
+  date?: string;
+  showDate?: boolean;
 }
 
 export interface Story {
@@ -28,6 +30,7 @@ export interface Story {
   date: string;
   category: 'story' | 'announcement';
   donationCount?: number;
+  showDate?: boolean;
 }
 
 export interface BlogPost {
@@ -177,6 +180,17 @@ export interface GetInvolvedSettings {
   ways: Array<{ title: string; desc: string; cta: string }>;
 }
 
+export type TabPermission = 'hidden' | 'view' | 'edit';
+
+export interface SubAdmin {
+  id: string;
+  email: string;
+  name: string;
+  permissions: Record<string, TabPermission>;
+  hideExistingData: Record<string, boolean>;
+  createdAt: string;
+}
+
 export interface ContactMessage {
   id: string;
   name: string;
@@ -212,7 +226,7 @@ export const store = {
       const snap = await getDocs(q);
       return snap.docs.map(d => {
         const r = d.data();
-        return { id: d.id, title: r.title, subtitle: r.subtitle || '', excerpt: r.excerpt, content: r.content, image: r.image || undefined, video: r.video || undefined, date: ts(r.date), category: r.category, donationCount: r.donationCount ?? 0 };
+        return { id: d.id, title: r.title, subtitle: r.subtitle || '', excerpt: r.excerpt, content: r.content, image: r.image || undefined, video: r.video || undefined, date: ts(r.date), category: r.category, donationCount: r.donationCount ?? 0, showDate: r.showDate !== false };
       });
     } catch (e) { console.error("getStories:", e); return []; }
   },
@@ -220,7 +234,7 @@ export const store = {
     try {
       const ref = await addDoc(collection(db, "stories"), {
         title: item.title, subtitle: item.subtitle || '', excerpt: item.excerpt, content: item.content,
-        image: item.image || null, video: item.video || null, category: item.category, date: item.date, donationCount: item.donationCount ?? 0, created_at: new Date().toISOString(),
+        image: item.image || null, video: item.video || null, category: item.category, date: item.date, donationCount: item.donationCount ?? 0, showDate: item.showDate !== false, created_at: new Date().toISOString(),
       });
       return { id: ref.id, ...item };
     } catch (e) { console.error("addStory:", e); return null; }
@@ -237,6 +251,7 @@ export const store = {
       if (item.category !== undefined) updates.category = item.category;
       if (item.date !== undefined) updates.date = item.date;
       if (item.donationCount !== undefined) updates.donationCount = item.donationCount;
+      if (item.showDate !== undefined) updates.showDate = item.showDate;
       await updateDoc(doc(db, "stories", id), updates);
       return true;
     } catch (e) { console.error("updateStory:", e); return false; }
@@ -418,14 +433,14 @@ export const store = {
       const snap = await getDocs(q);
       return snap.docs.map(d => {
         const r = d.data();
-        return { id: d.id, title: r.title, subtitle: r.subtitle || '', content: r.content, image: r.image || undefined, video: r.video || undefined, donationCount: r.donationCount ?? 0 };
+        return { id: d.id, title: r.title, subtitle: r.subtitle || '', content: r.content, image: r.image || undefined, video: r.video || undefined, donationCount: r.donationCount ?? 0, date: r.date || r.created_at || '', showDate: r.showDate !== false };
       });
     } catch (e) { console.error("getAnnouncements:", e); return []; }
   },
   addAnnouncement: async (item: Omit<Announcement, 'id'>): Promise<Announcement | null> => {
     try {
       const ref = await addDoc(collection(db, "announcements"), {
-        title: item.title, subtitle: item.subtitle || '', content: item.content, image: item.image || null, video: item.video || null, donationCount: item.donationCount ?? 0, created_at: new Date().toISOString(),
+        title: item.title, subtitle: item.subtitle || '', content: item.content, image: item.image || null, video: item.video || null, donationCount: item.donationCount ?? 0, date: item.date || new Date().toISOString().split('T')[0], showDate: item.showDate !== false, created_at: new Date().toISOString(),
       });
       return { id: ref.id, ...item };
     } catch (e) { console.error("addAnnouncement:", e); return null; }
@@ -439,6 +454,8 @@ export const store = {
       if (item.image !== undefined) updates.image = item.image;
       if (item.video !== undefined) updates.video = item.video;
       if (item.donationCount !== undefined) updates.donationCount = item.donationCount;
+      if (item.date !== undefined) updates.date = item.date;
+      if (item.showDate !== undefined) updates.showDate = item.showDate;
       await updateDoc(doc(db, "announcements", id), updates);
       return true;
     } catch (e) { console.error("updateAnnouncement:", e); return false; }
@@ -570,5 +587,38 @@ export const store = {
   savePageSettings: async (page: string, settings: Record<string, any>): Promise<boolean> => {
     try { await setDoc(doc(db, "settings", page), settings); return true; }
     catch (e) { console.error(`save ${page} settings:`, e); return false; }
+  },
+
+  // ─── Sub-Admin Management ─────────────────────────────────
+  getSubAdmins: async (): Promise<SubAdmin[]> => {
+    try {
+      const snap = await getDocs(collection(db, "sub_admins"));
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }) as SubAdmin);
+    } catch (e) { console.error("getSubAdmins:", e); return []; }
+  },
+  addSubAdmin: async (item: Omit<SubAdmin, 'id'>): Promise<SubAdmin | null> => {
+    try {
+      const ref = await addDoc(collection(db, "sub_admins"), { ...item, createdAt: new Date().toISOString() });
+      return { id: ref.id, ...item };
+    } catch (e) { console.error("addSubAdmin:", e); return null; }
+  },
+  updateSubAdmin: async (id: string, item: Partial<SubAdmin>): Promise<boolean> => {
+    try {
+      await updateDoc(doc(db, "sub_admins", id), item as any);
+      return true;
+    } catch (e) { console.error("updateSubAdmin:", e); return false; }
+  },
+  deleteSubAdmin: async (id: string): Promise<boolean> => {
+    try { await deleteDoc(doc(db, "sub_admins", id)); return true; }
+    catch (e) { console.error("deleteSubAdmin:", e); return false; }
+  },
+  getSubAdminByEmail: async (email: string): Promise<SubAdmin | null> => {
+    try {
+      const q = query(collection(db, "sub_admins"), where("email", "==", email.toLowerCase()));
+      const snap = await getDocs(q);
+      if (snap.empty) return null;
+      const d = snap.docs[0];
+      return { id: d.id, ...d.data() } as SubAdmin;
+    } catch (e) { console.error("getSubAdminByEmail:", e); return null; }
   },
 };
