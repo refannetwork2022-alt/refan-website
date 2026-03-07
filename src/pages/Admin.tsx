@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   LayoutDashboard, FileText, Image, Megaphone, Users, Heart,
   Plus, Trash2, ArrowLeft, LogOut, Download, Mail, Send, MessageSquare, KeyRound,
-  UserPlus, Copy, Camera, Upload, Shield, ChevronUp, ChevronDown, Type, ImagePlus, Video, Pencil, Save, Loader2, Settings, Globe, Power
+  UserPlus, Copy, Camera, Upload, Shield, ChevronUp, ChevronDown, Type, ImagePlus, Video, Pencil, Save, Loader2, Settings, Globe, Power, Link2
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { doc, updateDoc } from "firebase/firestore";
@@ -70,7 +70,7 @@ const Admin = () => {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [subAdmins, setSubAdmins] = useState<SubAdmin[]>([]);
-  const [subAdminForm, setSubAdminForm] = useState({ name: '', email: '', permissions: {} as Record<string, TabPermission>, hideExistingData: {} as Record<string, boolean> });
+  const [subAdminForm, setSubAdminForm] = useState({ name: '', permissions: {} as Record<string, TabPermission>, hideExistingData: {} as Record<string, boolean> });
   const [editingSubAdmin, setEditingSubAdmin] = useState<string | null>(null);
   const [footerForm, setFooterForm] = useState<FooterSettings>({
     email: "refannetwork2022@gmail.com", phone: "+265 997 561 852",
@@ -1816,42 +1816,55 @@ const Admin = () => {
             { id: 'site', label: 'Site Settings' },
           ];
 
+          const generateToken = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+
           const resetForm = () => {
-            setSubAdminForm({ name: '', email: '', permissions: {}, hideExistingData: {} });
+            setSubAdminForm({ name: '', permissions: {}, hideExistingData: {} });
             setEditingSubAdmin(null);
           };
 
           const saveSubAdmin = async () => {
-            if (!subAdminForm.name.trim() || !subAdminForm.email.trim()) {
-              toast({ title: "Name and email are required", variant: "destructive" });
+            if (!subAdminForm.name.trim()) {
+              toast({ title: "Name is required", variant: "destructive" });
               return;
             }
             setSaving(true);
             if (editingSubAdmin) {
               await store.updateSubAdmin(editingSubAdmin, {
                 name: subAdminForm.name,
-                email: subAdminForm.email.toLowerCase(),
                 permissions: subAdminForm.permissions,
                 hideExistingData: subAdminForm.hideExistingData,
               });
               toast({ title: "Sub-admin updated!" });
             } else {
-              await store.addSubAdmin({
+              const token = generateToken();
+              const result = await store.addSubAdmin({
                 name: subAdminForm.name,
-                email: subAdminForm.email.toLowerCase(),
+                token,
+                active: true,
                 permissions: subAdminForm.permissions,
                 hideExistingData: subAdminForm.hideExistingData,
                 createdAt: new Date().toISOString(),
               });
-              toast({ title: "Sub-admin added!" });
+              if (result) {
+                const link = `${window.location.origin}${window.location.pathname}#/admin-access/${token}`;
+                navigator.clipboard.writeText(link);
+                toast({ title: "Sub-admin added! Invite link copied to clipboard." });
+              }
             }
             setSubAdmins(await store.getSubAdmins());
             resetForm();
             setSaving(false);
           };
 
+          const copyInviteLink = (token: string) => {
+            const link = `${window.location.origin}${window.location.pathname}#/admin-access/${token}`;
+            navigator.clipboard.writeText(link);
+            toast({ title: "Invite link copied!" });
+          };
+
           const startEdit = (sa: SubAdmin) => {
-            setSubAdminForm({ name: sa.name, email: sa.email, permissions: { ...sa.permissions }, hideExistingData: { ...sa.hideExistingData } });
+            setSubAdminForm({ name: sa.name, permissions: { ...sa.permissions }, hideExistingData: { ...sa.hideExistingData } });
             setEditingSubAdmin(sa.id);
           };
 
@@ -1876,9 +1889,8 @@ const Admin = () => {
               <div className="bg-card rounded-xl p-6 shadow-soft mb-8">
                 <h3 className="font-heading font-bold mb-4">{editingSubAdmin ? 'Edit Sub-Admin' : 'Add New Sub-Admin'}</h3>
                 <div className="space-y-4">
-                  <div className="grid sm:grid-cols-2 gap-3">
+                  <div>
                     <input placeholder="Name" value={subAdminForm.name} onChange={(e) => setSubAdminForm({ ...subAdminForm, name: e.target.value })} className={inputClass} />
-                    <input placeholder="Email (must have Firebase account)" value={subAdminForm.email} onChange={(e) => setSubAdminForm({ ...subAdminForm, email: e.target.value })} className={inputClass} type="email" />
                   </div>
                   <div>
                     <h4 className="text-sm font-bold mb-3">Tab Permissions</h4>
@@ -1932,7 +1944,6 @@ const Admin = () => {
                       <div key={sa.id} className="bg-card rounded-lg p-4 shadow-soft flex justify-between items-start gap-4">
                         <div>
                           <p className="font-bold text-sm">{sa.name}</p>
-                          <p className="text-xs text-muted-foreground">{sa.email}</p>
                           <p className="text-xs text-muted-foreground mt-1">
                             Access to {permCount} section{permCount !== 1 ? 's' : ''}: {
                               Object.entries(sa.permissions)
@@ -1941,8 +1952,10 @@ const Admin = () => {
                                 .join(', ') || 'none'
                             }
                           </p>
+                          {sa.pin && <p className="text-xs text-green-600 mt-1">PIN set</p>}
                         </div>
                         <div className="flex gap-1 shrink-0">
+                          <Button size="sm" variant="ghost" onClick={() => copyInviteLink(sa.token)} title="Copy invite link"><Link2 className="h-3.5 w-3.5" /></Button>
                           <Button size="sm" variant="ghost" onClick={() => startEdit(sa)}><Pencil className="h-3.5 w-3.5" /></Button>
                           <Button size="sm" variant="ghost" className="text-red-500" onClick={() => deleteSA(sa.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                         </div>

@@ -184,8 +184,10 @@ export type TabPermission = 'hidden' | 'view' | 'edit';
 
 export interface SubAdmin {
   id: string;
-  email: string;
   name: string;
+  token: string;
+  pin?: string;
+  active: boolean;
   permissions: Record<string, TabPermission>;
   hideExistingData: Record<string, boolean>;
   createdAt: string;
@@ -612,13 +614,13 @@ export const store = {
     try { await deleteDoc(doc(db, "sub_admins", id)); return true; }
     catch (e) { console.error("deleteSubAdmin:", e); return false; }
   },
-  getSubAdminByEmail: async (email: string): Promise<SubAdmin | null> => {
+  getSubAdminByToken: async (token: string): Promise<SubAdmin | null> => {
     try {
-      const q = query(collection(db, "sub_admins"), where("email", "==", email.toLowerCase()));
+      const q = query(collection(db, "sub_admins"), where("token", "==", token));
       const snap = await getDocs(q);
       if (snap.empty) return null;
       const d = snap.docs[0];
       return { id: d.id, ...d.data() } as SubAdmin;
-    } catch (e) { console.error("getSubAdminByEmail:", e); return null; }
+    } catch (e) { console.error("getSubAdminByToken:", e); return null; }
   },
 };

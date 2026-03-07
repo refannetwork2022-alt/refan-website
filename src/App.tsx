@@ -18,6 +18,7 @@ import Contact from "./pages/Contact";
 import Admin from "./pages/Admin";
 import AdminLogin from "./pages/AdminLogin";
 import Register from "./pages/Register";
+import SubAdminAccess from "./pages/SubAdminAccess";
 import NotFound from "./pages/NotFound";
 
 const ScrollToTop = () => {
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/admin-login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+            <Route path="/admin-access/:token" element={<SubAdminAccess />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

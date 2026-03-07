@@ -13,7 +13,7 @@ import {
   type User,
 } from "firebase/auth";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { store, type SubAdmin, type TabPermission } from "@/lib/store";
+import { type SubAdmin, type TabPermission } from "@/lib/store";
 
 interface AdminUser {
   email: string;
@@ -58,12 +58,6 @@ const checkAdminRole = async (firebaseUser: User): Promise<{ isAdmin: boolean; i
     const snap = await getDocs(q);
     if (!snap.empty) return { isAdmin: true, isSuperAdmin: true, subAdminProfile: null };
   } catch {}
-
-  // Check sub-admin collection
-  const subAdmin = await store.getSubAdminByEmail(email);
-  if (subAdmin) {
-    return { isAdmin: true, isSuperAdmin: false, subAdminProfile: subAdmin };
-  }
 
   return { isAdmin: false, isSuperAdmin: false, subAdminProfile: null };
 };
