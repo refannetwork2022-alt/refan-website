@@ -70,7 +70,7 @@ const Admin = () => {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [subAdmins, setSubAdmins] = useState<SubAdmin[]>([]);
-  const [subAdminForm, setSubAdminForm] = useState({ name: '', permissions: {} as Record<string, TabPermission>, hideExistingData: {} as Record<string, boolean> });
+  const [subAdminForm, setSubAdminForm] = useState({ name: '', username: '', email: '', permissions: {} as Record<string, TabPermission>, hideExistingData: {} as Record<string, boolean> });
   const [editingSubAdmin, setEditingSubAdmin] = useState<string | null>(null);
   const [footerForm, setFooterForm] = useState<FooterSettings>({
     email: "refannetwork2022@gmail.com", phone: "+265 997 561 852",
@@ -1829,30 +1829,42 @@ const Admin = () => {
           ];
 
           const generateToken = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+          const generatePassword = () => {
+            const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+            let pw = '';
+            for (let i = 0; i < 8; i++) pw += chars[Math.floor(Math.random() * chars.length)];
+            return pw;
+          };
 
           const resetForm = () => {
-            setSubAdminForm({ name: '', permissions: {}, hideExistingData: {} });
+            setSubAdminForm({ name: '', username: '', email: '', permissions: {}, hideExistingData: {} });
             setEditingSubAdmin(null);
           };
 
           const saveSubAdmin = async () => {
-            if (!subAdminForm.name.trim()) {
-              toast({ title: "Name is required", variant: "destructive" });
+            if (!subAdminForm.name.trim() || !subAdminForm.username.trim() || !subAdminForm.email.trim()) {
+              toast({ title: "Name, username, and email are required", variant: "destructive" });
               return;
             }
             setSaving(true);
             if (editingSubAdmin) {
               await store.updateSubAdmin(editingSubAdmin, {
                 name: subAdminForm.name,
+                username: subAdminForm.username,
+                email: subAdminForm.email.toLowerCase(),
                 permissions: subAdminForm.permissions,
                 hideExistingData: subAdminForm.hideExistingData,
               });
               toast({ title: "Sub-admin updated!" });
             } else {
               const token = generateToken();
+              const password = generatePassword();
               const result = await store.addSubAdmin({
                 name: subAdminForm.name,
+                username: subAdminForm.username,
+                email: subAdminForm.email.toLowerCase(),
                 token,
+                password,
                 active: true,
                 permissions: subAdminForm.permissions,
                 hideExistingData: subAdminForm.hideExistingData,
@@ -1860,8 +1872,9 @@ const Admin = () => {
               });
               if (result) {
                 const link = `${window.location.origin}${window.location.pathname}#/admin-access/${token}`;
-                navigator.clipboard.writeText(link);
-                toast({ title: "Sub-admin added! Invite link copied to clipboard." });
+                const info = `Link: ${link}\nPassword: ${password}`;
+                navigator.clipboard.writeText(info);
+                toast({ title: "Sub-admin created! Link & password copied to clipboard." });
               }
             }
             setSubAdmins(await store.getSubAdmins());
@@ -1869,14 +1882,21 @@ const Admin = () => {
             setSaving(false);
           };
 
-          const copyInviteLink = (token: string) => {
-            const link = `${window.location.origin}${window.location.pathname}#/admin-access/${token}`;
-            navigator.clipboard.writeText(link);
-            toast({ title: "Invite link copied!" });
+          const copyInviteLink = (sa: SubAdmin) => {
+            const link = `${window.location.origin}${window.location.pathname}#/admin-access/${sa.token}`;
+            const info = `Link: ${link}\nPassword: ${sa.password}`;
+            navigator.clipboard.writeText(info);
+            toast({ title: "Link & password copied!" });
+          };
+
+          const toggleActive = async (sa: SubAdmin) => {
+            await store.updateSubAdmin(sa.id, { active: !sa.active });
+            setSubAdmins(await store.getSubAdmins());
+            toast({ title: sa.active ? "Access disabled" : "Access enabled" });
           };
 
           const startEdit = (sa: SubAdmin) => {
-            setSubAdminForm({ name: sa.name, permissions: { ...sa.permissions }, hideExistingData: { ...sa.hideExistingData } });
+            setSubAdminForm({ name: sa.name, username: sa.username || '', email: sa.email || '', permissions: { ...sa.permissions }, hideExistingData: { ...sa.hideExistingData } });
             setEditingSubAdmin(sa.id);
           };
 
@@ -1901,8 +1921,10 @@ const Admin = () => {
               <div className="bg-card rounded-xl p-6 shadow-soft mb-8">
                 <h3 className="font-heading font-bold mb-4">{editingSubAdmin ? 'Edit Sub-Admin' : 'Add New Sub-Admin'}</h3>
                 <div className="space-y-4">
-                  <div>
-                    <input placeholder="Name" value={subAdminForm.name} onChange={(e) => setSubAdminForm({ ...subAdminForm, name: e.target.value })} className={inputClass} />
+                  <div className="grid sm:grid-cols-3 gap-3">
+                    <input placeholder="Full Name" value={subAdminForm.name} onChange={(e) => setSubAdminForm({ ...subAdminForm, name: e.target.value })} className={inputClass} />
+                    <input placeholder="Username" value={subAdminForm.username} onChange={(e) => setSubAdminForm({ ...subAdminForm, username: e.target.value })} className={inputClass} />
+                    <input placeholder="Email" type="email" value={subAdminForm.email} onChange={(e) => setSubAdminForm({ ...subAdminForm, email: e.target.value })} className={inputClass} />
                   </div>
                   <div>
                     <h4 className="text-sm font-bold mb-3">Tab Permissions</h4>
@@ -1953,9 +1975,13 @@ const Admin = () => {
                   {subAdmins.map((sa) => {
                     const permCount = Object.values(sa.permissions).filter(p => p !== 'hidden').length;
                     return (
-                      <div key={sa.id} className="bg-card rounded-lg p-4 shadow-soft flex justify-between items-start gap-4">
+                      <div key={sa.id} className={`bg-card rounded-lg p-4 shadow-soft flex justify-between items-start gap-4 ${!sa.active ? 'opacity-50' : ''}`}>
                         <div>
-                          <p className="font-bold text-sm">{sa.name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-sm">{sa.name}</p>
+                            {!sa.active && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-semibold">Disabled</span>}
+                          </div>
+                          <p className="text-xs text-muted-foreground">@{sa.username || '—'} · {sa.email || '—'}</p>
                           <p className="text-xs text-muted-foreground mt-1">
                             Access to {permCount} section{permCount !== 1 ? 's' : ''}: {
                               Object.entries(sa.permissions)
@@ -1964,10 +1990,12 @@ const Admin = () => {
                                 .join(', ') || 'none'
                             }
                           </p>
-                          {sa.pin && <p className="text-xs text-green-600 mt-1">PIN set</p>}
                         </div>
                         <div className="flex gap-1 shrink-0">
-                          <Button size="sm" variant="ghost" onClick={() => copyInviteLink(sa.token)} title="Copy invite link"><Link2 className="h-3.5 w-3.5" /></Button>
+                          <Button size="sm" variant="ghost" onClick={() => copyInviteLink(sa)} title="Copy link & password"><Link2 className="h-3.5 w-3.5" /></Button>
+                          <Button size="sm" variant="ghost" onClick={() => toggleActive(sa)} title={sa.active ? 'Disable access' : 'Enable access'}>
+                            <Power className={`h-3.5 w-3.5 ${sa.active ? 'text-green-600' : 'text-red-500'}`} />
+                          </Button>
                           <Button size="sm" variant="ghost" onClick={() => startEdit(sa)}><Pencil className="h-3.5 w-3.5" /></Button>
                           <Button size="sm" variant="ghost" className="text-red-500" onClick={() => deleteSA(sa.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                         </div>

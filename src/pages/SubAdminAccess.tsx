@@ -39,9 +39,7 @@ const SubAdminAccess = () => {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<SubAdmin | null>(null);
   const [authenticated, setAuthenticated] = useState(false);
-  const [needsSetup, setNeedsSetup] = useState(false);
-  const [pinInput, setPinInput] = useState('');
-  const [confirmPin, setConfirmPin] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
   const [error, setError] = useState('');
 
   // Admin data states
@@ -65,7 +63,6 @@ const SubAdminAccess = () => {
         setProfile(null);
       } else {
         setProfile(sa);
-        if (!sa.pin) setNeedsSetup(true);
       }
       setLoading(false);
     });
@@ -95,26 +92,15 @@ const SubAdminAccess = () => {
 
   const visibleTabs = TAB_META.filter(t => canViewTab(t.id));
 
-  const handleSetPin = async () => {
+  const handleLogin = () => {
     setError('');
-    if (pinInput.length < 4) { setError("PIN must be at least 4 digits"); return; }
-    if (pinInput !== confirmPin) { setError("PINs do not match"); return; }
-    await store.updateSubAdmin(profile!.id, { pin: pinInput });
-    setProfile({ ...profile!, pin: pinInput });
-    setNeedsSetup(false);
-    setAuthenticated(true);
-    toast({ title: "PIN set! Welcome." });
-  };
-
-  const handleLogin = async () => {
-    setError('');
-    if (pinInput !== profile?.pin) { setError("Incorrect PIN"); return; }
+    if (passwordInput !== profile?.password) { setError("Incorrect password"); return; }
     setAuthenticated(true);
   };
 
   const handleLogout = () => {
     setAuthenticated(false);
-    setPinInput('');
+    setPasswordInput('');
   };
 
   const inputClass = "w-full px-4 py-2.5 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring outline-none text-sm";
@@ -137,32 +123,15 @@ const SubAdminAccess = () => {
     </div>
   );
 
-  // ── PIN Setup ──
-  if (needsSetup) return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="bg-card rounded-2xl p-8 shadow-elevated max-w-md w-full">
-        <Lock className="h-10 w-10 text-primary mx-auto mb-4" />
-        <h1 className="font-heading text-xl font-bold text-center mb-1">Welcome, {profile.name}!</h1>
-        <p className="text-muted-foreground text-sm text-center mb-6">Set your PIN to sign in (at least 4 digits)</p>
-        <div className="space-y-3">
-          <input type="password" placeholder="Enter PIN" value={pinInput} onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))} className={inputClass + " text-center text-2xl tracking-widest"} maxLength={8} />
-          <input type="password" placeholder="Confirm PIN" value={confirmPin} onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))} className={inputClass + " text-center text-2xl tracking-widest"} maxLength={8} />
-          {error && <p className="text-red-500 text-xs text-center">{error}</p>}
-          <Button onClick={handleSetPin} className="w-full" size="lg">Set PIN</Button>
-        </div>
-      </div>
-    </div>
-  );
-
-  // ── PIN Login ──
+  // ── Password Login ──
   if (!authenticated) return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="bg-card rounded-2xl p-8 shadow-elevated max-w-md w-full">
         <Lock className="h-10 w-10 text-primary mx-auto mb-4" />
         <h1 className="font-heading text-xl font-bold text-center mb-1">Welcome, {profile.name}</h1>
-        <p className="text-muted-foreground text-sm text-center mb-6">Enter your PIN</p>
+        <p className="text-muted-foreground text-sm text-center mb-6">Enter your password to sign in</p>
         <div className="space-y-3">
-          <input type="password" placeholder="PIN" value={pinInput} onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} className={inputClass + " text-center text-2xl tracking-widest"} maxLength={8} autoFocus />
+          <input type="password" placeholder="Password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} className={inputClass + " text-center text-lg tracking-wider"} autoFocus />
           {error && <p className="text-red-500 text-xs text-center">{error}</p>}
           <Button onClick={handleLogin} className="w-full" size="lg">Sign In</Button>
         </div>

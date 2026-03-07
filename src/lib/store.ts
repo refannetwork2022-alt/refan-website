@@ -189,8 +189,10 @@ export type TabPermission = 'hidden' | 'view' | 'edit';
 export interface SubAdmin {
   id: string;
   name: string;
+  username: string;
+  email: string;
   token: string;
-  pin?: string;
+  password: string;
   active: boolean;
   permissions: Record<string, TabPermission>;
   hideExistingData: Record<string, boolean>;
