@@ -97,18 +97,18 @@ const SubAdminAccess = () => {
 
   const handleSetPin = async () => {
     setError('');
-    if (pinInput.length < 4) { setError("PIN lazima iwe angalau tarakimu 4"); return; }
-    if (pinInput !== confirmPin) { setError("PIN hazilingani"); return; }
+    if (pinInput.length < 4) { setError("PIN must be at least 4 digits"); return; }
+    if (pinInput !== confirmPin) { setError("PINs do not match"); return; }
     await store.updateSubAdmin(profile!.id, { pin: pinInput });
     setProfile({ ...profile!, pin: pinInput });
     setNeedsSetup(false);
     setAuthenticated(true);
-    toast({ title: "PIN imewekwa! Karibu." });
+    toast({ title: "PIN set! Welcome." });
   };
 
   const handleLogin = async () => {
     setError('');
-    if (pinInput !== profile?.pin) { setError("PIN si sahihi"); return; }
+    if (pinInput !== profile?.pin) { setError("Incorrect PIN"); return; }
     setAuthenticated(true);
   };
 
@@ -142,13 +142,13 @@ const SubAdminAccess = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="bg-card rounded-2xl p-8 shadow-elevated max-w-md w-full">
         <Lock className="h-10 w-10 text-primary mx-auto mb-4" />
-        <h1 className="font-heading text-xl font-bold text-center mb-1">Karibu, {profile.name}!</h1>
-        <p className="text-muted-foreground text-sm text-center mb-6">Weka PIN yako ya kuingia (angalau tarakimu 4)</p>
+        <h1 className="font-heading text-xl font-bold text-center mb-1">Welcome, {profile.name}!</h1>
+        <p className="text-muted-foreground text-sm text-center mb-6">Set your PIN to sign in (at least 4 digits)</p>
         <div className="space-y-3">
-          <input type="password" placeholder="Weka PIN" value={pinInput} onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))} className={inputClass + " text-center text-2xl tracking-widest"} maxLength={8} />
-          <input type="password" placeholder="Thibitisha PIN" value={confirmPin} onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))} className={inputClass + " text-center text-2xl tracking-widest"} maxLength={8} />
+          <input type="password" placeholder="Enter PIN" value={pinInput} onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))} className={inputClass + " text-center text-2xl tracking-widest"} maxLength={8} />
+          <input type="password" placeholder="Confirm PIN" value={confirmPin} onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))} className={inputClass + " text-center text-2xl tracking-widest"} maxLength={8} />
           {error && <p className="text-red-500 text-xs text-center">{error}</p>}
-          <Button onClick={handleSetPin} className="w-full" size="lg">Weka PIN</Button>
+          <Button onClick={handleSetPin} className="w-full" size="lg">Set PIN</Button>
         </div>
       </div>
     </div>
@@ -159,12 +159,12 @@ const SubAdminAccess = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="bg-card rounded-2xl p-8 shadow-elevated max-w-md w-full">
         <Lock className="h-10 w-10 text-primary mx-auto mb-4" />
-        <h1 className="font-heading text-xl font-bold text-center mb-1">Karibu, {profile.name}</h1>
-        <p className="text-muted-foreground text-sm text-center mb-6">Ingiza PIN yako</p>
+        <h1 className="font-heading text-xl font-bold text-center mb-1">Welcome, {profile.name}</h1>
+        <p className="text-muted-foreground text-sm text-center mb-6">Enter your PIN</p>
         <div className="space-y-3">
           <input type="password" placeholder="PIN" value={pinInput} onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} className={inputClass + " text-center text-2xl tracking-widest"} maxLength={8} autoFocus />
           {error && <p className="text-red-500 text-xs text-center">{error}</p>}
-          <Button onClick={handleLogin} className="w-full" size="lg">Ingia</Button>
+          <Button onClick={handleLogin} className="w-full" size="lg">Sign In</Button>
         </div>
       </div>
     </div>
@@ -224,7 +224,7 @@ const SubAdminAccess = () => {
       <main className="flex-1 p-6 lg:p-10 pb-24 md:pb-10 overflow-auto">
         {isViewOnly && (
           <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-4 py-2 mb-4 text-sm font-medium">
-            View only — huwezi kubadilisha sehemu hii.
+            View only — you cannot make changes in this section.
           </div>
         )}
 
