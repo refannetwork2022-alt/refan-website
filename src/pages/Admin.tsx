@@ -2013,20 +2013,33 @@ const Admin = () => {
                           </div>
                         </div>
                         <div className="mt-3 pt-3 border-t border-border">
-                          {sa.token && sa.password ? (
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-semibold text-muted-foreground">Password:</span>
-                                <code className="bg-muted px-2 py-0.5 rounded text-foreground text-xs">{sa.password}</code>
-                                <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => copyPassword(sa.password)}><Copy className="h-3 w-3" /> Copy</Button>
+                          {sa.token && sa.password ? (() => {
+                            const link = `${window.location.origin}${window.location.pathname}#/admin-access/${sa.token}`;
+                            const msg = `Hi ${sa.name},\n\nYou have been given access to the ReFAN admin dashboard.\n\nLink: ${link}\nPassword: ${sa.password}\n\nClick the link and enter your password to sign in.`;
+                            return (
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-semibold text-muted-foreground">Password:</span>
+                                  <code className="bg-muted px-2 py-0.5 rounded text-foreground text-xs">{sa.password}</code>
+                                  <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => copyPassword(sa.password)}><Copy className="h-3 w-3" /> Copy</Button>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-semibold text-muted-foreground">Link:</span>
+                                  <span className="text-xs text-muted-foreground break-all flex-1">{link}</span>
+                                  <Button size="sm" variant="ghost" className="h-6 px-2 text-xs shrink-0" onClick={() => copyLink(sa)}><Copy className="h-3 w-3" /> Copy</Button>
+                                </div>
+                                <div className="flex gap-2 pt-1">
+                                  <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => { navigator.clipboard.writeText(msg); toast({ title: "Message copied!" }); }}><Copy className="h-3 w-3" /> Copy Message</Button>
+                                  <a href={`https://wa.me/?text=${encodeURIComponent(msg)}`} target="_blank" rel="noopener noreferrer">
+                                    <Button size="sm" variant="outline" className="text-xs h-7 text-green-600 border-green-200 hover:bg-green-50"><Send className="h-3 w-3" /> WhatsApp</Button>
+                                  </a>
+                                  <a href={`mailto:${sa.email}?subject=Your ReFAN Admin Access&body=${encodeURIComponent(msg)}`}>
+                                    <Button size="sm" variant="outline" className="text-xs h-7"><Mail className="h-3 w-3" /> Email</Button>
+                                  </a>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-semibold text-muted-foreground">Link:</span>
-                                <span className="text-xs text-muted-foreground break-all flex-1">{`${window.location.origin}${window.location.pathname}#/admin-access/${sa.token}`}</span>
-                                <Button size="sm" variant="ghost" className="h-6 px-2 text-xs shrink-0" onClick={() => copyLink(sa)}><Copy className="h-3 w-3" /> Copy</Button>
-                              </div>
-                            </div>
-                          ) : (
+                            );
+                          })() : (
                             <Button size="sm" variant="outline" onClick={() => generateCredentials(sa)}>Generate Link & Password</Button>
                           )}
                         </div>
