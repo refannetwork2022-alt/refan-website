@@ -1889,6 +1889,21 @@ const Admin = () => {
             toast({ title: "Link & password copied!" });
           };
 
+          const copyPassword = (pw: string) => {
+            navigator.clipboard.writeText(pw);
+            toast({ title: "Password copied!" });
+          };
+
+          const generateCredentials = async (sa: SubAdmin) => {
+            const token = generateToken();
+            const password = generatePassword();
+            await store.updateSubAdmin(sa.id, { token, password });
+            setSubAdmins(await store.getSubAdmins());
+            const link = `${window.location.origin}${window.location.pathname}#/admin-access/${token}`;
+            navigator.clipboard.writeText(`Link: ${link}\nPassword: ${password}`);
+            toast({ title: "Link & password generated and copied!" });
+          };
+
           const toggleActive = async (sa: SubAdmin) => {
             const isActive = sa.active !== false;
             await store.updateSubAdmin(sa.id, { active: !isActive });
@@ -2003,12 +2018,24 @@ const Admin = () => {
                             <Button size="sm" variant="ghost" className="text-red-500" onClick={() => deleteSA(sa.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                           </div>
                         </div>
-                        {sa.token && sa.password && (
-                          <div className="mt-3 pt-3 border-t border-border space-y-1">
-                            <p className="text-xs text-muted-foreground"><span className="font-semibold">Password:</span> <code className="bg-muted px-1.5 py-0.5 rounded text-foreground">{sa.password}</code></p>
-                            <p className="text-xs text-muted-foreground break-all"><span className="font-semibold">Link:</span> {`${window.location.origin}${window.location.pathname}#/admin-access/${sa.token}`}</p>
-                          </div>
-                        )}
+                        <div className="mt-3 pt-3 border-t border-border">
+                          {sa.token && sa.password ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-semibold text-muted-foreground">Password:</span>
+                                <code className="bg-muted px-2 py-0.5 rounded text-foreground text-xs">{sa.password}</code>
+                                <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => copyPassword(sa.password)}><Copy className="h-3 w-3" /> Copy</Button>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-semibold text-muted-foreground">Link:</span>
+                                <span className="text-xs text-muted-foreground break-all flex-1">{`${window.location.origin}${window.location.pathname}#/admin-access/${sa.token}`}</span>
+                                <Button size="sm" variant="ghost" className="h-6 px-2 text-xs shrink-0" onClick={() => copyInviteLink(sa)}><Copy className="h-3 w-3" /> Copy</Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <Button size="sm" variant="outline" onClick={() => generateCredentials(sa)}>Generate Link & Password</Button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
