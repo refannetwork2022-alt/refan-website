@@ -89,6 +89,8 @@ const Admin = () => {
     heroTitle: "Our Heart, Our Mission", heroSubtitle: "Dedicated to holistic continuity of care for orphans and widows in Dzaleka Refugee Camp since 2022.",
     heroImage: "", whoWeAreTitle: "A Refugee-Led Force for Community Wellness", whoWeAreBody: "", whoWeAreImage1: "", whoWeAreImage2: "/wg5r.png",
     missionQuote: "Holistic Continuity of Care", missionBody: "", ctaHeading: "Be the change you want to see.", ctaBody: "",
+    valuesHeading: 'Our Guiding <span class="text-primary">Values</span>', valuesSubtitle: "The principles that drive every decision and action we take.",
+    leadersHeading: '<span class="text-secondary">Board</span> of Directors', leadersSubtitle: "The visionary leaders steering ReFAN toward a brighter, healthier future for all.",
     leaders: [
       { name: "Goreth Niyibigira", title: "Président", quote: "", image: "/Goreth Niyibigira - Président.jpg", email: "refannetwork2022@gmail.com" },
       { name: "Lydia Igiraneza", title: "Général Secretary", quote: "", image: "/Lydia Igiraneza - Général Secretary.jpg", email: "refannetwork2022@gmail.com" },
@@ -1598,7 +1600,11 @@ const Admin = () => {
                   <RichTextEditor value={aboutForm.ctaHeading} onChange={(v) => setAboutForm({ ...aboutForm, ctaHeading: v })} rows={2} /></div>
                 <div><label className="text-xs font-semibold text-muted-foreground">CTA Body</label>
                   <RichTextEditor value={aboutForm.ctaBody} onChange={(v) => setAboutForm({ ...aboutForm, ctaBody: v })} rows={3} /></div>
-                <h4 className="font-bold text-sm mt-4">Leadership Team</h4>
+                <h4 className="font-bold text-sm mt-4">Leaders / Board Section</h4>
+                <div><label className="text-xs font-semibold text-muted-foreground">Section Heading</label>
+                  <RichTextEditor value={aboutForm.leadersHeading} onChange={(v) => setAboutForm({ ...aboutForm, leadersHeading: v })} rows={2} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">Section Subtitle</label>
+                  <RichTextEditor value={aboutForm.leadersSubtitle} onChange={(v) => setAboutForm({ ...aboutForm, leadersSubtitle: v })} rows={2} /></div>
                 {aboutForm.leaders.map((l, i) => (
                   <div key={i} className="border border-border rounded-lg p-4 space-y-2">
                     <div className="grid grid-cols-2 gap-2">
@@ -1613,7 +1619,11 @@ const Admin = () => {
                   </div>
                 ))}
                 <Button variant="outline" size="sm" onClick={() => setAboutForm({ ...aboutForm, leaders: [...aboutForm.leaders, { name: "", title: "", quote: "", image: "", email: "" }] })}><Plus className="h-3 w-3" /> Add Leader</Button>
-                <h4 className="font-bold text-sm mt-4">Values</h4>
+                <h4 className="font-bold text-sm mt-4">Values Section</h4>
+                <div><label className="text-xs font-semibold text-muted-foreground">Section Heading</label>
+                  <RichTextEditor value={aboutForm.valuesHeading} onChange={(v) => setAboutForm({ ...aboutForm, valuesHeading: v })} rows={2} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">Section Subtitle</label>
+                  <RichTextEditor value={aboutForm.valuesSubtitle} onChange={(v) => setAboutForm({ ...aboutForm, valuesSubtitle: v })} rows={2} /></div>
                 {aboutForm.values.map((v, i) => (
                   <div key={i} className="flex gap-2">
                     <input placeholder="Title" value={v.title} onChange={(e) => { const arr = [...aboutForm.values]; arr[i] = { ...v, title: e.target.value }; setAboutForm({ ...aboutForm, values: arr }); }} className={inputClass} />

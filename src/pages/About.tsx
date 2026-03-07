@@ -18,6 +18,10 @@ const DEFAULTS: AboutSettings = {
   missionBody: "We bridge the gap between emergency relief and long-term sustainable development, ensuring that support never ends when the cameras leave.",
   ctaHeading: "Be the change you want to see.",
   ctaBody: "Join our network of donors, volunteers, and partners working together to ensure care never stops.",
+  valuesHeading: 'Our Guiding <span class="text-primary">Values</span>',
+  valuesSubtitle: "The principles that drive every decision and action we take.",
+  leadersHeading: '<span class="text-secondary">Board</span> of Directors',
+  leadersSubtitle: "The visionary leaders steering ReFAN toward a brighter, healthier future for all.",
   leaders: [
     { name: "Goreth Niyibigira", title: "Président", quote: "Our goal isn't just to provide aid, but to build resilient systems that thrive independently.", image: "/Goreth Niyibigira - Président.jpg", email: "refannetwork2022@gmail.com" },
     { name: "Lydia Igiraneza", title: "Général Secretary", quote: "Strategic partnership is the engine that drives transformation and scale.", image: "/Lydia Igiraneza - Général Secretary.jpg", email: "refannetwork2022@gmail.com" },
@@ -97,8 +101,8 @@ const About = () => {
 
       <section className="container py-16">
         <div className="text-center mb-16">
-          <h2 className="font-heading text-3xl md:text-4xl font-extrabold mb-4">Our Guiding <span className="text-primary">Values</span></h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">The principles that drive every decision and action we take.</p>
+          <h2 className="font-heading text-3xl md:text-4xl font-extrabold mb-4" dangerouslySetInnerHTML={{ __html: d.valuesHeading }} />
+          <p className="text-muted-foreground max-w-xl mx-auto" dangerouslySetInnerHTML={{ __html: d.valuesSubtitle }} />
         </div>
         <div className="grid md:grid-cols-4 gap-8">
           {d.values.map((v, i) => {
@@ -116,8 +120,8 @@ const About = () => {
 
       <section className="container py-16">
         <div className="text-center mb-16">
-          <h2 className="font-heading text-3xl md:text-4xl font-extrabold mb-4"><span className="text-secondary">Board</span> of Directors</h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">The visionary leaders steering ReFAN toward a brighter, healthier future for all.</p>
+          <h2 className="font-heading text-3xl md:text-4xl font-extrabold mb-4" dangerouslySetInnerHTML={{ __html: d.leadersHeading }} />
+          <p className="text-muted-foreground max-w-xl mx-auto" dangerouslySetInnerHTML={{ __html: d.leadersSubtitle }} />
         </div>
         <div className="grid md:grid-cols-2 gap-12 max-w-4xl mx-auto">
           {d.leaders.map((leader, i) => (

@@ -138,6 +138,10 @@ export interface AboutSettings {
   missionBody: string;
   ctaHeading: string;
   ctaBody: string;
+  valuesHeading: string;
+  valuesSubtitle: string;
+  leadersHeading: string;
+  leadersSubtitle: string;
   leaders: Array<{ name: string; title: string; quote: string; image: string; email: string }>;
   values: Array<{ title: string; description: string }>;
 }
