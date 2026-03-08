@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { store, type SubAdmin, type TabPermission, type Story, type BlogPost, type GalleryItem, type Announcement, type Member, type NewsletterSubscriber, type ContactMessage } from "@/lib/store";
@@ -7,12 +7,44 @@ import {
   LayoutDashboard, FileText, Image, Megaphone, Users, Heart,
   Plus, Trash2, LogOut, Mail, MessageSquare, UserPlus, Shield,
   Pencil, Save, Loader2, Settings, Globe, Power, Lock, ImagePlus,
-  ArrowLeft, Menu, X
+  ArrowLeft, Menu, X, Camera, Upload
 } from "lucide-react";
 import ImageUpload from "@/components/ImageUpload";
 import RichTextEditor from "@/components/RichTextEditor";
 
 type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'sponsors' | 'donations' | 'subscribers' | 'messages' | 'members' | 'footer' | 'hero' | 'site' | 'pages';
+
+const countries = [
+  "Afghanistan", "Albania", "Algeria", "Angola", "Argentina", "Australia", "Austria", "Bangladesh",
+  "Belgium", "Benin", "Bolivia", "Botswana", "Brazil", "Burkina Faso", "Burundi", "Cameroon",
+  "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros",
+  "Congo (Brazzaville)", "Congo (DRC)", "Costa Rica", "Cote d'Ivoire", "Cuba", "Denmark",
+  "Djibouti", "Dominican Republic", "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea",
+  "Eritrea", "Ethiopia", "Finland", "France", "Gabon", "Gambia", "Germany", "Ghana", "Greece",
+  "Guatemala", "Guinea", "Guinea-Bissau", "Haiti", "Honduras", "India", "Indonesia", "Iran",
+  "Iraq", "Ireland", "Israel", "Italy", "Jamaica", "Japan", "Jordan", "Kenya", "Kuwait",
+  "Lebanon", "Lesotho", "Liberia", "Libya", "Madagascar", "Malawi", "Malaysia", "Mali",
+  "Mauritania", "Mauritius", "Mexico", "Morocco", "Mozambique", "Myanmar", "Namibia", "Nepal",
+  "Netherlands", "New Zealand", "Niger", "Nigeria", "Norway", "Pakistan", "Palestine", "Panama",
+  "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania", "Russia", "Rwanda",
+  "Saudi Arabia", "Senegal", "Sierra Leone", "Singapore", "Somalia", "South Africa", "South Korea",
+  "South Sudan", "Spain", "Sri Lanka", "Sudan", "Eswatini", "Sweden", "Switzerland", "Syria",
+  "Tanzania", "Thailand", "Togo", "Tunisia", "Turkey", "Uganda", "Ukraine", "United Arab Emirates",
+  "United Kingdom", "United States", "Uruguay", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe",
+];
+
+const phoneCodes = [
+  { code: "+265", country: "MW" }, { code: "+1", country: "US" }, { code: "+44", country: "GB" },
+  { code: "+33", country: "FR" }, { code: "+49", country: "DE" }, { code: "+254", country: "KE" },
+  { code: "+255", country: "TZ" }, { code: "+256", country: "UG" }, { code: "+250", country: "RW" },
+  { code: "+257", country: "BI" }, { code: "+243", country: "CD" }, { code: "+27", country: "ZA" },
+  { code: "+91", country: "IN" }, { code: "+86", country: "CN" }, { code: "+61", country: "AU" },
+  { code: "+234", country: "NG" }, { code: "+251", country: "ET" }, { code: "+252", country: "SO" },
+  { code: "+211", country: "SS" }, { code: "+249", country: "SD" }, { code: "+212", country: "MA" },
+  { code: "+213", country: "DZ" }, { code: "+216", country: "TN" }, { code: "+218", country: "LY" },
+  { code: "+20", country: "EG" }, { code: "+221", country: "SN" }, { code: "+233", country: "GH" },
+  { code: "+237", country: "CM" }, { code: "+242", country: "CG" }, { code: "+260", country: "ZM" },
+];
 
 const TAB_META: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -56,6 +88,85 @@ const SubAdminAccess = () => {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [saving, setSaving] = useState(false);
+  const [showMemberForm, setShowMemberForm] = useState(false);
+  const [memberSaving, setMemberSaving] = useState(false);
+  const emptyMemberForm = {
+    surname: '', firstName: '', otherName: '', email: '', countryOfOrigin: '', countryOfResidence: '',
+    unhcrId: '', phone: '', phoneCode: '+265', gender: '', maritalStatus: '',
+    dobYear: '', dobMonth: '', dobDay: '', familySize: '', photo: '', document: '',
+    paymentCurrency: 'MWK', paymentAmount: '', branchName: 'Dzaleka', username: '', expiryDate: '',
+  };
+  const [memberForm, setMemberForm] = useState(emptyMemberForm);
+  const photoRef = useRef<HTMLInputElement>(null);
+  const docRef = useRef<HTMLInputElement>(null);
+  const currentYear = new Date().getFullYear();
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
+  const days = Array.from({ length: 31 }, (_, i) => i + 1);
+
+  const handleFileToBase64 = (file: File, field: 'photo' | 'document') => {
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "File too large. Maximum 5MB.", variant: "destructive" });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setMemberForm(prev => ({ ...prev, [field]: reader.result as string }));
+    reader.readAsDataURL(file);
+  };
+
+  const compressImage = (base64: string, maxWidth = 400): Promise<string> => {
+    return new Promise((resolve) => {
+      if (!base64) { resolve(''); return; }
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = window.document.createElement('canvas');
+        const scale = Math.min(1, maxWidth / img.width);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.6));
+      };
+      img.onerror = () => resolve('');
+      img.src = base64;
+    });
+  };
+
+  const addMember = async () => {
+    if (!memberForm.surname.trim() || !memberForm.firstName.trim()) {
+      toast({ title: "Surname and First Name are required", variant: "destructive" });
+      return;
+    }
+    if (memberSaving) return;
+    setMemberSaving(true);
+    try {
+      const dob = memberForm.dobYear ? `${memberForm.dobYear}-${(memberForm.dobMonth || '1').padStart(2, '0')}-${(memberForm.dobDay || '1').padStart(2, '0')}` : '';
+      const compressedPhoto = await compressImage(memberForm.photo);
+      const compressedDoc = await compressImage(memberForm.document, 600);
+      const result = await store.addMember({
+        surname: memberForm.surname.trim(), firstName: memberForm.firstName.trim(),
+        otherName: memberForm.otherName.trim(), email: memberForm.email.trim(), countryOfOrigin: memberForm.countryOfOrigin,
+        countryOfResidence: memberForm.countryOfResidence, unhcrId: memberForm.unhcrId.trim(),
+        phone: memberForm.phone.trim(), phoneCode: memberForm.phoneCode,
+        gender: memberForm.gender, maritalStatus: memberForm.maritalStatus,
+        dateOfBirth: dob, familySize: Number(memberForm.familySize) || 0,
+        photo: compressedPhoto, document: compressedDoc,
+        paymentCurrency: memberForm.paymentCurrency, paymentAmount: Number(memberForm.paymentAmount) || 0,
+        registrationDate: new Date().toISOString(),
+        expiryDate: (() => { const d = new Date(); d.setMonth(d.getMonth() + 3); return d.toISOString().split('T')[0]; })(),
+        branchName: memberForm.branchName.trim(), username: memberForm.username.trim(),
+      });
+      if (result) {
+        setMembers(await store.getMembers());
+        setMemberForm(emptyMemberForm);
+        setShowMemberForm(false);
+        toast({ title: `Member ${result.regNumber} registered successfully.` });
+      }
+    } catch (err) {
+      toast({ title: "Error saving member.", variant: "destructive" });
+    }
+    setMemberSaving(false);
+  };
 
   // Load sub-admin profile
   useEffect(() => {
@@ -232,26 +343,148 @@ const SubAdminAccess = () => {
 
         {tab === 'members' && (
           <div>
-            <h1 className="font-heading text-2xl font-bold mb-4">Members</h1>
-            <p className="text-sm text-muted-foreground mb-6">Total: {members.length}</p>
+            <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
+              <div>
+                <h1 className="font-heading text-2xl font-bold">Members</h1>
+                {!isHideExisting && <p className="text-sm text-muted-foreground">Total: {members.length} member{members.length !== 1 ? 's' : ''}</p>}
+              </div>
+              {canEditTab('members') && (
+                <Button variant="default" size="sm" onClick={() => setShowMemberForm(!showMemberForm)}><Plus className="h-4 w-4" /> Add Member</Button>
+              )}
+            </div>
+
+            {/* Add Member Form */}
+            {showMemberForm && canEditTab('members') && (
+              <div className="bg-card rounded-xl p-6 shadow-soft mb-8 space-y-4">
+                <h3 className="font-heading font-bold">Register New Member</h3>
+                <div className="grid sm:grid-cols-3 gap-3">
+                  <input placeholder="Surname *" value={memberForm.surname} onChange={e => setMemberForm({ ...memberForm, surname: e.target.value })} className={inputClass} maxLength={100} />
+                  <input placeholder="First Name *" value={memberForm.firstName} onChange={e => setMemberForm({ ...memberForm, firstName: e.target.value })} className={inputClass} maxLength={100} />
+                  <input placeholder="Other Name" value={memberForm.otherName} onChange={e => setMemberForm({ ...memberForm, otherName: e.target.value })} className={inputClass} maxLength={100} />
+                </div>
+                <input type="email" placeholder="Email Address" value={memberForm.email} onChange={e => setMemberForm({ ...memberForm, email: e.target.value })} className={inputClass} maxLength={200} />
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <select value={memberForm.countryOfOrigin} onChange={e => setMemberForm({ ...memberForm, countryOfOrigin: e.target.value })} className={inputClass}>
+                    <option value="">Country of Origin</option>
+                    {countries.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <select value={memberForm.countryOfResidence} onChange={e => setMemberForm({ ...memberForm, countryOfResidence: e.target.value })} className={inputClass}>
+                    <option value="">Country of Residence</option>
+                    {countries.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <input placeholder="UNHCR / National / Any Valid ID" value={memberForm.unhcrId} onChange={e => setMemberForm({ ...memberForm, unhcrId: e.target.value })} className={inputClass} maxLength={50} />
+                <div className="flex gap-2">
+                  <select value={memberForm.phoneCode} onChange={e => setMemberForm({ ...memberForm, phoneCode: e.target.value })} className="w-28 px-2 py-2.5 rounded-lg border border-input bg-background text-sm">
+                    {phoneCodes.map(p => <option key={p.code} value={p.code}>{p.country} ({p.code})</option>)}
+                  </select>
+                  <input placeholder="Phone number" value={memberForm.phone} onChange={e => setMemberForm({ ...memberForm, phone: e.target.value })} className={inputClass} maxLength={15} />
+                </div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <select value={memberForm.gender} onChange={e => setMemberForm({ ...memberForm, gender: e.target.value })} className={inputClass}>
+                    <option value="">Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  <select value={memberForm.maritalStatus} onChange={e => setMemberForm({ ...memberForm, maritalStatus: e.target.value })} className={inputClass}>
+                    <option value="">Marital Status</option>
+                    <option value="Single">Single</option>
+                    <option value="Married">Married</option>
+                    <option value="Widowed">Widowed</option>
+                    <option value="Divorced">Divorced</option>
+                  </select>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <select value={memberForm.dobYear} onChange={e => setMemberForm({ ...memberForm, dobYear: e.target.value })} className={inputClass}>
+                    <option value="">Year</option>
+                    {years.map(y => <option key={y} value={String(y)}>{y}</option>)}
+                  </select>
+                  <select value={memberForm.dobMonth} onChange={e => setMemberForm({ ...memberForm, dobMonth: e.target.value })} className={inputClass}>
+                    <option value="">Month</option>
+                    {months.map((m, i) => <option key={m} value={String(i + 1)}>{m}</option>)}
+                  </select>
+                  <select value={memberForm.dobDay} onChange={e => setMemberForm({ ...memberForm, dobDay: e.target.value })} className={inputClass}>
+                    <option value="">Day</option>
+                    {days.map(d => <option key={d} value={String(d)}>{d}</option>)}
+                  </select>
+                </div>
+                <div className="grid sm:grid-cols-3 gap-3">
+                  <input type="number" placeholder="Family Size" value={memberForm.familySize} onChange={e => setMemberForm({ ...memberForm, familySize: e.target.value })} className={inputClass} min={0} />
+                  <input placeholder="Username" value={memberForm.username} onChange={e => setMemberForm({ ...memberForm, username: e.target.value })} className={inputClass} maxLength={50} />
+                  <input placeholder="Branch Name" value={memberForm.branchName} onChange={e => setMemberForm({ ...memberForm, branchName: e.target.value })} className={inputClass} maxLength={100} />
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex gap-6 text-sm">
+                  <div><span className="text-blue-600 font-medium">Registration Date:</span> <strong>{new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</strong></div>
+                  <div><span className="text-blue-600 font-medium">Expiry Date:</span> <strong>{(() => { const d = new Date(); d.setMonth(d.getMonth() + 3); return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); })()}</strong></div>
+                </div>
+                <div className="flex gap-4">
+                  <div>
+                    <input ref={photoRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleFileToBase64(e.target.files[0], 'photo')} />
+                    <Button type="button" variant="outline" size="sm" onClick={() => photoRef.current?.click()}>
+                      <Camera className="h-4 w-4" /> {memberForm.photo ? 'Photo uploaded' : 'Upload Photo'}
+                    </Button>
+                  </div>
+                  <div>
+                    <input ref={docRef} type="file" accept="image/*,.pdf" className="hidden" onChange={e => e.target.files?.[0] && handleFileToBase64(e.target.files[0], 'document')} />
+                    <Button type="button" variant="outline" size="sm" onClick={() => docRef.current?.click()}>
+                      <Upload className="h-4 w-4" /> {memberForm.document ? 'Doc uploaded' : 'Upload Document'}
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Button onClick={addMember} size="sm" disabled={memberSaving}><Plus className="h-4 w-4" /> {memberSaving ? 'Saving...' : 'Register Member'}</Button>
+                  <Button variant="ghost" size="sm" onClick={() => { setShowMemberForm(false); setMemberForm(emptyMemberForm); }}>Cancel</Button>
+                </div>
+              </div>
+            )}
+
+            {/* Members Table */}
             {isHideExisting ? (
               <p className="text-muted-foreground text-center py-8">Existing member data is hidden for your account.</p>
-            ) : (
-              <div className="overflow-x-auto">
+            ) : members.length === 0 ? <p className="text-muted-foreground">No members registered yet.</p> : (
+              <div className="overflow-x-auto bg-card rounded-xl shadow-soft">
                 <table className="w-full text-sm">
-                  <thead><tr className="border-b border-border text-left">
-                    <th className="py-2 px-3 font-semibold">#</th>
-                    <th className="py-2 px-3 font-semibold">Name</th>
-                    <th className="py-2 px-3 font-semibold">Email</th>
-                    <th className="py-2 px-3 font-semibold">Phone</th>
-                  </tr></thead>
+                  <thead>
+                    <tr className="border-b border-border bg-muted/50">
+                      <th className="text-left py-3 px-3 font-medium text-xs">#</th>
+                      <th className="text-left py-3 px-3 font-medium text-xs">Family Size</th>
+                      <th className="text-left py-3 px-3 font-medium text-xs">Country</th>
+                      <th className="text-left py-3 px-3 font-medium text-xs">Names</th>
+                      <th className="text-left py-3 px-3 font-medium text-xs">Reg. Number</th>
+                      <th className="text-left py-3 px-3 font-medium text-xs">Profile</th>
+                      <th className="text-left py-3 px-3 font-medium text-xs">Email</th>
+                      <th className="text-left py-3 px-3 font-medium text-xs">Contact</th>
+                      <th className="text-left py-3 px-3 font-medium text-xs">Username</th>
+                      <th className="text-left py-3 px-3 font-medium text-xs">Branch</th>
+                      <th className="text-left py-3 px-3 font-medium text-xs">Reg. Date</th>
+                      <th className="text-left py-3 px-3 font-medium text-xs">Exp. Date</th>
+                    </tr>
+                  </thead>
                   <tbody>
-                    {members.map((m, i) => (
-                      <tr key={m.id} className="border-b border-border/50 hover:bg-muted/50">
-                        <td className="py-2 px-3">{i + 1}</td>
-                        <td className="py-2 px-3 font-medium">{m.surname} {m.firstName}</td>
-                        <td className="py-2 px-3">{m.email}</td>
-                        <td className="py-2 px-3">{m.phone}</td>
+                    {members.map((m, idx) => (
+                      <tr key={m.id} className="border-b border-border hover:bg-muted/30">
+                        <td className="py-3 px-3 text-xs text-muted-foreground">{idx + 1}</td>
+                        <td className="py-3 px-3">{m.familySize}</td>
+                        <td className="py-3 px-3 text-xs">{m.countryOfOrigin}</td>
+                        <td className="py-3 px-3 font-medium">{m.firstName} {m.surname}</td>
+                        <td className="py-3 px-3 text-primary font-bold">{m.regNumber}</td>
+                        <td className="py-3 px-3">
+                          {m.photo ? (
+                            <img src={m.photo} alt={m.firstName} className="w-10 h-10 rounded-full object-cover border border-border" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-xs text-muted-foreground">N/A</div>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 text-xs">{m.email}</td>
+                        <td className="py-3 px-3 text-xs">{m.phoneCode}{m.phone}</td>
+                        <td className="py-3 px-3 text-xs">{m.username}</td>
+                        <td className="py-3 px-3 text-xs">{m.branchName}</td>
+                        <td className="py-3 px-3 text-xs">{m.registrationDate ? new Date(m.registrationDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase() : ''}</td>
+                        <td className={`py-3 px-3 text-xs ${m.expiryDate && new Date(m.expiryDate).getTime() < Date.now() ? 'text-red-600 font-bold' : ''}`}>
+                          {m.expiryDate ? (() => { const dt = new Date(m.expiryDate); return isNaN(dt.getTime()) ? m.expiryDate : dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase(); })() : <span className="text-amber-500">NO EXPIRY</span>}
+                          {m.expiryDate && new Date(m.expiryDate).getTime() < Date.now() && !isNaN(new Date(m.expiryDate).getTime()) && <span className="block text-[10px]">EXPIRED</span>}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
