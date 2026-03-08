@@ -6,7 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import {
   LayoutDashboard, FileText, Image, Megaphone, Users, Heart,
   Plus, Trash2, LogOut, Mail, MessageSquare, UserPlus, Shield,
-  Pencil, Save, Loader2, Settings, Globe, Power, Lock, ImagePlus
+  Pencil, Save, Loader2, Settings, Globe, Power, Lock, ImagePlus,
+  ArrowLeft, Menu, X
 } from "lucide-react";
 import ImageUpload from "@/components/ImageUpload";
 import RichTextEditor from "@/components/RichTextEditor";
@@ -43,6 +44,7 @@ const SubAdminAccess = () => {
   const [error, setError] = useState('');
 
   // Admin data states
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tab, setTab] = useState<Tab>('dashboard');
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [stories, setStories] = useState<Story[]>([]);
@@ -92,15 +94,25 @@ const SubAdminAccess = () => {
 
   const visibleTabs = TAB_META.filter(t => canViewTab(t.id));
 
+  // Restore session on load
+  useEffect(() => {
+    if (profile && token) {
+      const saved = sessionStorage.getItem(`sa_auth_${token}`);
+      if (saved === 'true') setAuthenticated(true);
+    }
+  }, [profile, token]);
+
   const handleLogin = () => {
     setError('');
     if (passwordInput !== profile?.password) { setError("Incorrect password"); return; }
     setAuthenticated(true);
+    if (token) sessionStorage.setItem(`sa_auth_${token}`, 'true');
   };
 
   const handleLogout = () => {
     setAuthenticated(false);
     setPasswordInput('');
+    if (token) sessionStorage.removeItem(`sa_auth_${token}`);
   };
 
   const inputClass = "w-full px-4 py-2.5 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring outline-none text-sm";
@@ -145,17 +157,23 @@ const SubAdminAccess = () => {
 
   return (
     <div className="min-h-screen flex bg-background">
+      {/* Mobile overlay */}
+      {sidebarOpen && <div className="md:hidden fixed inset-0 bg-black/40 z-40" onClick={() => setSidebarOpen(false)} />}
+
       {/* Sidebar */}
-      <aside className="hidden md:flex w-56 bg-sidebar border-r border-sidebar-border flex-col shrink-0">
-        <div className="p-5 border-b border-sidebar-border">
-          <h2 className="font-heading font-bold text-sm text-sidebar-foreground">{profile.name}</h2>
-          <p className="text-xs text-sidebar-foreground/60">Sub-Admin</p>
+      <aside className={`fixed md:relative z-50 md:z-auto inset-y-0 left-0 w-56 bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 transform transition-transform md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="p-5 border-b border-sidebar-border flex items-center justify-between">
+          <div>
+            <h2 className="font-heading font-bold text-sm text-sidebar-foreground">{profile.name}</h2>
+            <p className="text-xs text-sidebar-foreground/60">Sub-Admin</p>
+          </div>
+          <button onClick={() => setSidebarOpen(false)} className="md:hidden text-sidebar-foreground/60"><X className="h-5 w-5" /></button>
         </div>
         <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
           {visibleTabs.map((item) => (
             <button
               key={item.id}
-              onClick={() => setTab(item.id)}
+              onClick={() => { setTab(item.id); setSidebarOpen(false); }}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 tab === item.id ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-secondary-foreground/70 hover:bg-sidebar-accent/50'
               }`}
@@ -166,31 +184,24 @@ const SubAdminAccess = () => {
             </button>
           ))}
         </nav>
-        <div className="p-3 border-t border-sidebar-border">
+        <div className="p-3 border-t border-sidebar-border space-y-1">
+          <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground px-4 py-2">
+            <ArrowLeft className="h-4 w-4" /> Back to Site
+          </Link>
           <button onClick={handleLogout} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground px-4 py-2">
             <LogOut className="h-4 w-4" /> Logout
           </button>
         </div>
       </aside>
 
-      {/* Mobile bottom nav */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50 flex overflow-x-auto px-2 py-1">
-        {visibleTabs.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setTab(item.id)}
-            className={`flex flex-col items-center gap-0.5 py-2 px-2 rounded-md text-[10px] min-w-[52px] shrink-0 ${
-              tab === item.id ? 'text-primary bg-primary/10' : 'text-secondary-foreground/60'
-            }`}
-          >
-            <item.icon className="h-3.5 w-3.5" />
-            <span className="leading-tight">{item.label}</span>
-          </button>
-        ))}
-      </div>
-
       {/* Main content */}
-      <main className="flex-1 p-6 lg:p-10 pb-24 md:pb-10 overflow-auto">
+      <main className="flex-1 p-6 lg:p-10 overflow-auto">
+        {/* Mobile top bar */}
+        <div className="md:hidden flex items-center justify-between mb-4">
+          <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-lg bg-muted"><Menu className="h-5 w-5" /></button>
+          <span className="font-heading font-bold text-sm">{profile.name}</span>
+          <Link to="/" className="text-xs text-primary">Back to Site</Link>
+        </div>
         {isViewOnly && (
           <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-4 py-2 mb-4 text-sm font-medium">
             View only — you cannot make changes in this section.
