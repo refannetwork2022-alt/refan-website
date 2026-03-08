@@ -88,6 +88,27 @@ const SubAdminAccess = () => {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [saving, setSaving] = useState(false);
+
+  // Announcement form
+  const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = useState<string | null>(null);
+  const [announcementForm, setAnnouncementForm] = useState({ title: '', subtitle: '', content: '', image: '', video: '', donationCount: 0, date: new Date().toISOString().split('T')[0], showDate: true });
+
+  // Story form
+  const [showStoryForm, setShowStoryForm] = useState(false);
+  const [editingStory, setEditingStory] = useState<string | null>(null);
+  const [storyForm, setStoryForm] = useState({ title: '', subtitle: '', excerpt: '', content: '', image: '', video: '', category: 'story' as 'story' | 'announcement', donationCount: 0, date: new Date().toISOString().split('T')[0], showDate: true });
+
+  // Blog form
+  const [showBlogForm, setShowBlogForm] = useState(false);
+  const [editingBlog, setEditingBlog] = useState<string | null>(null);
+  const [blogForm, setBlogForm] = useState({ title: '', excerpt: '', image: '', author: 'ReFAN Team', tags: '' });
+  const [contentBlocks, setContentBlocks] = useState<Array<{ type: 'text' | 'image' | 'video'; value?: string; url?: string; caption?: string }>>([{ type: 'text', value: '' }]);
+
+  // Gallery form
+  const [showGalleryForm, setShowGalleryForm] = useState(false);
+  const [galleryForm, setGalleryForm] = useState({ title: '', url: '', type: 'photo' as 'photo' | 'video' });
+
   const [showMemberForm, setShowMemberForm] = useState(false);
   const [memberSaving, setMemberSaving] = useState(false);
   const emptyMemberForm = {
@@ -166,6 +187,98 @@ const SubAdminAccess = () => {
       toast({ title: "Error saving member.", variant: "destructive" });
     }
     setMemberSaving(false);
+  };
+
+  // ── Announcement CRUD ──
+  const saveAnnouncement = async () => {
+    if (!announcementForm.title.trim()) return;
+    setSaving(true);
+    if (editingAnnouncement) {
+      await store.updateAnnouncement(editingAnnouncement, announcementForm);
+      setEditingAnnouncement(null);
+      toast({ title: "Announcement updated!" });
+    } else {
+      await store.addAnnouncement({ ...announcementForm, donationCount: announcementForm.donationCount || 0 });
+      toast({ title: "Announcement added!" });
+    }
+    setAnnouncements(await store.getAnnouncements());
+    setAnnouncementForm({ title: '', subtitle: '', content: '', image: '', video: '', donationCount: 0, date: new Date().toISOString().split('T')[0], showDate: true });
+    setShowAnnouncementForm(false);
+    setSaving(false);
+  };
+
+  const editAnnouncement = (a: Announcement) => {
+    setAnnouncementForm({ title: a.title, subtitle: a.subtitle || '', content: a.content, image: a.image || '', video: a.video || '', donationCount: a.donationCount || 0, date: a.date || new Date().toISOString().split('T')[0], showDate: a.showDate !== false });
+    setEditingAnnouncement(a.id);
+    setShowAnnouncementForm(true);
+  };
+
+  // ── Story CRUD ──
+  const saveStory = async () => {
+    if (!storyForm.title.trim()) return;
+    setSaving(true);
+    if (editingStory) {
+      await store.updateStory(editingStory, storyForm);
+      setEditingStory(null);
+      toast({ title: "Story updated!" });
+    } else {
+      await store.addStory({ ...storyForm, donationCount: storyForm.donationCount || 0 });
+      toast({ title: "Story added!" });
+    }
+    setStories(await store.getStories());
+    setStoryForm({ title: '', subtitle: '', excerpt: '', content: '', image: '', video: '', category: 'story', donationCount: 0, date: new Date().toISOString().split('T')[0], showDate: true });
+    setShowStoryForm(false);
+    setSaving(false);
+  };
+
+  const editStoryItem = (s: Story) => {
+    setStoryForm({ title: s.title, subtitle: s.subtitle || '', excerpt: s.excerpt, content: s.content, image: s.image || '', video: s.video || '', category: s.category, donationCount: s.donationCount || 0, date: s.date || new Date().toISOString().split('T')[0], showDate: s.showDate !== false });
+    setEditingStory(s.id);
+    setShowStoryForm(true);
+  };
+
+  // ── Blog CRUD ──
+  const saveBlog = async () => {
+    if (!blogForm.title.trim()) return;
+    setSaving(true);
+    const content = contentBlocks.map(b => {
+      if (b.type === 'text') return `<div>${b.value || ''}</div>`;
+      if (b.type === 'image') return `<figure><img src="${b.url}" />${b.caption ? `<figcaption>${b.caption}</figcaption>` : ''}</figure>`;
+      if (b.type === 'video') return `<div class="video">${b.url}${b.caption ? `<p>${b.caption}</p>` : ''}</div>`;
+      return '';
+    }).join('');
+    if (editingBlog) {
+      await store.updateBlog(editingBlog, { ...blogForm, content, tags: blogForm.tags });
+      setEditingBlog(null);
+      toast({ title: "Blog updated!" });
+    } else {
+      await store.addBlog({ ...blogForm, content, tags: blogForm.tags });
+      toast({ title: "Blog added!" });
+    }
+    setBlogs(await store.getBlogs());
+    setBlogForm({ title: '', excerpt: '', image: '', author: 'ReFAN Team', tags: '' });
+    setContentBlocks([{ type: 'text', value: '' }]);
+    setShowBlogForm(false);
+    setSaving(false);
+  };
+
+  const editBlogItem = (b: BlogPost) => {
+    setBlogForm({ title: b.title, excerpt: b.excerpt, image: b.image || '', author: b.author || 'ReFAN Team', tags: b.tags || '' });
+    setContentBlocks([{ type: 'text', value: b.content || '' }]);
+    setEditingBlog(b.id);
+    setShowBlogForm(true);
+  };
+
+  // ── Gallery CRUD ──
+  const saveGalleryItem = async () => {
+    if (!galleryForm.title.trim() || !galleryForm.url.trim()) return;
+    setSaving(true);
+    await store.addGalleryItem({ ...galleryForm });
+    setGallery(await store.getGallery());
+    setGalleryForm({ title: '', url: '', type: 'photo' });
+    setShowGalleryForm(false);
+    toast({ title: "Gallery item added!" });
+    setSaving(false);
   };
 
   // Load sub-admin profile
@@ -569,7 +682,30 @@ const SubAdminAccess = () => {
         {/* ── Announcements ── */}
         {tab === 'announcements' && (
           <div>
-            <h1 className="font-heading text-2xl font-bold mb-6">Announcements</h1>
+            <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
+              <h1 className="font-heading text-2xl font-bold">Announcements</h1>
+              {canEditTab('announcements') && (
+                <Button size="sm" onClick={() => { setShowAnnouncementForm(!showAnnouncementForm); setEditingAnnouncement(null); setAnnouncementForm({ title: '', subtitle: '', content: '', image: '', video: '', donationCount: 0, date: new Date().toISOString().split('T')[0], showDate: true }); }}><Plus className="h-4 w-4" /> Add Announcement</Button>
+              )}
+            </div>
+            {showAnnouncementForm && canEditTab('announcements') && (
+              <div className="bg-card rounded-xl p-6 shadow-soft mb-8 space-y-4">
+                <h3 className="font-heading font-bold">{editingAnnouncement ? 'Edit' : 'New'} Announcement</h3>
+                <input placeholder="Title *" value={announcementForm.title} onChange={e => setAnnouncementForm({ ...announcementForm, title: e.target.value })} className={inputClass} maxLength={200} />
+                <input placeholder="Subtitle / Name" value={announcementForm.subtitle} onChange={e => setAnnouncementForm({ ...announcementForm, subtitle: e.target.value })} className={inputClass} maxLength={200} />
+                <RichTextEditor value={announcementForm.content} onChange={(v: string) => setAnnouncementForm({ ...announcementForm, content: v })} />
+                <ImageUpload value={announcementForm.image} onChange={(v: string) => setAnnouncementForm({ ...announcementForm, image: v })} />
+                <input placeholder="Video URL (YouTube, Vimeo)" value={announcementForm.video} onChange={e => setAnnouncementForm({ ...announcementForm, video: e.target.value })} className={inputClass} maxLength={500} />
+                <div className="flex gap-3 items-center">
+                  <input type="date" value={announcementForm.date} onChange={e => setAnnouncementForm({ ...announcementForm, date: e.target.value })} className={inputClass + " w-auto"} />
+                  <label className="flex items-center gap-1 text-sm"><input type="checkbox" checked={announcementForm.showDate} onChange={e => setAnnouncementForm({ ...announcementForm, showDate: e.target.checked })} /> Show date</label>
+                </div>
+                <div className="flex gap-3">
+                  <Button onClick={saveAnnouncement} size="sm" disabled={saving}><Save className="h-4 w-4" /> {saving ? 'Saving...' : 'Save'}</Button>
+                  <Button variant="ghost" size="sm" onClick={() => { setShowAnnouncementForm(false); setEditingAnnouncement(null); }}>Cancel</Button>
+                </div>
+              </div>
+            )}
             {isHideExisting ? (
               <p className="text-muted-foreground text-center py-8">Existing data is hidden for your account.</p>
             ) : announcements.length === 0 ? <p className="text-muted-foreground text-center py-8">No announcements yet.</p> : (
@@ -583,13 +719,16 @@ const SubAdminAccess = () => {
                       <div className="text-xs text-muted-foreground mt-1" dangerouslySetInnerHTML={{ __html: a.content }} />
                       {a.date && a.showDate && <p className="text-xs text-muted-foreground mt-2">{new Date(a.date).toLocaleDateString()}</p>}
                       {canEditTab('announcements') && (
-                        <Button size="sm" variant="destructive" className="text-xs h-7 mt-2" onClick={async () => {
-                          if (confirm('Delete this announcement?')) {
-                            await store.deleteAnnouncement(a.id);
-                            setAnnouncements(await store.getAnnouncements());
-                            toast({ title: "Announcement deleted" });
-                          }
-                        }}><Trash2 className="h-3 w-3" /> Delete</Button>
+                        <div className="flex gap-2 mt-2">
+                          <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => editAnnouncement(a)}><Pencil className="h-3 w-3" /> Edit</Button>
+                          <Button size="sm" variant="destructive" className="text-xs h-7" onClick={async () => {
+                            if (confirm('Delete this announcement?')) {
+                              await store.deleteAnnouncement(a.id);
+                              setAnnouncements(await store.getAnnouncements());
+                              toast({ title: "Announcement deleted" });
+                            }
+                          }}><Trash2 className="h-3 w-3" /> Delete</Button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -602,7 +741,35 @@ const SubAdminAccess = () => {
         {/* ── Stories ── */}
         {tab === 'stories' && (
           <div>
-            <h1 className="font-heading text-2xl font-bold mb-6">Stories</h1>
+            <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
+              <h1 className="font-heading text-2xl font-bold">Stories</h1>
+              {canEditTab('stories') && (
+                <Button size="sm" onClick={() => { setShowStoryForm(!showStoryForm); setEditingStory(null); setStoryForm({ title: '', subtitle: '', excerpt: '', content: '', image: '', video: '', category: 'story', donationCount: 0, date: new Date().toISOString().split('T')[0], showDate: true }); }}><Plus className="h-4 w-4" /> Add Story</Button>
+              )}
+            </div>
+            {showStoryForm && canEditTab('stories') && (
+              <div className="bg-card rounded-xl p-6 shadow-soft mb-8 space-y-4">
+                <h3 className="font-heading font-bold">{editingStory ? 'Edit' : 'New'} Story</h3>
+                <input placeholder="Title *" value={storyForm.title} onChange={e => setStoryForm({ ...storyForm, title: e.target.value })} className={inputClass} maxLength={200} />
+                <input placeholder="Subtitle / Name" value={storyForm.subtitle} onChange={e => setStoryForm({ ...storyForm, subtitle: e.target.value })} className={inputClass} maxLength={200} />
+                <input placeholder="Excerpt (short summary)" value={storyForm.excerpt} onChange={e => setStoryForm({ ...storyForm, excerpt: e.target.value })} className={inputClass} maxLength={300} />
+                <RichTextEditor value={storyForm.content} onChange={(v: string) => setStoryForm({ ...storyForm, content: v })} />
+                <ImageUpload value={storyForm.image} onChange={(v: string) => setStoryForm({ ...storyForm, image: v })} />
+                <input placeholder="Video URL (YouTube, Vimeo)" value={storyForm.video} onChange={e => setStoryForm({ ...storyForm, video: e.target.value })} className={inputClass} maxLength={500} />
+                <div className="flex gap-3 items-center flex-wrap">
+                  <select value={storyForm.category} onChange={e => setStoryForm({ ...storyForm, category: e.target.value as 'story' | 'announcement' })} className={inputClass + " w-auto"}>
+                    <option value="story">Story</option>
+                    <option value="announcement">Announcement</option>
+                  </select>
+                  <input type="date" value={storyForm.date} onChange={e => setStoryForm({ ...storyForm, date: e.target.value })} className={inputClass + " w-auto"} />
+                  <label className="flex items-center gap-1 text-sm"><input type="checkbox" checked={storyForm.showDate} onChange={e => setStoryForm({ ...storyForm, showDate: e.target.checked })} /> Show date</label>
+                </div>
+                <div className="flex gap-3">
+                  <Button onClick={saveStory} size="sm" disabled={saving}><Save className="h-4 w-4" /> {saving ? 'Saving...' : 'Save'}</Button>
+                  <Button variant="ghost" size="sm" onClick={() => { setShowStoryForm(false); setEditingStory(null); }}>Cancel</Button>
+                </div>
+              </div>
+            )}
             {isHideExisting ? (
               <p className="text-muted-foreground text-center py-8">Existing data is hidden for your account.</p>
             ) : stories.length === 0 ? <p className="text-muted-foreground text-center py-8">No stories yet.</p> : (
@@ -618,13 +785,16 @@ const SubAdminAccess = () => {
                       <div className="text-xs text-muted-foreground mt-1" dangerouslySetInnerHTML={{ __html: s.content }} />
                       {s.date && s.showDate && <p className="text-xs text-muted-foreground mt-2">{new Date(s.date).toLocaleDateString()}</p>}
                       {canEditTab('stories') && (
-                        <Button size="sm" variant="destructive" className="text-xs h-7 mt-2" onClick={async () => {
-                          if (confirm('Delete this story?')) {
-                            await store.deleteStory(s.id);
-                            setStories(await store.getStories());
-                            toast({ title: "Story deleted" });
-                          }
-                        }}><Trash2 className="h-3 w-3" /> Delete</Button>
+                        <div className="flex gap-2 mt-2">
+                          <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => editStoryItem(s)}><Pencil className="h-3 w-3" /> Edit</Button>
+                          <Button size="sm" variant="destructive" className="text-xs h-7" onClick={async () => {
+                            if (confirm('Delete this story?')) {
+                              await store.deleteStory(s.id);
+                              setStories(await store.getStories());
+                              toast({ title: "Story deleted" });
+                            }
+                          }}><Trash2 className="h-3 w-3" /> Delete</Button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -637,7 +807,51 @@ const SubAdminAccess = () => {
         {/* ── Blog Posts ── */}
         {tab === 'blogs' && (
           <div>
-            <h1 className="font-heading text-2xl font-bold mb-6">Blog Posts</h1>
+            <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
+              <h1 className="font-heading text-2xl font-bold">Blog Posts</h1>
+              {canEditTab('blogs') && (
+                <Button size="sm" onClick={() => { setShowBlogForm(!showBlogForm); setEditingBlog(null); setBlogForm({ title: '', excerpt: '', image: '', author: 'ReFAN Team', tags: '' }); setContentBlocks([{ type: 'text', value: '' }]); }}><Plus className="h-4 w-4" /> Add Blog</Button>
+              )}
+            </div>
+            {showBlogForm && canEditTab('blogs') && (
+              <div className="bg-card rounded-xl p-6 shadow-soft mb-8 space-y-4">
+                <h3 className="font-heading font-bold">{editingBlog ? 'Edit' : 'New'} Blog Post</h3>
+                <input placeholder="Title *" value={blogForm.title} onChange={e => setBlogForm({ ...blogForm, title: e.target.value })} className={inputClass} maxLength={200} />
+                <input placeholder="Excerpt (short summary)" value={blogForm.excerpt} onChange={e => setBlogForm({ ...blogForm, excerpt: e.target.value })} className={inputClass} maxLength={300} />
+                <ImageUpload value={blogForm.image} onChange={(v: string) => setBlogForm({ ...blogForm, image: v })} />
+                <input placeholder="Tags (comma separated)" value={blogForm.tags} onChange={e => setBlogForm({ ...blogForm, tags: e.target.value })} className={inputClass} maxLength={200} />
+                <div className="space-y-3">
+                  <p className="text-sm font-medium">Content</p>
+                  {contentBlocks.map((block, i) => (
+                    <div key={i} className="border border-border rounded-lg p-3 space-y-2">
+                      {block.type === 'text' && <RichTextEditor value={block.value || ''} onChange={(v: string) => { const nb = [...contentBlocks]; nb[i] = { ...nb[i], value: v }; setContentBlocks(nb); }} />}
+                      {block.type === 'image' && (
+                        <>
+                          <ImageUpload value={block.url || ''} onChange={(v: string) => { const nb = [...contentBlocks]; nb[i] = { ...nb[i], url: v }; setContentBlocks(nb); }} />
+                          <input placeholder="Caption" value={block.caption || ''} onChange={e => { const nb = [...contentBlocks]; nb[i] = { ...nb[i], caption: e.target.value }; setContentBlocks(nb); }} className={inputClass} />
+                        </>
+                      )}
+                      {block.type === 'video' && (
+                        <>
+                          <input placeholder="Video URL" value={block.url || ''} onChange={e => { const nb = [...contentBlocks]; nb[i] = { ...nb[i], url: e.target.value }; setContentBlocks(nb); }} className={inputClass} />
+                          <input placeholder="Caption" value={block.caption || ''} onChange={e => { const nb = [...contentBlocks]; nb[i] = { ...nb[i], caption: e.target.value }; setContentBlocks(nb); }} className={inputClass} />
+                        </>
+                      )}
+                      <Button size="sm" variant="destructive" className="text-xs h-6" onClick={() => setContentBlocks(contentBlocks.filter((_, j) => j !== i))}><Trash2 className="h-3 w-3" /></Button>
+                    </div>
+                  ))}
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" className="text-xs" onClick={() => setContentBlocks([...contentBlocks, { type: 'text', value: '' }])}>+ Text</Button>
+                    <Button size="sm" variant="outline" className="text-xs" onClick={() => setContentBlocks([...contentBlocks, { type: 'image', url: '' }])}>+ Image</Button>
+                    <Button size="sm" variant="outline" className="text-xs" onClick={() => setContentBlocks([...contentBlocks, { type: 'video', url: '' }])}>+ Video</Button>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Button onClick={saveBlog} size="sm" disabled={saving}><Save className="h-4 w-4" /> {saving ? 'Saving...' : 'Save'}</Button>
+                  <Button variant="ghost" size="sm" onClick={() => { setShowBlogForm(false); setEditingBlog(null); }}>Cancel</Button>
+                </div>
+              </div>
+            )}
             {isHideExisting ? (
               <p className="text-muted-foreground text-center py-8">Existing data is hidden for your account.</p>
             ) : blogs.length === 0 ? <p className="text-muted-foreground text-center py-8">No blog posts yet.</p> : (
@@ -651,13 +865,16 @@ const SubAdminAccess = () => {
                       {b.tags && <p className="text-xs text-primary mt-1">{b.tags}</p>}
                       {b.date && <p className="text-xs text-muted-foreground mt-1">{new Date(b.date).toLocaleDateString()}</p>}
                       {canEditTab('blogs') && (
-                        <Button size="sm" variant="destructive" className="text-xs h-7 mt-2" onClick={async () => {
-                          if (confirm('Delete this blog post?')) {
-                            await store.deleteBlog(b.id);
-                            setBlogs(await store.getBlogs());
-                            toast({ title: "Blog post deleted" });
-                          }
-                        }}><Trash2 className="h-3 w-3" /> Delete</Button>
+                        <div className="flex gap-2 mt-2">
+                          <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => editBlogItem(b)}><Pencil className="h-3 w-3" /> Edit</Button>
+                          <Button size="sm" variant="destructive" className="text-xs h-7" onClick={async () => {
+                            if (confirm('Delete this blog post?')) {
+                              await store.deleteBlog(b.id);
+                              setBlogs(await store.getBlogs());
+                              toast({ title: "Blog post deleted" });
+                            }
+                          }}><Trash2 className="h-3 w-3" /> Delete</Button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -670,7 +887,27 @@ const SubAdminAccess = () => {
         {/* ── Gallery ── */}
         {tab === 'gallery' && (
           <div>
-            <h1 className="font-heading text-2xl font-bold mb-6">Gallery</h1>
+            <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
+              <h1 className="font-heading text-2xl font-bold">Gallery</h1>
+              {canEditTab('gallery') && (
+                <Button size="sm" onClick={() => { setShowGalleryForm(!showGalleryForm); setGalleryForm({ title: '', url: '', type: 'photo' }); }}><Plus className="h-4 w-4" /> Add Item</Button>
+              )}
+            </div>
+            {showGalleryForm && canEditTab('gallery') && (
+              <div className="bg-card rounded-xl p-6 shadow-soft mb-8 space-y-4">
+                <h3 className="font-heading font-bold">Add Gallery Item</h3>
+                <input placeholder="Title *" value={galleryForm.title} onChange={e => setGalleryForm({ ...galleryForm, title: e.target.value })} className={inputClass} maxLength={200} />
+                <ImageUpload value={galleryForm.url} onChange={(v: string) => setGalleryForm({ ...galleryForm, url: v })} />
+                <select value={galleryForm.type} onChange={e => setGalleryForm({ ...galleryForm, type: e.target.value as 'photo' | 'video' })} className={inputClass + " w-auto"}>
+                  <option value="photo">Photo</option>
+                  <option value="video">Video</option>
+                </select>
+                <div className="flex gap-3">
+                  <Button onClick={saveGalleryItem} size="sm" disabled={saving}><Save className="h-4 w-4" /> {saving ? 'Saving...' : 'Save'}</Button>
+                  <Button variant="ghost" size="sm" onClick={() => setShowGalleryForm(false)}>Cancel</Button>
+                </div>
+              </div>
+            )}
             {isHideExisting ? (
               <p className="text-muted-foreground text-center py-8">Existing data is hidden for your account.</p>
             ) : gallery.length === 0 ? <p className="text-muted-foreground text-center py-8">No gallery items yet.</p> : (
