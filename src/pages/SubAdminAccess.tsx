@@ -494,78 +494,315 @@ const SubAdminAccess = () => {
           </div>
         )}
 
-        {(tab === 'announcements' || tab === 'stories' || tab === 'blogs' || tab === 'gallery' ||
-          tab === 'volunteers' || tab === 'sponsors' || tab === 'donations' || tab === 'subscribers' || tab === 'messages') && (
+        {/* ── Messages ── */}
+        {tab === 'messages' && (
           <div>
-            <h1 className="font-heading text-2xl font-bold mb-6">
-              {TAB_META.find(t => t.id === tab)?.label}
-            </h1>
+            <h1 className="font-heading text-2xl font-bold mb-6">Messages</h1>
+            {!isHideExisting && <p className="text-sm text-muted-foreground mb-4">Total: {messages.length}</p>}
             {isHideExisting ? (
               <p className="text-muted-foreground text-center py-8">Existing data is hidden for your account.</p>
-            ) : (
+            ) : messages.length === 0 ? <p className="text-muted-foreground text-center py-8">No messages yet.</p> : (
               <div className="space-y-3">
-                {tab === 'announcements' && announcements.map(a => (
-                  <div key={a.id} className="bg-card rounded-lg p-4 shadow-soft">
-                    <h4 className="font-medium">{a.title}</h4>
-                    <p className="text-xs text-muted-foreground mt-1">{a.content.slice(0, 100)}...</p>
+                {messages.map(m => (
+                  <div key={m.id} className="bg-card rounded-lg p-4 shadow-soft">
+                    <div className="flex flex-wrap justify-between items-start gap-2">
+                      <div>
+                        <span className="font-medium text-sm">{m.name}</span>
+                        <span className="text-muted-foreground text-xs ml-2">{m.email}</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">{m.date ? new Date(m.date).toLocaleString() : ''}</span>
+                    </div>
+                    <p className="text-sm font-medium text-primary mt-2">{m.subject}</p>
+                    <p className="text-sm text-foreground mt-1 whitespace-pre-line">{m.message}</p>
+                    {canEditTab('messages') && (
+                      <div className="flex gap-2 mt-3">
+                        <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => {
+                          window.open(`https://mail.google.com/mail/?authuser=refannetwork2022%40gmail.com&view=cm&to=${encodeURIComponent(m.email)}&su=${encodeURIComponent('Re: ' + m.subject)}`, '_blank');
+                        }}><Mail className="h-3 w-3" /> Reply</Button>
+                        <Button size="sm" variant="destructive" className="text-xs h-7" onClick={async () => {
+                          if (confirm('Delete this message?')) {
+                            await store.deleteMessage(m.id);
+                            setMessages(await store.getMessages());
+                            toast({ title: "Message deleted" });
+                          }
+                        }}><Trash2 className="h-3 w-3" /> Delete</Button>
+                      </div>
+                    )}
                   </div>
                 ))}
-                {tab === 'stories' && stories.map(s => (
-                  <div key={s.id} className="bg-card rounded-lg p-4 shadow-soft">
-                    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium mb-1 ${s.category === 'story' ? 'bg-accent text-accent-foreground' : 'bg-primary/10 text-primary'}`}>{s.category}</span>
-                    <h4 className="font-medium">{s.title}</h4>
-                    <p className="text-xs text-muted-foreground">{s.excerpt}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Subscribers ── */}
+        {tab === 'subscribers' && (
+          <div>
+            <h1 className="font-heading text-2xl font-bold mb-6">Subscribers</h1>
+            {!isHideExisting && <p className="text-sm text-muted-foreground mb-4">Total: {subscribers.length}</p>}
+            {isHideExisting ? (
+              <p className="text-muted-foreground text-center py-8">Existing data is hidden for your account.</p>
+            ) : subscribers.length === 0 ? <p className="text-muted-foreground text-center py-8">No subscribers yet.</p> : (
+              <div className="space-y-2">
+                {subscribers.map(s => (
+                  <div key={s.id} className="bg-card rounded-lg p-3 shadow-soft flex justify-between items-center">
+                    <div>
+                      <span className="text-sm font-medium">{s.email}</span>
+                      {s.date && <span className="text-xs text-muted-foreground ml-2">{new Date(s.date).toLocaleDateString()}</span>}
+                    </div>
+                    {canEditTab('subscribers') && (
+                      <Button size="sm" variant="destructive" className="text-xs h-7" onClick={async () => {
+                        if (confirm('Delete this subscriber?')) {
+                          await store.deleteSubscriber(s.id);
+                          setSubscribers(await store.getSubscribers());
+                          toast({ title: "Subscriber deleted" });
+                        }
+                      }}><Trash2 className="h-3 w-3" /></Button>
+                    )}
                   </div>
                 ))}
-                {tab === 'blogs' && blogs.map(b => (
-                  <div key={b.id} className="bg-card rounded-lg p-4 shadow-soft">
-                    <h4 className="font-medium">{b.title}</h4>
-                    <p className="text-xs text-muted-foreground">{b.excerpt}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Announcements ── */}
+        {tab === 'announcements' && (
+          <div>
+            <h1 className="font-heading text-2xl font-bold mb-6">Announcements</h1>
+            {isHideExisting ? (
+              <p className="text-muted-foreground text-center py-8">Existing data is hidden for your account.</p>
+            ) : announcements.length === 0 ? <p className="text-muted-foreground text-center py-8">No announcements yet.</p> : (
+              <div className="grid sm:grid-cols-2 gap-4">
+                {announcements.map(a => (
+                  <div key={a.id} className="bg-card rounded-lg shadow-soft overflow-hidden">
+                    {a.image && <img src={a.image} alt={a.title} className="w-full max-h-48 object-contain bg-muted" />}
+                    <div className="p-4">
+                      <h4 className="font-medium">{a.title}</h4>
+                      {a.subtitle && <p className="text-xs text-muted-foreground">{a.subtitle}</p>}
+                      <div className="text-xs text-muted-foreground mt-1" dangerouslySetInnerHTML={{ __html: a.content }} />
+                      {a.date && a.showDate && <p className="text-xs text-muted-foreground mt-2">{new Date(a.date).toLocaleDateString()}</p>}
+                      {canEditTab('announcements') && (
+                        <Button size="sm" variant="destructive" className="text-xs h-7 mt-2" onClick={async () => {
+                          if (confirm('Delete this announcement?')) {
+                            await store.deleteAnnouncement(a.id);
+                            setAnnouncements(await store.getAnnouncements());
+                            toast({ title: "Announcement deleted" });
+                          }
+                        }}><Trash2 className="h-3 w-3" /> Delete</Button>
+                      )}
+                    </div>
                   </div>
                 ))}
-                {tab === 'gallery' && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {gallery.map(g => (
-                      <div key={g.id} className="rounded-lg overflow-hidden">
-                        <img src={g.url} alt={g.title} className="w-full aspect-square object-cover" />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Stories ── */}
+        {tab === 'stories' && (
+          <div>
+            <h1 className="font-heading text-2xl font-bold mb-6">Stories</h1>
+            {isHideExisting ? (
+              <p className="text-muted-foreground text-center py-8">Existing data is hidden for your account.</p>
+            ) : stories.length === 0 ? <p className="text-muted-foreground text-center py-8">No stories yet.</p> : (
+              <div className="space-y-3">
+                {stories.map(s => (
+                  <div key={s.id} className="bg-card rounded-lg shadow-soft overflow-hidden">
+                    {s.image && <img src={s.image} alt={s.title} className="w-full max-h-48 object-contain bg-muted" />}
+                    <div className="p-4">
+                      <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium mb-1 ${s.category === 'story' ? 'bg-accent text-accent-foreground' : 'bg-primary/10 text-primary'}`}>{s.category}</span>
+                      <h4 className="font-medium">{s.title}</h4>
+                      {s.subtitle && <p className="text-xs text-muted-foreground">{s.subtitle}</p>}
+                      <p className="text-sm text-muted-foreground mt-1">{s.excerpt}</p>
+                      <div className="text-xs text-muted-foreground mt-1" dangerouslySetInnerHTML={{ __html: s.content }} />
+                      {s.date && s.showDate && <p className="text-xs text-muted-foreground mt-2">{new Date(s.date).toLocaleDateString()}</p>}
+                      {canEditTab('stories') && (
+                        <Button size="sm" variant="destructive" className="text-xs h-7 mt-2" onClick={async () => {
+                          if (confirm('Delete this story?')) {
+                            await store.deleteStory(s.id);
+                            setStories(await store.getStories());
+                            toast({ title: "Story deleted" });
+                          }
+                        }}><Trash2 className="h-3 w-3" /> Delete</Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Blog Posts ── */}
+        {tab === 'blogs' && (
+          <div>
+            <h1 className="font-heading text-2xl font-bold mb-6">Blog Posts</h1>
+            {isHideExisting ? (
+              <p className="text-muted-foreground text-center py-8">Existing data is hidden for your account.</p>
+            ) : blogs.length === 0 ? <p className="text-muted-foreground text-center py-8">No blog posts yet.</p> : (
+              <div className="space-y-3">
+                {blogs.map(b => (
+                  <div key={b.id} className="bg-card rounded-lg shadow-soft overflow-hidden">
+                    {b.image && <img src={b.image} alt={b.title} className="w-full max-h-48 object-contain bg-muted" />}
+                    <div className="p-4">
+                      <h4 className="font-medium">{b.title}</h4>
+                      <p className="text-sm text-muted-foreground mt-1">{b.excerpt}</p>
+                      {b.tags && <p className="text-xs text-primary mt-1">{b.tags}</p>}
+                      {b.date && <p className="text-xs text-muted-foreground mt-1">{new Date(b.date).toLocaleDateString()}</p>}
+                      {canEditTab('blogs') && (
+                        <Button size="sm" variant="destructive" className="text-xs h-7 mt-2" onClick={async () => {
+                          if (confirm('Delete this blog post?')) {
+                            await store.deleteBlog(b.id);
+                            setBlogs(await store.getBlogs());
+                            toast({ title: "Blog post deleted" });
+                          }
+                        }}><Trash2 className="h-3 w-3" /> Delete</Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Gallery ── */}
+        {tab === 'gallery' && (
+          <div>
+            <h1 className="font-heading text-2xl font-bold mb-6">Gallery</h1>
+            {isHideExisting ? (
+              <p className="text-muted-foreground text-center py-8">Existing data is hidden for your account.</p>
+            ) : gallery.length === 0 ? <p className="text-muted-foreground text-center py-8">No gallery items yet.</p> : (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {gallery.map(g => (
+                  <div key={g.id} className="bg-card rounded-lg shadow-soft overflow-hidden">
+                    <img src={g.url} alt={g.title} className="w-full h-32 object-cover" />
+                    <div className="p-3">
+                      <p className="text-sm font-medium">{g.title}</p>
+                      <p className="text-xs text-muted-foreground">{g.type} {g.date ? '· ' + new Date(g.date).toLocaleDateString() : ''}</p>
+                      {canEditTab('gallery') && (
+                        <Button size="sm" variant="destructive" className="text-xs h-7 mt-2" onClick={async () => {
+                          if (confirm('Delete this item?')) {
+                            await store.deleteGalleryItem(g.id);
+                            setGallery(await store.getGallery());
+                            toast({ title: "Gallery item deleted" });
+                          }
+                        }}><Trash2 className="h-3 w-3" /> Delete</Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Volunteers ── */}
+        {tab === 'volunteers' && (
+          <div>
+            <h1 className="font-heading text-2xl font-bold mb-6">Volunteers</h1>
+            {(() => { const filtered = volunteers.filter(v => v.type === 'volunteer'); return (
+              <>
+                {!isHideExisting && <p className="text-sm text-muted-foreground mb-4">Total: {filtered.length}</p>}
+                {isHideExisting ? (
+                  <p className="text-muted-foreground text-center py-8">Existing data is hidden for your account.</p>
+                ) : filtered.length === 0 ? <p className="text-muted-foreground text-center py-8">No volunteers yet.</p> : (
+                  <div className="space-y-3">
+                    {filtered.map(v => (
+                      <div key={v.id} className="bg-card rounded-lg p-4 shadow-soft">
+                        <div className="flex justify-between items-start">
+                          <span className="font-medium text-sm">{v.name}</span>
+                          <span className="text-xs text-muted-foreground">{v.date ? new Date(v.date).toLocaleDateString() : ''}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{v.email}{v.phone ? ' · ' + v.phone : ''}</p>
+                        {v.country && <p className="text-xs text-muted-foreground">{v.country}</p>}
+                        {v.message && <p className="text-sm mt-2 whitespace-pre-line">{v.message}</p>}
+                        {canEditTab('volunteers') && (
+                          <Button size="sm" variant="destructive" className="text-xs h-7 mt-2" onClick={async () => {
+                            if (confirm('Delete this volunteer?')) {
+                              await store.deleteVolunteer(v.id);
+                              setVolunteers(await store.getVolunteers());
+                              toast({ title: "Volunteer deleted" });
+                            }
+                          }}><Trash2 className="h-3 w-3" /> Delete</Button>
+                        )}
                       </div>
                     ))}
                   </div>
                 )}
-                {tab === 'volunteers' && volunteers.filter(v => v.type === 'volunteer').map(v => (
-                  <div key={v.id} className="bg-card rounded-lg p-4 shadow-soft">
-                    <h4 className="font-medium">{v.name}</h4>
-                    <p className="text-xs text-muted-foreground">{v.email}</p>
+              </>
+            ); })()}
+          </div>
+        )}
+
+        {/* ── Sponsors ── */}
+        {tab === 'sponsors' && (
+          <div>
+            <h1 className="font-heading text-2xl font-bold mb-6">Sponsors</h1>
+            {(() => { const filtered = volunteers.filter(v => v.type === 'sponsor'); return (
+              <>
+                {!isHideExisting && <p className="text-sm text-muted-foreground mb-4">Total: {filtered.length}</p>}
+                {isHideExisting ? (
+                  <p className="text-muted-foreground text-center py-8">Existing data is hidden for your account.</p>
+                ) : filtered.length === 0 ? <p className="text-muted-foreground text-center py-8">No sponsors yet.</p> : (
+                  <div className="space-y-3">
+                    {filtered.map(v => (
+                      <div key={v.id} className="bg-card rounded-lg p-4 shadow-soft">
+                        <div className="flex justify-between items-start">
+                          <span className="font-medium text-sm">{v.name}</span>
+                          <span className="text-xs text-muted-foreground">{v.date ? new Date(v.date).toLocaleDateString() : ''}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{v.email}{v.phone ? ' · ' + v.phone : ''}</p>
+                        {v.country && <p className="text-xs text-muted-foreground">{v.country}</p>}
+                        {v.message && <p className="text-sm mt-2 whitespace-pre-line">{v.message}</p>}
+                        {canEditTab('sponsors') && (
+                          <Button size="sm" variant="destructive" className="text-xs h-7 mt-2" onClick={async () => {
+                            if (confirm('Delete this sponsor?')) {
+                              await store.deleteVolunteer(v.id);
+                              setVolunteers(await store.getVolunteers());
+                              toast({ title: "Sponsor deleted" });
+                            }
+                          }}><Trash2 className="h-3 w-3" /> Delete</Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            ); })()}
+          </div>
+        )}
+
+        {/* ── Donations ── */}
+        {tab === 'donations' && (
+          <div>
+            <h1 className="font-heading text-2xl font-bold mb-6">Donations</h1>
+            {!isHideExisting && <p className="text-sm text-muted-foreground mb-4">Total: {donations.length}</p>}
+            {isHideExisting ? (
+              <p className="text-muted-foreground text-center py-8">Existing data is hidden for your account.</p>
+            ) : donations.length === 0 ? <p className="text-muted-foreground text-center py-8">No donations yet.</p> : (
+              <div className="space-y-3">
+                {donations.map(d => (
+                  <div key={d.id} className="bg-card rounded-lg p-4 shadow-soft">
+                    <div className="flex justify-between items-start">
+                      <span className="font-medium text-sm">{d.name || 'Anonymous'}</span>
+                      <span className="text-xs text-muted-foreground">{d.date ? new Date(d.date).toLocaleDateString() : ''}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{d.email}</p>
+                    <p className="text-sm font-bold text-primary mt-1">{d.currency || 'USD'} {d.amount}</p>
+                    {d.message && <p className="text-sm mt-2 whitespace-pre-line">{d.message}</p>}
+                    {canEditTab('donations') && (
+                      <Button size="sm" variant="destructive" className="text-xs h-7 mt-2" onClick={async () => {
+                        if (confirm('Delete this donation?')) {
+                          await store.deleteDonation(d.id);
+                          setDonations(await store.getDonations());
+                          toast({ title: "Donation deleted" });
+                        }
+                      }}><Trash2 className="h-3 w-3" /> Delete</Button>
+                    )}
                   </div>
                 ))}
-                {tab === 'sponsors' && volunteers.filter(v => v.type === 'sponsor').map(v => (
-                  <div key={v.id} className="bg-card rounded-lg p-4 shadow-soft">
-                    <h4 className="font-medium">{v.name}</h4>
-                    <p className="text-xs text-muted-foreground">{v.email}</p>
-                  </div>
-                ))}
-                {tab === 'donations' && donations.map(d => (
-                  <div key={d.id} className="bg-card rounded-lg p-4 shadow-soft flex justify-between">
-                    <span className="font-medium">{d.name || 'Anonymous'}</span>
-                    <span className="font-bold">{d.amount}</span>
-                  </div>
-                ))}
-                {tab === 'subscribers' && subscribers.map(s => (
-                  <div key={s.id} className="bg-card rounded-lg p-3 shadow-soft text-sm">{s.email}</div>
-                ))}
-                {tab === 'messages' && messages.map(m => (
-                  <div key={m.id} className="bg-card rounded-lg p-4 shadow-soft">
-                    <div className="flex justify-between text-sm"><span className="font-medium">{m.name}</span><span className="text-muted-foreground">{m.email}</span></div>
-                    <p className="text-xs font-medium mt-1">{m.subject}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{m.message.slice(0, 150)}</p>
-                  </div>
-                ))}
-                {(tab === 'announcements' && announcements.length === 0) ||
-                 (tab === 'stories' && stories.length === 0) ||
-                 (tab === 'blogs' && blogs.length === 0) ||
-                 (tab === 'gallery' && gallery.length === 0) ? (
-                  <p className="text-muted-foreground text-center py-8">No data yet.</p>
-                ) : null}
               </div>
             )}
           </div>
