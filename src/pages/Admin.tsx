@@ -58,7 +58,7 @@ const phoneCodes = [
 
 const Admin = () => {
   const { toast } = useToast();
-  const { signOut, changePassword, isSuperAdmin, canEdit, canView, shouldHideExisting } = useAuth();
+  const { signOut, changePassword, isSuperAdmin, canEdit, canView, canDelete, shouldHideExisting } = useAuth();
   const [tab, setTab] = useState<Tab>('dashboard');
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [stories, setStories] = useState<Story[]>([]);
@@ -70,8 +70,9 @@ const Admin = () => {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [subAdmins, setSubAdmins] = useState<SubAdmin[]>([]);
-  const [subAdminForm, setSubAdminForm] = useState({ name: '', username: '', email: '', permissions: {} as Record<string, TabPermission>, hideExistingData: {} as Record<string, boolean> });
+  const [subAdminForm, setSubAdminForm] = useState({ name: '', username: '', email: '', permissions: {} as Record<string, TabPermission>, allowDelete: {} as Record<string, boolean>, hideExistingData: {} as Record<string, boolean> });
   const [editingSubAdmin, setEditingSubAdmin] = useState<string | null>(null);
+  const [viewPhoto, setViewPhoto] = useState<{ url: string; name: string } | null>(null);
   const [footerForm, setFooterForm] = useState<FooterSettings>({
     email: "refannetwork2022@gmail.com", phone: "+265 997 561 852",
     address: "Dzaleka Refugee Camp, Dowa District, Malawi", whatsapp: "265997561852",
@@ -496,8 +497,8 @@ const Admin = () => {
 
   const COMPANY_EMAIL = "refannetwork2022@gmail.com";
   const openGmail = (emails: string[], subject: string, body: string) => {
-    const params = `view=cm&fs=1&bcc=${encodeURIComponent(emails.join(','))}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.open(`https://mail.google.com/mail/u/${COMPANY_EMAIL}/?${params}`, '_blank');
+    const mailto = `mailto:${emails.join(',')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailto;
   };
 
   const copyRegLink = () => {
@@ -536,6 +537,7 @@ const Admin = () => {
 
   // Permission helpers for current tab
   const isViewOnly = !isSuperAdmin && !canEdit(tab);
+  const canDeleteTab = canDelete(tab);
   const hideExisting = !isSuperAdmin && shouldHideExisting(tab);
 
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -833,7 +835,7 @@ const Admin = () => {
                         <td className="py-3 px-3 text-primary font-bold">{m.regNumber}</td>
                         <td className="py-3 px-3">
                           {m.photo ? (
-                            <img src={m.photo} alt={m.firstName} className="w-10 h-10 rounded-full object-cover border border-border" />
+                            <img src={m.photo} alt={m.firstName} className="w-10 h-10 rounded-full object-cover border border-border cursor-pointer hover:ring-2 hover:ring-primary transition-all" onClick={() => setViewPhoto({ url: m.photo, name: `${m.firstName} ${m.surname}` })} />
                           ) : (
                             <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-xs text-muted-foreground">N/A</div>
                           )}
@@ -855,7 +857,7 @@ const Admin = () => {
                             const subject = `ReFAN Membership Renewal - ${name}`;
                             const body = `Dear ${name},\n\nYour ReFAN membership has been renewed.\n\nNew Expiry Date: ${newExpiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}\nReg Number: ${m.regNumber}\nTerm Fee: 2,000 MWK\n\nThank you for being a member of ReFAN.\n\nBest regards,\nReFAN Admin`;
                             if (m.email) {
-                              window.open(`https://mail.google.com/mail/u/${COMPANY_EMAIL}/?view=cm&fs=1&to=${encodeURIComponent(m.email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+                              window.location.href = `mailto:${encodeURIComponent(m.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
                             }
                             updateDoc(doc(db, "members", m.id), { expiryDate: expiryStr }).then(() => {
                               loadData();
@@ -864,7 +866,7 @@ const Admin = () => {
                           }}>
                             <Mail className="h-3 w-3" /> Renew
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => deleteMember(m.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          {canDeleteTab && <Button variant="ghost" size="icon" onClick={() => deleteMember(m.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
                         </td>
                       </tr>
                     ))}
@@ -939,7 +941,7 @@ const Admin = () => {
                     </div>
                     <div className="flex gap-1">
                       <Button variant="ghost" size="icon" onClick={() => startEditAnnouncement(a)}><Pencil className="h-4 w-4 text-blue-500" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => deleteAnnouncement(a.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      {canDeleteTab && <Button variant="ghost" size="icon" onClick={() => deleteAnnouncement(a.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
                     </div>
                   </div>
                 </div>
@@ -999,7 +1001,7 @@ const Admin = () => {
                   </div>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => startEditStory(s)}><Pencil className="h-4 w-4 text-blue-500" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => deleteStory(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    {canDeleteTab && <Button variant="ghost" size="icon" onClick={() => deleteStory(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
                   </div>
                 </div>
               ))}
@@ -1079,7 +1081,7 @@ const Admin = () => {
                   </div>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => startEditBlog(b)}><Pencil className="h-4 w-4 text-blue-500" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => deleteBlog(b.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    {canDeleteTab && <Button variant="ghost" size="icon" onClick={() => deleteBlog(b.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
                   </div>
                 </div>
               ))}
@@ -1113,7 +1115,7 @@ const Admin = () => {
                         <p className="font-medium text-sm">{g.title}</p>
                         <p className="text-xs text-muted-foreground">{g.type} • {new Date(g.date).toLocaleDateString()}</p>
                       </div>
-                      <Button variant="destructive" size="sm" className="h-7 w-7 p-0" onClick={() => deleteGalleryItem(g.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                      {canDeleteTab && <Button variant="destructive" size="sm" className="h-7 w-7 p-0" onClick={() => deleteGalleryItem(g.id)}><Trash2 className="h-3.5 w-3.5" /></Button>}
                     </div>
                   </div>
                 </div>
@@ -1168,12 +1170,12 @@ const Admin = () => {
                           {v.country && <p className="text-sm text-muted-foreground">Country: {v.country}</p>}
                           {v.message && <p className="text-sm mt-2 text-muted-foreground whitespace-pre-line">{v.message}</p>}
                         </div>
-                        <Button variant="destructive" size="sm" className="shrink-0" onClick={async () => {
+                        {canDeleteTab && <Button variant="destructive" size="sm" className="shrink-0" onClick={async () => {
                           if (!confirm(`Delete ${v.name}?`)) return;
                           await store.deleteVolunteer(v.id);
                           setVolunteers(await store.getVolunteers());
                           toast({ title: "Deleted" });
-                        }}><Trash2 className="h-4 w-4" /></Button>
+                        }}><Trash2 className="h-4 w-4" /></Button>}
                       </div>
                     </div>
                   ))}
@@ -1239,12 +1241,12 @@ const Admin = () => {
                         <p className="text-sm mt-1"><span className="font-medium">{d.currency || 'USD'}</span> <span className="font-bold text-primary">{d.amount}</span></p>
                         {d.message && <p className="text-sm mt-2 text-muted-foreground whitespace-pre-line">{d.message}</p>}
                       </div>
-                      <Button variant="destructive" size="sm" className="shrink-0" onClick={async () => {
+                      {canDeleteTab && <Button variant="destructive" size="sm" className="shrink-0" onClick={async () => {
                         if (!confirm(`Delete donation from ${d.name}?`)) return;
                         await store.deleteDonation(d.id);
                         setDonations(await store.getDonations());
                         toast({ title: "Donation deleted" });
-                      }}><Trash2 className="h-4 w-4" /></Button>
+                      }}><Trash2 className="h-4 w-4" /></Button>}
                     </div>
                   </div>
                 ))}
@@ -1313,7 +1315,7 @@ const Admin = () => {
                         <Button variant="ghost" size="icon" onClick={() => {
                           openGmail([m.email], `Re: ${m.subject}`, '');
                         }}><Send className="h-4 w-4 text-blue-500" /></Button>
-                        <Button variant="ghost" size="icon" onClick={async () => {
+                        {canDeleteTab && <Button variant="ghost" size="icon" onClick={async () => {
                           if (!confirm("Are you sure you want to delete this message?")) return;
                           await store.deleteMessage(m.id);
                           setMessages(await store.getMessages());
@@ -1321,7 +1323,7 @@ const Admin = () => {
                           toast({ title: "Message deleted" });
                         }}>
                           <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        </Button>}
                       </div>
                     </div>
                   </div>
@@ -1402,7 +1404,7 @@ const Admin = () => {
                         <span className="text-sm font-medium">{s.email}</span>
                         <span className="text-xs text-muted-foreground">{new Date(s.date).toLocaleDateString()}</span>
                       </label>
-                      <Button variant="ghost" size="icon" onClick={async () => {
+                      {canDeleteTab && <Button variant="ghost" size="icon" onClick={async () => {
                         if (!confirm("Are you sure you want to remove this subscriber?")) return;
                         await store.deleteSubscriber(s.id);
                         setSubscribers(await store.getSubscribers());
@@ -1412,7 +1414,7 @@ const Admin = () => {
                         toast({ title: "Subscriber removed" });
                       }}>
                         <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      </Button>}
                     </div>
                   ))}
                 </div>
@@ -1837,7 +1839,7 @@ const Admin = () => {
           };
 
           const resetForm = () => {
-            setSubAdminForm({ name: '', username: '', email: '', permissions: {}, hideExistingData: {} });
+            setSubAdminForm({ name: '', username: '', email: '', permissions: {}, allowDelete: {}, hideExistingData: {} });
             setEditingSubAdmin(null);
           };
 
@@ -1853,6 +1855,7 @@ const Admin = () => {
                 username: subAdminForm.username,
                 email: subAdminForm.email.toLowerCase(),
                 permissions: subAdminForm.permissions,
+                allowDelete: subAdminForm.allowDelete,
                 hideExistingData: subAdminForm.hideExistingData,
               });
               toast({ title: "Sub-admin updated!" });
@@ -1867,6 +1870,7 @@ const Admin = () => {
                 password,
                 active: true,
                 permissions: subAdminForm.permissions,
+                allowDelete: subAdminForm.allowDelete,
                 hideExistingData: subAdminForm.hideExistingData,
                 createdAt: new Date().toISOString(),
               });
@@ -1906,7 +1910,7 @@ const Admin = () => {
           };
 
           const startEdit = (sa: SubAdmin) => {
-            setSubAdminForm({ name: sa.name, username: sa.username || '', email: sa.email || '', permissions: { ...sa.permissions }, hideExistingData: { ...sa.hideExistingData } });
+            setSubAdminForm({ name: sa.name, username: sa.username || '', email: sa.email || '', permissions: { ...sa.permissions }, allowDelete: { ...(sa.allowDelete || {}) }, hideExistingData: { ...sa.hideExistingData } });
             setEditingSubAdmin(sa.id);
           };
 
@@ -1919,6 +1923,10 @@ const Admin = () => {
 
           const setPerm = (tabId: string, perm: TabPermission) => {
             setSubAdminForm(prev => ({ ...prev, permissions: { ...prev.permissions, [tabId]: perm } }));
+          };
+
+          const toggleDelete = (tabId: string) => {
+            setSubAdminForm(prev => ({ ...prev, allowDelete: { ...prev.allowDelete, [tabId]: !prev.allowDelete[tabId] } }));
           };
 
           const toggleHide = (tabId: string) => {
@@ -1939,24 +1947,30 @@ const Admin = () => {
                   <div>
                     <h4 className="text-sm font-bold mb-3">Tab Permissions</h4>
                     <div className="border border-border rounded-lg overflow-hidden">
-                      <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-0 text-xs font-semibold bg-muted px-3 py-2">
+                      <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto_auto] gap-0 text-xs font-semibold bg-muted px-3 py-2">
                         <span>Section</span>
                         <span className="w-16 text-center">Hidden</span>
                         <span className="w-16 text-center">View</span>
                         <span className="w-16 text-center">Edit</span>
+                        <span className="w-16 text-center">Full</span>
+                        <span className="w-16 text-center">Delete</span>
                         <span className="w-20 text-center">Hide Data</span>
                       </div>
                       {ALL_TABS.map((t) => {
                         const perm = subAdminForm.permissions[t.id] || 'hidden';
+                        const allowDel = subAdminForm.allowDelete[t.id] || false;
                         const hideData = subAdminForm.hideExistingData[t.id] || false;
                         return (
-                          <div key={t.id} className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-0 px-3 py-2 border-t border-border items-center text-sm">
+                          <div key={t.id} className="grid grid-cols-[1fr_auto_auto_auto_auto_auto_auto] gap-0 px-3 py-2 border-t border-border items-center text-sm">
                             <span className="font-medium">{t.label}</span>
-                            {(['hidden', 'view', 'edit'] as TabPermission[]).map(p => (
+                            {(['hidden', 'view', 'edit', 'full'] as TabPermission[]).map(p => (
                               <label key={p} className="w-16 flex justify-center cursor-pointer">
                                 <input type="radio" name={`perm-${t.id}`} checked={perm === p} onChange={() => setPerm(t.id, p)} className="accent-primary" />
                               </label>
                             ))}
+                            <label className="w-16 flex justify-center cursor-pointer">
+                              <input type="checkbox" checked={perm === 'full' || allowDel} onChange={() => toggleDelete(t.id)} disabled={perm === 'hidden' || perm === 'full'} className="accent-destructive" />
+                            </label>
                             <label className="w-20 flex justify-center cursor-pointer">
                               <input type="checkbox" checked={hideData} onChange={() => toggleHide(t.id)} disabled={perm === 'hidden'} className="accent-primary" />
                             </label>
@@ -1965,7 +1979,7 @@ const Admin = () => {
                       })}
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
-                      <strong>Hidden</strong> = tab not visible. <strong>View</strong> = can see data but not edit. <strong>Edit</strong> = full access. <strong>Hide Data</strong> = can add new items but cannot see existing records.
+                      <strong>Hidden</strong> = tab not visible. <strong>View</strong> = can see data only. <strong>Edit</strong> = can add & edit. <strong>Full</strong> = can add, edit & delete. <strong>Delete</strong> = allow delete (separate from Full). <strong>Hide Data</strong> = cannot see existing records.
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -2033,7 +2047,7 @@ const Admin = () => {
                                   <a href={`https://wa.me/?text=${encodeURIComponent(msg)}`} target="_blank" rel="noopener noreferrer">
                                     <Button size="sm" variant="outline" className="text-xs h-7 text-green-600 border-green-200 hover:bg-green-50"><Send className="h-3 w-3" /> WhatsApp</Button>
                                   </a>
-                                  <a href={`https://mail.google.com/mail/?authuser=refannetwork2022%40gmail.com&view=cm&to=${encodeURIComponent(sa.email)}&su=${encodeURIComponent('Your ReFAN Admin Access')}&body=${encodeURIComponent(msg)}`} target="_blank" rel="noopener noreferrer">
+                                  <a href={`mailto:${encodeURIComponent(sa.email)}?subject=${encodeURIComponent('Your ReFAN Admin Access')}&body=${encodeURIComponent(msg)}`}>
                                     <Button size="sm" variant="outline" className="text-xs h-7"><Mail className="h-3 w-3" /> Send via Email</Button>
                                   </a>
                                 </div>
@@ -2130,6 +2144,16 @@ const Admin = () => {
                 Cancel
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Photo Viewer Modal */}
+      {viewPhoto && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setViewPhoto(null)}>
+          <div className="relative max-w-lg w-full" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setViewPhoto(null)} className="absolute -top-10 right-0 text-white hover:text-gray-300 text-2xl font-bold">✕</button>
+            <img src={viewPhoto.url} alt={viewPhoto.name} className="w-full rounded-xl shadow-2xl" />
+            <p className="text-white text-center mt-3 font-medium">{viewPhoto.name}</p>
           </div>
         </div>
       )}

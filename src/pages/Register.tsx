@@ -6,6 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import { store } from "@/lib/store";
 import CountrySearch from "@/components/CountrySearch";
 
+const WEB3FORMS_KEY = "2b77a360-efe4-4f8c-926e-a6a7a8e05895";
+
 const phoneCodes = [
   { code: "+265", country: "MW" }, { code: "+1", country: "US" }, { code: "+44", country: "GB" },
   { code: "+33", country: "FR" }, { code: "+49", country: "DE" }, { code: "+254", country: "KE" },
@@ -138,6 +140,23 @@ const Register = () => {
       });
       setSubmitting(false);
       if (member) {
+        // Send email notification to admin about new registration
+        try {
+          const fullName = `${form.surname} ${form.firstName} ${form.otherName}`.trim();
+          await fetch("https://api.web3forms.com/submit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              access_key: WEB3FORMS_KEY,
+              subject: `New Member Registration - ${fullName}`,
+              from_name: fullName,
+              email: form.email.trim() || "no-email@refan.org",
+              message: `A new member has registered on the ReFAN website.\n\nName: ${fullName}\nReg Number: ${member.regNumber}\nEmail: ${form.email.trim() || 'Not provided'}\nPhone: ${form.phoneCode} ${form.phone.trim()}\nGender: ${form.gender}\nCountry of Origin: ${form.countryOfOrigin}\nCountry of Residence: ${form.countryOfResidence}\nBranch: ${form.branchName.trim()}\nExpiry Date: ${expiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`,
+            }),
+          });
+        } catch {
+          // Email notification failure should not block registration success
+        }
         setRegNumber(member.regNumber);
         setMemberData({
           name: `${form.surname} ${form.firstName} ${form.otherName}`.trim(),

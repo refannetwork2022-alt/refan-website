@@ -1,10 +1,31 @@
-import { Link } from "react-router-dom";
+import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface MaintenancePageProps {
   message?: string;
 }
 
 const MaintenancePage = ({ message }: MaintenancePageProps) => {
+  const navigate = useNavigate();
+  const [tapCount, setTapCount] = useState(0);
+  const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSecretTap = () => {
+    const newCount = tapCount + 1;
+    setTapCount(newCount);
+
+    // Reset tap count after 3 seconds of inactivity
+    if (tapTimer.current) clearTimeout(tapTimer.current);
+    tapTimer.current = setTimeout(() => setTapCount(0), 3000);
+
+    if (newCount >= 5) {
+      setTapCount(0);
+      navigate("/admin-login");
+    }
+  };
+
+  const currentYear = new Date().getFullYear();
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-secondary text-white px-4">
       <div className="text-center max-w-md space-y-6">
@@ -22,12 +43,16 @@ const MaintenancePage = ({ message }: MaintenancePageProps) => {
             </p>
           )}
         </div>
-        <Link
-          to="/admin-login"
-          className="inline-block text-xs text-white/30 hover:text-white/60 transition-colors"
-        >
-          Admin
-        </Link>
+        <p className="text-white/20 text-xs select-none">
+          &copy;{" "}
+          <span
+            onClick={handleSecretTap}
+            className="cursor-default"
+          >
+            {currentYear}
+          </span>
+          {" "}ReFAN
+        </p>
       </div>
     </div>
   );

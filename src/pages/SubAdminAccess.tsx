@@ -88,6 +88,7 @@ const SubAdminAccess = () => {
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [saving, setSaving] = useState(false);
+  const [viewPhoto, setViewPhoto] = useState<{ url: string; name: string } | null>(null);
 
   // Announcement form
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
@@ -312,9 +313,27 @@ const SubAdminAccess = () => {
   }, [authenticated]);
 
   const getPerm = (t: string): TabPermission => profile?.permissions[t] || 'hidden';
-  const canEditTab = (t: string) => getPerm(t) === 'edit';
-  const canViewTab = (t: string) => { const p = getPerm(t); return p === 'edit' || p === 'view'; };
+  const canEditTab = (t: string) => { const p = getPerm(t); return p === 'edit' || p === 'full'; };
+  const canViewTab = (t: string) => { const p = getPerm(t); return p === 'edit' || p === 'view' || p === 'full'; };
+  const canDeleteTab = (t: string) => {
+    const p = getPerm(t);
+    if (p === 'full') return true;
+    return (p === 'edit' || p === 'view') && profile?.allowDelete?.[t] === true;
+  };
   const hideExisting = (t: string) => profile?.hideExistingData[t] === true;
+
+  const openGmail = (emails: string[], subject: string, body: string) => {
+    const mailto = `mailto:${emails.join(',')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailto;
+  };
+
+  const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set());
+  const [selectedVols, setSelectedVols] = useState<Set<string>>(new Set());
+  const [selectedDonors, setSelectedDonors] = useState<Set<string>>(new Set());
+  const [selectedSubs, setSelectedSubs] = useState<Set<string>>(new Set());
+  const [selectedMsgs, setSelectedMsgs] = useState<Set<string>>(new Set());
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
 
   const visibleTabs = TAB_META.filter(t => canViewTab(t.id));
 
@@ -560,6 +579,11 @@ const SubAdminAccess = () => {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted/50">
+                      <th className="py-3 px-2 w-8">
+                        <input type="checkbox" checked={selectedMembers.size === members.length && members.length > 0} onChange={(e) => {
+                          setSelectedMembers(e.target.checked ? new Set(members.map(m => m.id)) : new Set());
+                        }} />
+                      </th>
                       <th className="text-left py-3 px-3 font-medium text-xs">#</th>
                       <th className="text-left py-3 px-3 font-medium text-xs">Family Size</th>
                       <th className="text-left py-3 px-3 font-medium text-xs">Country</th>
@@ -577,6 +601,11 @@ const SubAdminAccess = () => {
                   <tbody>
                     {members.map((m, idx) => (
                       <tr key={m.id} className="border-b border-border hover:bg-muted/30">
+                        <td className="py-3 px-2"><input type="checkbox" checked={selectedMembers.has(m.id)} onChange={(e) => {
+                          const next = new Set(selectedMembers);
+                          e.target.checked ? next.add(m.id) : next.delete(m.id);
+                          setSelectedMembers(next);
+                        }} /></td>
                         <td className="py-3 px-3 text-xs text-muted-foreground">{idx + 1}</td>
                         <td className="py-3 px-3">{m.familySize}</td>
                         <td className="py-3 px-3 text-xs">{m.countryOfOrigin}</td>
@@ -584,7 +613,7 @@ const SubAdminAccess = () => {
                         <td className="py-3 px-3 text-primary font-bold">{m.regNumber}</td>
                         <td className="py-3 px-3">
                           {m.photo ? (
-                            <img src={m.photo} alt={m.firstName} className="w-10 h-10 rounded-full object-cover border border-border" />
+                            <img src={m.photo} alt={m.firstName} className="w-10 h-10 rounded-full object-cover border border-border cursor-pointer hover:ring-2 hover:ring-primary transition-all" onClick={() => setViewPhoto({ url: m.photo, name: `${m.firstName} ${m.surname}` })} />
                           ) : (
                             <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-xs text-muted-foreground">N/A</div>
                           )}
@@ -602,6 +631,18 @@ const SubAdminAccess = () => {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+            {selectedMembers.size > 0 && (
+              <div className="bg-card rounded-xl p-6 shadow-soft mt-6">
+                <h3 className="font-heading font-bold mb-4">Send Email to {selectedMembers.size} member{selectedMembers.size > 1 ? 's' : ''}</h3>
+                <input placeholder="Subject" value={emailSubject} onChange={e => setEmailSubject(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm mb-3" />
+                <textarea placeholder="Message body..." value={emailBody} onChange={e => setEmailBody(e.target.value)} rows={4} className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm mb-3" />
+                <Button size="sm" onClick={() => {
+                  const emails = members.filter(m => selectedMembers.has(m.id)).map(m => m.email).filter(Boolean);
+                  if (emails.length === 0) { toast({ title: "No emails found", variant: "destructive" }); return; }
+                  openGmail(emails, emailSubject, emailBody);
+                }}><Mail className="h-4 w-4" /> Send via Email</Button>
               </div>
             )}
           </div>
@@ -627,18 +668,18 @@ const SubAdminAccess = () => {
                     </div>
                     <p className="text-sm font-medium text-primary mt-2">{m.subject}</p>
                     <p className="text-sm text-foreground mt-1 whitespace-pre-line">{m.message}</p>
-                    {canEditTab('messages') && (
+                    {(canViewTab('messages') || canDeleteTab('messages')) && (
                       <div className="flex gap-2 mt-3">
-                        <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => {
-                          window.open(`https://mail.google.com/mail/?authuser=refannetwork2022%40gmail.com&view=cm&to=${encodeURIComponent(m.email)}&su=${encodeURIComponent('Re: ' + m.subject)}`, '_blank');
-                        }}><Mail className="h-3 w-3" /> Reply</Button>
-                        <Button size="sm" variant="destructive" className="text-xs h-7" onClick={async () => {
+                        {canViewTab('messages') && <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => {
+                          openGmail([m.email], `Re: ${m.subject}`, '');
+                        }}><Mail className="h-3 w-3" /> Reply</Button>}
+                        {canDeleteTab('messages') && <Button size="sm" variant="destructive" className="text-xs h-7" onClick={async () => {
                           if (confirm('Delete this message?')) {
                             await store.deleteMessage(m.id);
                             setMessages(await store.getMessages());
                             toast({ title: "Message deleted" });
                           }
-                        }}><Trash2 className="h-3 w-3" /> Delete</Button>
+                        }}><Trash2 className="h-3 w-3" /> Delete</Button>}
                       </div>
                     )}
                   </div>
@@ -657,23 +698,49 @@ const SubAdminAccess = () => {
               <p className="text-muted-foreground text-center py-8">Existing data is hidden for your account.</p>
             ) : subscribers.length === 0 ? <p className="text-muted-foreground text-center py-8">No subscribers yet.</p> : (
               <div className="space-y-2">
+                <div className="flex items-center gap-3 mb-2">
+                  <input type="checkbox" checked={selectedSubs.size === subscribers.length && subscribers.length > 0} onChange={(e) => {
+                    setSelectedSubs(e.target.checked ? new Set(subscribers.map(s => s.id)) : new Set());
+                  }} />
+                  {selectedSubs.size > 0 && <span className="text-sm text-muted-foreground">{selectedSubs.size} selected</span>}
+                </div>
                 {subscribers.map(s => (
                   <div key={s.id} className="bg-card rounded-lg p-3 shadow-soft flex justify-between items-center">
-                    <div>
-                      <span className="text-sm font-medium">{s.email}</span>
-                      {s.date && <span className="text-xs text-muted-foreground ml-2">{new Date(s.date).toLocaleDateString()}</span>}
-                    </div>
-                    {canEditTab('subscribers') && (
+                    <label className="flex items-center gap-3 cursor-pointer flex-1">
+                      <input type="checkbox" checked={selectedSubs.has(s.id)} onChange={(e) => {
+                        const next = new Set(selectedSubs);
+                        e.target.checked ? next.add(s.id) : next.delete(s.id);
+                        setSelectedSubs(next);
+                      }} />
+                      <div>
+                        <span className="text-sm font-medium">{s.email}</span>
+                        {s.date && <span className="text-xs text-muted-foreground ml-2">{new Date(s.date).toLocaleDateString()}</span>}
+                      </div>
+                    </label>
+                    {canDeleteTab('subscribers') && (
                       <Button size="sm" variant="destructive" className="text-xs h-7" onClick={async () => {
                         if (confirm('Delete this subscriber?')) {
                           await store.deleteSubscriber(s.id);
                           setSubscribers(await store.getSubscribers());
+                          const next = new Set(selectedSubs); next.delete(s.id); setSelectedSubs(next);
                           toast({ title: "Subscriber deleted" });
                         }
                       }}><Trash2 className="h-3 w-3" /></Button>
                     )}
                   </div>
                 ))}
+              </div>
+            )}
+            {selectedSubs.size > 0 && (
+              <div className="bg-card rounded-xl p-6 shadow-soft mt-6">
+                <h3 className="font-heading font-bold mb-4">Compose Email to {selectedSubs.size} subscriber{selectedSubs.size > 1 ? 's' : ''}</h3>
+                <input placeholder="Subject" value={emailSubject} onChange={e => setEmailSubject(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm mb-3" />
+                <textarea placeholder="Message body..." value={emailBody} onChange={e => setEmailBody(e.target.value)} rows={4} className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm mb-3" />
+                <Button size="sm" onClick={() => {
+                  const emails = subscribers.filter(s => selectedSubs.has(s.id)).map(s => s.email);
+                  if (emails.length === 0) { toast({ title: "No emails found", variant: "destructive" }); return; }
+                  openGmail(emails, emailSubject, emailBody);
+                }}><Mail className="h-4 w-4" /> Send via Email</Button>
               </div>
             )}
           </div>
@@ -718,16 +785,16 @@ const SubAdminAccess = () => {
                       {a.subtitle && <p className="text-xs text-muted-foreground">{a.subtitle}</p>}
                       <div className="text-xs text-muted-foreground mt-1" dangerouslySetInnerHTML={{ __html: a.content }} />
                       {a.date && a.showDate && <p className="text-xs text-muted-foreground mt-2">{new Date(a.date).toLocaleDateString()}</p>}
-                      {canEditTab('announcements') && (
+                      {(canEditTab('announcements') || canDeleteTab('announcements')) && (
                         <div className="flex gap-2 mt-2">
-                          <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => editAnnouncement(a)}><Pencil className="h-3 w-3" /> Edit</Button>
-                          <Button size="sm" variant="destructive" className="text-xs h-7" onClick={async () => {
+                          {canEditTab('announcements') && <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => editAnnouncement(a)}><Pencil className="h-3 w-3" /> Edit</Button>}
+                          {canDeleteTab('announcements') && <Button size="sm" variant="destructive" className="text-xs h-7" onClick={async () => {
                             if (confirm('Delete this announcement?')) {
                               await store.deleteAnnouncement(a.id);
                               setAnnouncements(await store.getAnnouncements());
                               toast({ title: "Announcement deleted" });
                             }
-                          }}><Trash2 className="h-3 w-3" /> Delete</Button>
+                          }}><Trash2 className="h-3 w-3" /> Delete</Button>}
                         </div>
                       )}
                     </div>
@@ -784,16 +851,16 @@ const SubAdminAccess = () => {
                       <p className="text-sm text-muted-foreground mt-1">{s.excerpt}</p>
                       <div className="text-xs text-muted-foreground mt-1" dangerouslySetInnerHTML={{ __html: s.content }} />
                       {s.date && s.showDate && <p className="text-xs text-muted-foreground mt-2">{new Date(s.date).toLocaleDateString()}</p>}
-                      {canEditTab('stories') && (
+                      {(canEditTab('stories') || canDeleteTab('stories')) && (
                         <div className="flex gap-2 mt-2">
-                          <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => editStoryItem(s)}><Pencil className="h-3 w-3" /> Edit</Button>
-                          <Button size="sm" variant="destructive" className="text-xs h-7" onClick={async () => {
+                          {canEditTab('stories') && <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => editStoryItem(s)}><Pencil className="h-3 w-3" /> Edit</Button>}
+                          {canDeleteTab('stories') && <Button size="sm" variant="destructive" className="text-xs h-7" onClick={async () => {
                             if (confirm('Delete this story?')) {
                               await store.deleteStory(s.id);
                               setStories(await store.getStories());
                               toast({ title: "Story deleted" });
                             }
-                          }}><Trash2 className="h-3 w-3" /> Delete</Button>
+                          }}><Trash2 className="h-3 w-3" /> Delete</Button>}
                         </div>
                       )}
                     </div>
@@ -864,16 +931,16 @@ const SubAdminAccess = () => {
                       <p className="text-sm text-muted-foreground mt-1">{b.excerpt}</p>
                       {b.tags && <p className="text-xs text-primary mt-1">{b.tags}</p>}
                       {b.date && <p className="text-xs text-muted-foreground mt-1">{new Date(b.date).toLocaleDateString()}</p>}
-                      {canEditTab('blogs') && (
+                      {(canEditTab('blogs') || canDeleteTab('blogs')) && (
                         <div className="flex gap-2 mt-2">
-                          <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => editBlogItem(b)}><Pencil className="h-3 w-3" /> Edit</Button>
-                          <Button size="sm" variant="destructive" className="text-xs h-7" onClick={async () => {
+                          {canEditTab('blogs') && <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => editBlogItem(b)}><Pencil className="h-3 w-3" /> Edit</Button>}
+                          {canDeleteTab('blogs') && <Button size="sm" variant="destructive" className="text-xs h-7" onClick={async () => {
                             if (confirm('Delete this blog post?')) {
                               await store.deleteBlog(b.id);
                               setBlogs(await store.getBlogs());
                               toast({ title: "Blog post deleted" });
                             }
-                          }}><Trash2 className="h-3 w-3" /> Delete</Button>
+                          }}><Trash2 className="h-3 w-3" /> Delete</Button>}
                         </div>
                       )}
                     </div>
@@ -918,7 +985,7 @@ const SubAdminAccess = () => {
                     <div className="p-3">
                       <p className="text-sm font-medium">{g.title}</p>
                       <p className="text-xs text-muted-foreground">{g.type} {g.date ? '· ' + new Date(g.date).toLocaleDateString() : ''}</p>
-                      {canEditTab('gallery') && (
+                      {canDeleteTab('gallery') && (
                         <Button size="sm" variant="destructive" className="text-xs h-7 mt-2" onClick={async () => {
                           if (confirm('Delete this item?')) {
                             await store.deleteGalleryItem(g.id);
@@ -946,26 +1013,53 @@ const SubAdminAccess = () => {
                   <p className="text-muted-foreground text-center py-8">Existing data is hidden for your account.</p>
                 ) : filtered.length === 0 ? <p className="text-muted-foreground text-center py-8">No volunteers yet.</p> : (
                   <div className="space-y-3">
+                    <div className="flex items-center gap-3 mb-2">
+                      <input type="checkbox" checked={selectedVols.size === filtered.length && filtered.length > 0} onChange={(e) => {
+                        setSelectedVols(e.target.checked ? new Set(filtered.map(v => v.id)) : new Set());
+                      }} />
+                      {selectedVols.size > 0 && <span className="text-sm text-muted-foreground">{selectedVols.size} selected</span>}
+                    </div>
                     {filtered.map(v => (
                       <div key={v.id} className="bg-card rounded-lg p-4 shadow-soft">
-                        <div className="flex justify-between items-start">
-                          <span className="font-medium text-sm">{v.name}</span>
-                          <span className="text-xs text-muted-foreground">{v.date ? new Date(v.date).toLocaleDateString() : ''}</span>
+                        <div className="flex items-start gap-3">
+                          <input type="checkbox" className="mt-1" checked={selectedVols.has(v.id)} onChange={(e) => {
+                            const next = new Set(selectedVols);
+                            e.target.checked ? next.add(v.id) : next.delete(v.id);
+                            setSelectedVols(next);
+                          }} />
+                          <div className="flex-1">
+                            <div className="flex justify-between items-start">
+                              <span className="font-medium text-sm">{v.name}</span>
+                              <span className="text-xs text-muted-foreground">{v.date ? new Date(v.date).toLocaleDateString() : ''}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">{v.email}{v.phone ? ' · ' + v.phone : ''}</p>
+                            {v.country && <p className="text-xs text-muted-foreground">{v.country}</p>}
+                            {v.message && <p className="text-sm mt-2 whitespace-pre-line">{v.message}</p>}
+                            {canDeleteTab('volunteers') && (
+                              <Button size="sm" variant="destructive" className="text-xs h-7 mt-2" onClick={async () => {
+                                if (confirm('Delete this volunteer?')) {
+                                  await store.deleteVolunteer(v.id);
+                                  setVolunteers(await store.getVolunteers());
+                                  toast({ title: "Volunteer deleted" });
+                                }
+                              }}><Trash2 className="h-3 w-3" /> Delete</Button>
+                            )}
+                          </div>
                         </div>
-                        <p className="text-xs text-muted-foreground">{v.email}{v.phone ? ' · ' + v.phone : ''}</p>
-                        {v.country && <p className="text-xs text-muted-foreground">{v.country}</p>}
-                        {v.message && <p className="text-sm mt-2 whitespace-pre-line">{v.message}</p>}
-                        {canEditTab('volunteers') && (
-                          <Button size="sm" variant="destructive" className="text-xs h-7 mt-2" onClick={async () => {
-                            if (confirm('Delete this volunteer?')) {
-                              await store.deleteVolunteer(v.id);
-                              setVolunteers(await store.getVolunteers());
-                              toast({ title: "Volunteer deleted" });
-                            }
-                          }}><Trash2 className="h-3 w-3" /> Delete</Button>
-                        )}
                       </div>
                     ))}
+                  </div>
+                )}
+                {selectedVols.size > 0 && (
+                  <div className="bg-card rounded-xl p-6 shadow-soft mt-6">
+                    <h3 className="font-heading font-bold mb-4">Send Email to {selectedVols.size} volunteer{selectedVols.size > 1 ? 's' : ''}</h3>
+                    <input placeholder="Subject" value={emailSubject} onChange={e => setEmailSubject(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm mb-3" />
+                    <textarea placeholder="Message body..." value={emailBody} onChange={e => setEmailBody(e.target.value)} rows={4} className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm mb-3" />
+                    <Button size="sm" onClick={() => {
+                      const emails = filtered.filter(v => selectedVols.has(v.id)).map(v => v.email).filter(Boolean);
+                      if (emails.length === 0) { toast({ title: "No emails found", variant: "destructive" }); return; }
+                      openGmail(emails, emailSubject, emailBody);
+                    }}><Mail className="h-4 w-4" /> Send via Email</Button>
                   </div>
                 )}
               </>
@@ -984,26 +1078,53 @@ const SubAdminAccess = () => {
                   <p className="text-muted-foreground text-center py-8">Existing data is hidden for your account.</p>
                 ) : filtered.length === 0 ? <p className="text-muted-foreground text-center py-8">No sponsors yet.</p> : (
                   <div className="space-y-3">
+                    <div className="flex items-center gap-3 mb-2">
+                      <input type="checkbox" checked={selectedVols.size === filtered.length && filtered.length > 0} onChange={(e) => {
+                        setSelectedVols(e.target.checked ? new Set(filtered.map(v => v.id)) : new Set());
+                      }} />
+                      {selectedVols.size > 0 && <span className="text-sm text-muted-foreground">{selectedVols.size} selected</span>}
+                    </div>
                     {filtered.map(v => (
                       <div key={v.id} className="bg-card rounded-lg p-4 shadow-soft">
-                        <div className="flex justify-between items-start">
-                          <span className="font-medium text-sm">{v.name}</span>
-                          <span className="text-xs text-muted-foreground">{v.date ? new Date(v.date).toLocaleDateString() : ''}</span>
+                        <div className="flex items-start gap-3">
+                          <input type="checkbox" className="mt-1" checked={selectedVols.has(v.id)} onChange={(e) => {
+                            const next = new Set(selectedVols);
+                            e.target.checked ? next.add(v.id) : next.delete(v.id);
+                            setSelectedVols(next);
+                          }} />
+                          <div className="flex-1">
+                            <div className="flex justify-between items-start">
+                              <span className="font-medium text-sm">{v.name}</span>
+                              <span className="text-xs text-muted-foreground">{v.date ? new Date(v.date).toLocaleDateString() : ''}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">{v.email}{v.phone ? ' · ' + v.phone : ''}</p>
+                            {v.country && <p className="text-xs text-muted-foreground">{v.country}</p>}
+                            {v.message && <p className="text-sm mt-2 whitespace-pre-line">{v.message}</p>}
+                            {canDeleteTab('sponsors') && (
+                              <Button size="sm" variant="destructive" className="text-xs h-7 mt-2" onClick={async () => {
+                                if (confirm('Delete this sponsor?')) {
+                                  await store.deleteVolunteer(v.id);
+                                  setVolunteers(await store.getVolunteers());
+                                  toast({ title: "Sponsor deleted" });
+                                }
+                              }}><Trash2 className="h-3 w-3" /> Delete</Button>
+                            )}
+                          </div>
                         </div>
-                        <p className="text-xs text-muted-foreground">{v.email}{v.phone ? ' · ' + v.phone : ''}</p>
-                        {v.country && <p className="text-xs text-muted-foreground">{v.country}</p>}
-                        {v.message && <p className="text-sm mt-2 whitespace-pre-line">{v.message}</p>}
-                        {canEditTab('sponsors') && (
-                          <Button size="sm" variant="destructive" className="text-xs h-7 mt-2" onClick={async () => {
-                            if (confirm('Delete this sponsor?')) {
-                              await store.deleteVolunteer(v.id);
-                              setVolunteers(await store.getVolunteers());
-                              toast({ title: "Sponsor deleted" });
-                            }
-                          }}><Trash2 className="h-3 w-3" /> Delete</Button>
-                        )}
                       </div>
                     ))}
+                  </div>
+                )}
+                {selectedVols.size > 0 && (
+                  <div className="bg-card rounded-xl p-6 shadow-soft mt-6">
+                    <h3 className="font-heading font-bold mb-4">Send Email to {selectedVols.size} sponsor{selectedVols.size > 1 ? 's' : ''}</h3>
+                    <input placeholder="Subject" value={emailSubject} onChange={e => setEmailSubject(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm mb-3" />
+                    <textarea placeholder="Message body..." value={emailBody} onChange={e => setEmailBody(e.target.value)} rows={4} className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm mb-3" />
+                    <Button size="sm" onClick={() => {
+                      const emails = filtered.filter(v => selectedVols.has(v.id)).map(v => v.email).filter(Boolean);
+                      if (emails.length === 0) { toast({ title: "No emails found", variant: "destructive" }); return; }
+                      openGmail(emails, emailSubject, emailBody);
+                    }}><Mail className="h-4 w-4" /> Send via Email</Button>
                   </div>
                 )}
               </>
@@ -1020,26 +1141,53 @@ const SubAdminAccess = () => {
               <p className="text-muted-foreground text-center py-8">Existing data is hidden for your account.</p>
             ) : donations.length === 0 ? <p className="text-muted-foreground text-center py-8">No donations yet.</p> : (
               <div className="space-y-3">
+                <div className="flex items-center gap-3 mb-2">
+                  <input type="checkbox" checked={selectedDonors.size === donations.length && donations.length > 0} onChange={(e) => {
+                    setSelectedDonors(e.target.checked ? new Set(donations.map(d => d.id)) : new Set());
+                  }} />
+                  {selectedDonors.size > 0 && <span className="text-sm text-muted-foreground">{selectedDonors.size} selected</span>}
+                </div>
                 {donations.map(d => (
                   <div key={d.id} className="bg-card rounded-lg p-4 shadow-soft">
-                    <div className="flex justify-between items-start">
-                      <span className="font-medium text-sm">{d.name || 'Anonymous'}</span>
-                      <span className="text-xs text-muted-foreground">{d.date ? new Date(d.date).toLocaleDateString() : ''}</span>
+                    <div className="flex items-start gap-3">
+                      <input type="checkbox" className="mt-1" checked={selectedDonors.has(d.id)} onChange={(e) => {
+                        const next = new Set(selectedDonors);
+                        e.target.checked ? next.add(d.id) : next.delete(d.id);
+                        setSelectedDonors(next);
+                      }} />
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <span className="font-medium text-sm">{d.name || 'Anonymous'}</span>
+                          <span className="text-xs text-muted-foreground">{d.date ? new Date(d.date).toLocaleDateString() : ''}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{d.email}</p>
+                        <p className="text-sm font-bold text-primary mt-1">{d.currency || 'USD'} {d.amount}</p>
+                        {d.message && <p className="text-sm mt-2 whitespace-pre-line">{d.message}</p>}
+                        {canDeleteTab('donations') && (
+                          <Button size="sm" variant="destructive" className="text-xs h-7 mt-2" onClick={async () => {
+                            if (confirm('Delete this donation?')) {
+                              await store.deleteDonation(d.id);
+                              setDonations(await store.getDonations());
+                              toast({ title: "Donation deleted" });
+                            }
+                          }}><Trash2 className="h-3 w-3" /> Delete</Button>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground">{d.email}</p>
-                    <p className="text-sm font-bold text-primary mt-1">{d.currency || 'USD'} {d.amount}</p>
-                    {d.message && <p className="text-sm mt-2 whitespace-pre-line">{d.message}</p>}
-                    {canEditTab('donations') && (
-                      <Button size="sm" variant="destructive" className="text-xs h-7 mt-2" onClick={async () => {
-                        if (confirm('Delete this donation?')) {
-                          await store.deleteDonation(d.id);
-                          setDonations(await store.getDonations());
-                          toast({ title: "Donation deleted" });
-                        }
-                      }}><Trash2 className="h-3 w-3" /> Delete</Button>
-                    )}
                   </div>
                 ))}
+              </div>
+            )}
+            {selectedDonors.size > 0 && (
+              <div className="bg-card rounded-xl p-6 shadow-soft mt-6">
+                <h3 className="font-heading font-bold mb-4">Send Email to {selectedDonors.size} donor{selectedDonors.size > 1 ? 's' : ''}</h3>
+                <input placeholder="Subject" value={emailSubject} onChange={e => setEmailSubject(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm mb-3" />
+                <textarea placeholder="Message body..." value={emailBody} onChange={e => setEmailBody(e.target.value)} rows={4} className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm mb-3" />
+                <Button size="sm" onClick={() => {
+                  const emails = donations.filter(d => selectedDonors.has(d.id)).map(d => d.email).filter(Boolean);
+                  if (emails.length === 0) { toast({ title: "No emails found", variant: "destructive" }); return; }
+                  openGmail(emails, emailSubject, emailBody);
+                }}><Mail className="h-4 w-4" /> Send via Email</Button>
               </div>
             )}
           </div>
@@ -1054,6 +1202,17 @@ const SubAdminAccess = () => {
           </div>
         )}
       </main>
+
+      {/* Photo Viewer Modal */}
+      {viewPhoto && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setViewPhoto(null)}>
+          <div className="relative max-w-lg w-full" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setViewPhoto(null)} className="absolute -top-10 right-0 text-white hover:text-gray-300 text-2xl font-bold">✕</button>
+            <img src={viewPhoto.url} alt={viewPhoto.name} className="w-full rounded-xl shadow-2xl" />
+            <p className="text-white text-center mt-3 font-medium">{viewPhoto.name}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
