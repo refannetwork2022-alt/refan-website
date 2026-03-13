@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { store, type Story, type BlogPost, type GalleryItem, type NewsletterSubscriber, type ContactMessage, type Announcement, type Member, type FooterSettings, type HeroSettings, type SiteSettings, type AboutSettings, type ProgramsSettings, type HomeSettings, type ContactPageSettings, type DonateSettings, type GetInvolvedSettings, type SubAdmin, type TabPermission } from "@/lib/store";
+import { store, type Story, type BlogPost, type GalleryItem, type NewsletterSubscriber, type ContactMessage, type Announcement, type Member, type FooterSettings, type HeroSettings, type SiteSettings, type AboutSettings, type ProgramsSettings, type HomeSettings, type ContactPageSettings, type DonateSettings, type GetInvolvedSettings, type SubAdmin, type TabPermission, type AdminChatMessage } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import {
   LayoutDashboard, FileText, Image, Megaphone, Users, Heart,
@@ -14,7 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import ImageUpload from "@/components/ImageUpload";
 import RichTextEditor from "@/components/RichTextEditor";
 
-type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'sponsors' | 'donations' | 'subscribers' | 'messages' | 'members' | 'footer' | 'hero' | 'site' | 'pages' | 'admins';
+type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'sponsors' | 'donations' | 'subscribers' | 'messages' | 'members' | 'footer' | 'hero' | 'site' | 'pages' | 'admins' | 'chat';
 
 const countries = [
   "Afghanistan", "Albania", "Algeria", "Angola", "Argentina", "Australia", "Austria", "Bangladesh",
@@ -58,7 +58,8 @@ const phoneCodes = [
 
 const Admin = () => {
   const { toast } = useToast();
-  const { signOut, changePassword, isSuperAdmin, canEdit, canView, canDelete, shouldHideExisting } = useAuth();
+  const { user, signOut, changePassword, isSuperAdmin, subAdminProfile, canEdit, canView, canDelete, shouldHideExisting } = useAuth();
+  const chatEndRef = useRef<HTMLDivElement>(null);
   const [tab, setTab] = useState<Tab>('dashboard');
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [stories, setStories] = useState<Story[]>([]);
@@ -73,6 +74,8 @@ const Admin = () => {
   const [subAdminForm, setSubAdminForm] = useState({ name: '', username: '', email: '', permissions: {} as Record<string, TabPermission>, allowDelete: {} as Record<string, boolean>, hideExistingData: {} as Record<string, boolean> });
   const [editingSubAdmin, setEditingSubAdmin] = useState<string | null>(null);
   const [viewPhoto, setViewPhoto] = useState<{ url: string; name: string } | null>(null);
+  const [chatMessages, setChatMessages] = useState<AdminChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
   const [footerForm, setFooterForm] = useState<FooterSettings>({
     email: "refannetwork2022@gmail.com", phone: "+265 997 561 852",
     address: "Dzaleka Refugee Camp, Dowa District, Malawi", whatsapp: "265997561852",
@@ -131,6 +134,7 @@ const Admin = () => {
     setAnnouncements(a); setStories(s); setBlogs(b); setGallery(g);
     setVolunteers(v); setDonations(d); setSubscribers(sub); setMessages(msg); setMembers(mem);
     if (isSuperAdmin) { store.getSubAdmins().then(setSubAdmins); }
+    store.getAdminMessages().then(setChatMessages);
     // Auto-backfill missing expiry dates
     for (const m of mem) {
       if (!m.expiryDate || !m.expiryDate.match(/^\d{4}-\d{2}-\d{2}/)) {
@@ -524,12 +528,14 @@ const Admin = () => {
     { id: 'hero', label: 'Hero Settings', icon: ImagePlus },
     { id: 'pages', label: 'Page Content', icon: Globe },
     { id: 'site', label: 'Site Settings', icon: Power },
+    { id: 'chat' as Tab, label: 'Admin Chat', icon: Send },
     ...(isSuperAdmin ? [{ id: 'admins' as Tab, label: 'Manage Admins', icon: Shield }] : []),
   ];
 
   const visibleSidebar = sidebarItems.filter(item => {
     if (isSuperAdmin) return true;
     if (item.id === 'admins') return false;
+    if (item.id === 'chat') return true;
     return canView(item.id);
   });
 
@@ -2065,6 +2071,95 @@ const Admin = () => {
             </div>
           );
         })()}
+
+        {tab === 'chat' && (
+          <div className="space-y-4">
+            <h2 className="font-heading text-xl font-bold flex items-center gap-2"><Send className="h-5 w-5" /> Admin Chat</h2>
+            <div className="bg-card rounded-xl border border-border flex flex-col" style={{ height: 'calc(100vh - 220px)', minHeight: 400 }}>
+              {/* Messages area */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {chatMessages.length === 0 && (
+                  <p className="text-center text-muted-foreground text-sm py-10">No messages yet. Start the conversation!</p>
+                )}
+                {chatMessages.map((msg) => {
+                  const isMe = msg.senderEmail === (user?.email || '');
+                  return (
+                    <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${isMe ? 'bg-primary text-white rounded-br-md' : 'bg-muted rounded-bl-md'}`}>
+                        {!isMe && (
+                          <p className="text-xs font-bold mb-0.5 opacity-80">{msg.senderName}</p>
+                        )}
+                        <p className="text-sm whitespace-pre-wrap break-words">{msg.message}</p>
+                        <p className={`text-[10px] mt-1 ${isMe ? 'text-white/60' : 'text-muted-foreground'}`}>
+                          {new Date(msg.timestamp).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                      {isMe && isSuperAdmin && (
+                        <button onClick={async () => { await store.deleteAdminMessage(msg.id); setChatMessages(prev => prev.filter(m => m.id !== msg.id)); }} className="ml-1 text-destructive/50 hover:text-destructive self-center" title="Delete">
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+                <div ref={chatEndRef} />
+              </div>
+              {/* Input area */}
+              <div className="border-t border-border p-3 flex gap-2">
+                <input
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={async (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey && chatInput.trim()) {
+                      e.preventDefault();
+                      const text = chatInput.trim();
+                      setChatInput('');
+                      const senderName = isSuperAdmin ? 'Super Admin' : (subAdminProfile?.name || user?.email || 'Admin');
+                      const sent = await store.sendAdminMessage({
+                        senderName,
+                        senderEmail: user?.email || '',
+                        senderRole: isSuperAdmin ? 'super_admin' : 'sub_admin',
+                        message: text,
+                        timestamp: new Date().toISOString(),
+                      });
+                      if (sent) {
+                        setChatMessages(prev => [...prev, sent]);
+                        setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+                      }
+                    }
+                  }}
+                  placeholder="Type a message..."
+                  className="flex-1 px-4 py-2.5 rounded-full border border-input bg-background text-sm focus:ring-2 focus:ring-ring outline-none"
+                  maxLength={2000}
+                />
+                <Button
+                  size="icon"
+                  className="rounded-full shrink-0"
+                  disabled={!chatInput.trim()}
+                  onClick={async () => {
+                    const text = chatInput.trim();
+                    if (!text) return;
+                    setChatInput('');
+                    const senderName = isSuperAdmin ? 'Super Admin' : (subAdminProfile?.name || user?.email || 'Admin');
+                    const sent = await store.sendAdminMessage({
+                      senderName,
+                      senderEmail: user?.email || '',
+                      senderRole: isSuperAdmin ? 'super_admin' : 'sub_admin',
+                      message: text,
+                      timestamp: new Date().toISOString(),
+                    });
+                    if (sent) {
+                      setChatMessages(prev => [...prev, sent]);
+                      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+                    }
+                  }}
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </main>
 

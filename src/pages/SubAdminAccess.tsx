@@ -1,18 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { store, type SubAdmin, type TabPermission, type Story, type BlogPost, type GalleryItem, type Announcement, type Member, type NewsletterSubscriber, type ContactMessage } from "@/lib/store";
+import { store, type SubAdmin, type TabPermission, type Story, type BlogPost, type GalleryItem, type Announcement, type Member, type NewsletterSubscriber, type ContactMessage, type AdminChatMessage } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import {
   LayoutDashboard, FileText, Image, Megaphone, Users, Heart,
   Plus, Trash2, LogOut, Mail, MessageSquare, UserPlus, Shield,
   Pencil, Save, Loader2, Settings, Globe, Power, Lock, ImagePlus,
-  ArrowLeft, Menu, X, Camera, Upload
+  ArrowLeft, Menu, X, Camera, Upload, Send
 } from "lucide-react";
 import ImageUpload from "@/components/ImageUpload";
 import RichTextEditor from "@/components/RichTextEditor";
 
-type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'sponsors' | 'donations' | 'subscribers' | 'messages' | 'members' | 'footer' | 'hero' | 'site' | 'pages';
+type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'sponsors' | 'donations' | 'subscribers' | 'messages' | 'members' | 'footer' | 'hero' | 'site' | 'pages' | 'chat';
 
 const countries = [
   "Afghanistan", "Albania", "Algeria", "Angola", "Argentina", "Australia", "Austria", "Bangladesh",
@@ -62,6 +62,7 @@ const TAB_META: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'hero', label: 'Hero Settings', icon: ImagePlus },
   { id: 'pages', label: 'Page Content', icon: Globe },
   { id: 'site', label: 'Site Settings', icon: Power },
+  { id: 'chat', label: 'Admin Chat', icon: Send },
 ];
 
 const SubAdminAccess = () => {
@@ -89,6 +90,9 @@ const SubAdminAccess = () => {
   const [members, setMembers] = useState<Member[]>([]);
   const [saving, setSaving] = useState(false);
   const [viewPhoto, setViewPhoto] = useState<{ url: string; name: string } | null>(null);
+  const [chatMessages, setChatMessages] = useState<AdminChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Announcement form
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
@@ -305,6 +309,7 @@ const SubAdminAccess = () => {
       ]);
       setAnnouncements(a); setStories(s); setBlogs(b); setGallery(g);
       setVolunteers(v); setDonations(d); setSubscribers(sub); setMessages(msg); setMembers(mem);
+      store.getAdminMessages().then(setChatMessages);
       // Set first visible tab
       const firstTab = visibleTabs[0];
       if (firstTab) setTab(firstTab.id);
@@ -335,7 +340,7 @@ const SubAdminAccess = () => {
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
 
-  const visibleTabs = TAB_META.filter(t => canViewTab(t.id));
+  const visibleTabs = TAB_META.filter(t => t.id === 'chat' || canViewTab(t.id));
 
   // Restore session on load
   useEffect(() => {
@@ -1199,6 +1204,84 @@ const SubAdminAccess = () => {
             <p className="text-muted-foreground text-center py-8">
               {isViewOnly ? 'View only — settings are managed by the main admin.' : 'Settings management available from the main admin panel.'}
             </p>
+          </div>
+        )}
+
+        {tab === 'chat' && (
+          <div className="space-y-4">
+            <h2 className="font-heading text-xl font-bold flex items-center gap-2"><Send className="h-5 w-5" /> Admin Chat</h2>
+            <div className="bg-card rounded-xl border border-border flex flex-col" style={{ height: 'calc(100vh - 220px)', minHeight: 400 }}>
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {chatMessages.length === 0 && (
+                  <p className="text-center text-muted-foreground text-sm py-10">No messages yet. Start the conversation!</p>
+                )}
+                {chatMessages.map((msg) => {
+                  const isMe = msg.senderEmail === (profile?.email || '');
+                  return (
+                    <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${isMe ? 'bg-primary text-white rounded-br-md' : 'bg-muted rounded-bl-md'}`}>
+                        {!isMe && <p className="text-xs font-bold mb-0.5 opacity-80">{msg.senderName}</p>}
+                        <p className="text-sm whitespace-pre-wrap break-words">{msg.message}</p>
+                        <p className={`text-[10px] mt-1 ${isMe ? 'text-white/60' : 'text-muted-foreground'}`}>
+                          {new Date(msg.timestamp).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div ref={chatEndRef} />
+              </div>
+              <div className="border-t border-border p-3 flex gap-2">
+                <input
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={async (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey && chatInput.trim()) {
+                      e.preventDefault();
+                      const text = chatInput.trim();
+                      setChatInput('');
+                      const sent = await store.sendAdminMessage({
+                        senderName: profile?.name || 'Admin',
+                        senderEmail: profile?.email || '',
+                        senderRole: 'sub_admin',
+                        message: text,
+                        timestamp: new Date().toISOString(),
+                      });
+                      if (sent) {
+                        setChatMessages(prev => [...prev, sent]);
+                        setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+                      }
+                    }
+                  }}
+                  placeholder="Type a message..."
+                  className="flex-1 px-4 py-2.5 rounded-full border border-input bg-background text-sm focus:ring-2 focus:ring-ring outline-none"
+                  maxLength={2000}
+                />
+                <Button
+                  size="icon"
+                  className="rounded-full shrink-0"
+                  disabled={!chatInput.trim()}
+                  onClick={async () => {
+                    const text = chatInput.trim();
+                    if (!text) return;
+                    setChatInput('');
+                    const sent = await store.sendAdminMessage({
+                      senderName: profile?.name || 'Admin',
+                      senderEmail: profile?.email || '',
+                      senderRole: 'sub_admin',
+                      message: text,
+                      timestamp: new Date().toISOString(),
+                    });
+                    if (sent) {
+                      setChatMessages(prev => [...prev, sent]);
+                      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+                    }
+                  }}
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
         )}
       </main>

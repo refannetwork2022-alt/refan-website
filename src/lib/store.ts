@@ -184,7 +184,7 @@ export interface GetInvolvedSettings {
   ways: Array<{ title: string; desc: string; cta: string }>;
 }
 
-export type TabPermission = 'hidden' | 'view' | 'edit';
+export type TabPermission = 'hidden' | 'view' | 'edit' | 'full';
 
 export interface SubAdmin {
   id: string;
@@ -195,6 +195,7 @@ export interface SubAdmin {
   password: string;
   active: boolean;
   permissions: Record<string, TabPermission>;
+  allowDelete: Record<string, boolean>;
   hideExistingData: Record<string, boolean>;
   createdAt: string;
 }
@@ -206,6 +207,15 @@ export interface ContactMessage {
   subject: string;
   message: string;
   date: string;
+}
+
+export interface AdminChatMessage {
+  id: string;
+  senderName: string;
+  senderEmail: string;
+  senderRole: 'super_admin' | 'sub_admin';
+  message: string;
+  timestamp: string;
 }
 
 // ── Helpers ─────────────────────────────────────────────────
@@ -628,5 +638,24 @@ export const store = {
       const d = snap.docs[0];
       return { id: d.id, ...d.data() } as SubAdmin;
     } catch (e) { console.error("getSubAdminByToken:", e); return null; }
+  },
+
+  // ─── Admin Chat ────────────────────────────────────────────
+  getAdminMessages: async (): Promise<AdminChatMessage[]> => {
+    try {
+      const q = query(collection(db, "admin_chat"), orderBy("timestamp", "asc"));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }) as AdminChatMessage);
+    } catch (e) { console.error("getAdminMessages:", e); return []; }
+  },
+  sendAdminMessage: async (msg: Omit<AdminChatMessage, 'id'>): Promise<AdminChatMessage | null> => {
+    try {
+      const ref = await addDoc(collection(db, "admin_chat"), msg);
+      return { id: ref.id, ...msg };
+    } catch (e) { console.error("sendAdminMessage:", e); return null; }
+  },
+  deleteAdminMessage: async (id: string): Promise<boolean> => {
+    try { await deleteDoc(doc(db, "admin_chat", id)); return true; }
+    catch (e) { console.error("deleteAdminMessage:", e); return false; }
   },
 };
