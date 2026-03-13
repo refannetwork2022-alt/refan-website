@@ -14,9 +14,9 @@ const MaintenancePage = ({ message }: MaintenancePageProps) => {
     const newCount = tapCount + 1;
     setTapCount(newCount);
 
-    // Reset tap count after 3 seconds of inactivity
+    // Reset tap count after 2 seconds of inactivity
     if (tapTimer.current) clearTimeout(tapTimer.current);
-    tapTimer.current = setTimeout(() => setTapCount(0), 3000);
+    tapTimer.current = setTimeout(() => setTapCount(0), 2000);
 
     if (newCount >= 5) {
       setTapCount(0);
@@ -30,7 +30,10 @@ const MaintenancePage = ({ message }: MaintenancePageProps) => {
     <div className="min-h-screen flex items-center justify-center bg-secondary text-white px-4">
       <div className="text-center max-w-md space-y-6">
         <img src="/logo.png" alt="ReFAN" className="w-20 h-20 mx-auto opacity-80" />
-        <h1 className="font-heading text-3xl font-extrabold">
+        <h1
+          className="font-heading text-3xl font-extrabold cursor-default select-none"
+          onClick={handleSecretTap}
+        >
           <span className="text-primary">ReFA</span>N
         </h1>
         <div className="bg-white/10 rounded-2xl p-8 backdrop-blur-sm border border-white/10">
@@ -44,14 +47,7 @@ const MaintenancePage = ({ message }: MaintenancePageProps) => {
           )}
         </div>
         <p className="text-white/20 text-xs select-none">
-          &copy;{" "}
-          <span
-            onClick={handleSecretTap}
-            className="cursor-default"
-          >
-            {currentYear}
-          </span>
-          {" "}ReFAN
+          &copy; {currentYear} ReFAN
         </p>
       </div>
     </div>
