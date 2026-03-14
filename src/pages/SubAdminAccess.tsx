@@ -331,8 +331,6 @@ const SubAdminAccess = () => {
     const mailto = `mailto:${emails.join(',')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     const a = document.createElement('a');
     a.href = mailto;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
