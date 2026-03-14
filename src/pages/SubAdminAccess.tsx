@@ -327,13 +327,10 @@ const SubAdminAccess = () => {
   };
   const hideExisting = (t: string) => profile?.hideExistingData[t] === true;
 
+  const COMPANY_EMAIL = "refannetwork2022@gmail.com";
   const openGmail = (emails: string[], subject: string, body: string) => {
-    const mailto = `mailto:${emails.join(',')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    const a = document.createElement('a');
-    a.href = mailto;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    const params = new URLSearchParams({ view: 'cm', fs: '1', to: emails.join(','), su: subject, body: body });
+    window.open(`https://mail.google.com/mail/?authuser=${encodeURIComponent(COMPANY_EMAIL)}&${params.toString()}`, '_blank');
   };
 
   const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set());

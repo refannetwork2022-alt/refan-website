@@ -501,12 +501,8 @@ const Admin = () => {
 
   const COMPANY_EMAIL = "refannetwork2022@gmail.com";
   const openGmail = (emails: string[], subject: string, body: string) => {
-    const mailto = `mailto:${emails.join(',')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    const a = document.createElement('a');
-    a.href = mailto;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    const params = new URLSearchParams({ view: 'cm', fs: '1', to: emails.join(','), su: subject, body: body });
+    window.open(`https://mail.google.com/mail/?authuser=${encodeURIComponent(COMPANY_EMAIL)}&${params.toString()}`, '_blank');
   };
 
   const copyRegLink = () => {
@@ -2057,7 +2053,7 @@ const Admin = () => {
                                   <a href={`https://wa.me/?text=${encodeURIComponent(msg)}`} target="_blank" rel="noopener noreferrer">
                                     <Button size="sm" variant="outline" className="text-xs h-7 text-green-600 border-green-200 hover:bg-green-50"><Send className="h-3 w-3" /> WhatsApp</Button>
                                   </a>
-                                  <a href={`mailto:${encodeURIComponent(sa.email)}?subject=${encodeURIComponent('Your ReFAN Admin Access')}&body=${encodeURIComponent(msg)}`}>
+                                  <a href={`https://mail.google.com/mail/?authuser=${encodeURIComponent(COMPANY_EMAIL)}&view=cm&fs=1&to=${encodeURIComponent(sa.email)}&su=${encodeURIComponent('Your ReFAN Admin Access')}&body=${encodeURIComponent(msg)}`} target="_blank" rel="noopener noreferrer">
                                     <Button size="sm" variant="outline" className="text-xs h-7"><Mail className="h-3 w-3" /> Send via Email</Button>
                                   </a>
                                 </div>
