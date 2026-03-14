@@ -329,7 +329,13 @@ const SubAdminAccess = () => {
 
   const openGmail = (emails: string[], subject: string, body: string) => {
     const mailto = `mailto:${emails.join(',')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.location.href = mailto;
+    const a = document.createElement('a');
+    a.href = mailto;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set());

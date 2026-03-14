@@ -502,7 +502,13 @@ const Admin = () => {
   const COMPANY_EMAIL = "refannetwork2022@gmail.com";
   const openGmail = (emails: string[], subject: string, body: string) => {
     const mailto = `mailto:${emails.join(',')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.location.href = mailto;
+    const a = document.createElement('a');
+    a.href = mailto;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   const copyRegLink = () => {
@@ -863,7 +869,7 @@ const Admin = () => {
                             const subject = `ReFAN Membership Renewal - ${name}`;
                             const body = `Dear ${name},\n\nYour ReFAN membership has been renewed.\n\nNew Expiry Date: ${newExpiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}\nReg Number: ${m.regNumber}\nTerm Fee: 2,000 MWK\n\nThank you for being a member of ReFAN.\n\nBest regards,\nReFAN Admin`;
                             if (m.email) {
-                              window.location.href = `mailto:${encodeURIComponent(m.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                              openGmail([m.email], subject, body);
                             }
                             updateDoc(doc(db, "members", m.id), { expiryDate: expiryStr }).then(() => {
                               loadData();

@@ -30,10 +30,7 @@ const MaintenancePage = ({ message }: MaintenancePageProps) => {
     <div className="min-h-screen flex items-center justify-center bg-secondary text-white px-4">
       <div className="text-center max-w-md space-y-6">
         <img src="/logo.png" alt="ReFAN" className="w-20 h-20 mx-auto opacity-80" />
-        <h1
-          className="font-heading text-3xl font-extrabold cursor-default select-none"
-          onClick={handleSecretTap}
-        >
+        <h1 className="font-heading text-3xl font-extrabold select-none">
           <span className="text-primary">ReFA</span>N
         </h1>
         <div className="bg-white/10 rounded-2xl p-8 backdrop-blur-sm border border-white/10">
@@ -46,7 +43,10 @@ const MaintenancePage = ({ message }: MaintenancePageProps) => {
             </p>
           )}
         </div>
-        <p className="text-white/20 text-xs select-none">
+        <p
+          className="text-white/20 text-xs select-none cursor-default"
+          onClick={handleSecretTap}
+        >
           &copy; {currentYear} ReFAN
         </p>
       </div>
