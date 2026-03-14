@@ -1207,9 +1207,36 @@ const SubAdminAccess = () => {
           </div>
         )}
 
-        {tab === 'chat' && (
+        {tab === 'chat' && (() => {
+          const sendMessage = async () => {
+            const text = chatInput.trim();
+            if (!text) return;
+            setChatInput('');
+            try {
+              const sent = await store.sendAdminMessage({
+                senderName: profile?.name || 'Admin',
+                senderEmail: profile?.email || '',
+                senderRole: 'sub_admin',
+                message: text,
+                timestamp: new Date().toISOString(),
+              });
+              if (sent) {
+                setChatMessages(prev => [...prev, sent]);
+                setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+              } else {
+                setChatInput(text);
+              }
+            } catch {
+              setChatInput(text);
+            }
+          };
+          const refreshChat = () => { store.getAdminMessages().then(setChatMessages); };
+          return (
           <div className="space-y-4">
-            <h2 className="font-heading text-xl font-bold flex items-center gap-2"><Send className="h-5 w-5" /> Admin Chat</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="font-heading text-xl font-bold flex items-center gap-2"><Send className="h-5 w-5" /> Admin Chat</h2>
+              <Button variant="outline" size="sm" onClick={refreshChat} className="text-xs">Refresh</Button>
+            </div>
             <div className="bg-card rounded-xl border border-border flex flex-col" style={{ height: 'calc(100vh - 220px)', minHeight: 400 }}>
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {chatMessages.length === 0 && (
@@ -1220,7 +1247,7 @@ const SubAdminAccess = () => {
                   return (
                     <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${isMe ? 'bg-primary text-white rounded-br-md' : 'bg-muted rounded-bl-md'}`}>
-                        {!isMe && <p className="text-xs font-bold mb-0.5 opacity-80">{msg.senderName}</p>}
+                        <p className={`text-xs font-bold mb-0.5 ${isMe ? 'text-white/80' : 'opacity-80'}`}>{msg.senderName}{isMe ? ' (You)' : ''}</p>
                         <p className="text-sm whitespace-pre-wrap break-words">{msg.message}</p>
                         <p className={`text-[10px] mt-1 ${isMe ? 'text-white/60' : 'text-muted-foreground'}`}>
                           {new Date(msg.timestamp).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
@@ -1235,55 +1262,24 @@ const SubAdminAccess = () => {
                 <input
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
-                  onKeyDown={async (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey && chatInput.trim()) {
-                      e.preventDefault();
-                      const text = chatInput.trim();
-                      setChatInput('');
-                      const sent = await store.sendAdminMessage({
-                        senderName: profile?.name || 'Admin',
-                        senderEmail: profile?.email || '',
-                        senderRole: 'sub_admin',
-                        message: text,
-                        timestamp: new Date().toISOString(),
-                      });
-                      if (sent) {
-                        setChatMessages(prev => [...prev, sent]);
-                        setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-                      }
-                    }
-                  }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
                   placeholder="Type a message..."
                   className="flex-1 px-4 py-2.5 rounded-full border border-input bg-background text-sm focus:ring-2 focus:ring-ring outline-none"
                   maxLength={2000}
                 />
                 <Button
                   size="icon"
-                  className="rounded-full shrink-0"
+                  className="rounded-full shrink-0 h-10 w-10"
                   disabled={!chatInput.trim()}
-                  onClick={async () => {
-                    const text = chatInput.trim();
-                    if (!text) return;
-                    setChatInput('');
-                    const sent = await store.sendAdminMessage({
-                      senderName: profile?.name || 'Admin',
-                      senderEmail: profile?.email || '',
-                      senderRole: 'sub_admin',
-                      message: text,
-                      timestamp: new Date().toISOString(),
-                    });
-                    if (sent) {
-                      setChatMessages(prev => [...prev, sent]);
-                      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-                    }
-                  }}
+                  onClick={sendMessage}
                 >
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
             </div>
           </div>
-        )}
+          );
+        })()}
       </main>
 
       {/* Photo Viewer Modal */}
