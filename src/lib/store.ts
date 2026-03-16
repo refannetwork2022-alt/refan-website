@@ -643,9 +643,9 @@ export const store = {
   // ─── Admin Chat ────────────────────────────────────────────
   getAdminMessages: async (): Promise<AdminChatMessage[]> => {
     try {
-      const q = query(collection(db, "admin_chat"), orderBy("timestamp", "asc"));
-      const snap = await getDocs(q);
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }) as AdminChatMessage);
+      const snap = await getDocs(collection(db, "admin_chat"));
+      const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }) as AdminChatMessage);
+      return msgs.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
     } catch (e) { console.error("getAdminMessages:", e); return []; }
   },
   sendAdminMessage: async (msg: Omit<AdminChatMessage, 'id'>): Promise<AdminChatMessage | null> => {

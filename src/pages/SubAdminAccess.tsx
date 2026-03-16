@@ -327,10 +327,27 @@ const SubAdminAccess = () => {
   };
   const hideExisting = (t: string) => profile?.hideExistingData[t] === true;
 
-  const COMPANY_EMAIL = "refannetwork2022@gmail.com";
-  const openGmail = (emails: string[], subject: string, body: string) => {
-    const params = new URLSearchParams({ view: 'cm', fs: '1', to: emails.join(','), su: subject, body: body });
-    window.open(`https://mail.google.com/mail/?authuser=${encodeURIComponent(COMPANY_EMAIL)}&${params.toString()}`, '_blank');
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const sendEmail = async (emails: string[], subject: string, body: string) => {
+    if (sendingEmail) return;
+    setSendingEmail(true);
+    try {
+      const res = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: emails, subject, body }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "Email sent successfully!" });
+      } else {
+        toast({ title: "Failed to send email.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Failed to send email.", variant: "destructive" });
+    } finally {
+      setSendingEmail(false);
+    }
   };
 
   const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set());
@@ -647,7 +664,7 @@ const SubAdminAccess = () => {
                 <Button size="sm" onClick={() => {
                   const emails = members.filter(m => selectedMembers.has(m.id)).map(m => m.email).filter(Boolean);
                   if (emails.length === 0) { toast({ title: "No emails found", variant: "destructive" }); return; }
-                  openGmail(emails, emailSubject, emailBody);
+                  sendEmail(emails, emailSubject, emailBody);
                 }}><Mail className="h-4 w-4" /> Send via Email</Button>
               </div>
             )}
@@ -677,7 +694,7 @@ const SubAdminAccess = () => {
                     {(canViewTab('messages') || canDeleteTab('messages')) && (
                       <div className="flex gap-2 mt-3">
                         {canViewTab('messages') && <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => {
-                          openGmail([m.email], `Re: ${m.subject}`, '');
+                          sendEmail([m.email], `Re: ${m.subject}`, '');
                         }}><Mail className="h-3 w-3" /> Reply</Button>}
                         {canDeleteTab('messages') && <Button size="sm" variant="destructive" className="text-xs h-7" onClick={async () => {
                           if (confirm('Delete this message?')) {
@@ -745,7 +762,7 @@ const SubAdminAccess = () => {
                 <Button size="sm" onClick={() => {
                   const emails = subscribers.filter(s => selectedSubs.has(s.id)).map(s => s.email);
                   if (emails.length === 0) { toast({ title: "No emails found", variant: "destructive" }); return; }
-                  openGmail(emails, emailSubject, emailBody);
+                  sendEmail(emails, emailSubject, emailBody);
                 }}><Mail className="h-4 w-4" /> Send via Email</Button>
               </div>
             )}
@@ -1064,7 +1081,7 @@ const SubAdminAccess = () => {
                     <Button size="sm" onClick={() => {
                       const emails = filtered.filter(v => selectedVols.has(v.id)).map(v => v.email).filter(Boolean);
                       if (emails.length === 0) { toast({ title: "No emails found", variant: "destructive" }); return; }
-                      openGmail(emails, emailSubject, emailBody);
+                      sendEmail(emails, emailSubject, emailBody);
                     }}><Mail className="h-4 w-4" /> Send via Email</Button>
                   </div>
                 )}
@@ -1129,7 +1146,7 @@ const SubAdminAccess = () => {
                     <Button size="sm" onClick={() => {
                       const emails = filtered.filter(v => selectedVols.has(v.id)).map(v => v.email).filter(Boolean);
                       if (emails.length === 0) { toast({ title: "No emails found", variant: "destructive" }); return; }
-                      openGmail(emails, emailSubject, emailBody);
+                      sendEmail(emails, emailSubject, emailBody);
                     }}><Mail className="h-4 w-4" /> Send via Email</Button>
                   </div>
                 )}
@@ -1192,7 +1209,7 @@ const SubAdminAccess = () => {
                 <Button size="sm" onClick={() => {
                   const emails = donations.filter(d => selectedDonors.has(d.id)).map(d => d.email).filter(Boolean);
                   if (emails.length === 0) { toast({ title: "No emails found", variant: "destructive" }); return; }
-                  openGmail(emails, emailSubject, emailBody);
+                  sendEmail(emails, emailSubject, emailBody);
                 }}><Mail className="h-4 w-4" /> Send via Email</Button>
               </div>
             )}

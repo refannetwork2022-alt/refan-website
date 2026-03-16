@@ -500,9 +500,29 @@ const Admin = () => {
   };
 
   const COMPANY_EMAIL = "refannetwork2022@gmail.com";
-  const openGmail = (emails: string[], subject: string, body: string) => {
-    const params = new URLSearchParams({ view: 'cm', fs: '1', to: emails.join(','), su: subject, body: body });
-    window.open(`https://mail.google.com/mail/?authuser=${encodeURIComponent(COMPANY_EMAIL)}&${params.toString()}`, '_blank');
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const sendEmail = async (emails: string[], subject: string, body: string) => {
+    if (sendingEmail) return;
+    setSendingEmail(true);
+    try {
+      const res = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: emails, subject, body }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "Email sent successfully!" });
+        setEmailSubject('');
+        setEmailBody('');
+      } else {
+        toast({ title: "Failed to send email. Please try again.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Failed to send email. Please try again.", variant: "destructive" });
+    } finally {
+      setSendingEmail(false);
+    }
   };
 
   const copyRegLink = () => {
@@ -863,7 +883,7 @@ const Admin = () => {
                             const subject = `ReFAN Membership Renewal - ${name}`;
                             const body = `Dear ${name},\n\nYour ReFAN membership has been renewed.\n\nNew Expiry Date: ${newExpiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}\nReg Number: ${m.regNumber}\nTerm Fee: 2,000 MWK\n\nThank you for being a member of ReFAN.\n\nBest regards,\nReFAN Admin`;
                             if (m.email) {
-                              openGmail([m.email], subject, body);
+                              sendEmail([m.email], subject, body);
                             }
                             updateDoc(doc(db, "members", m.id), { expiryDate: expiryStr }).then(() => {
                               loadData();
@@ -887,7 +907,7 @@ const Admin = () => {
                     <textarea placeholder="Write your message here..." value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={6} className={inputClass + " resize-none"} maxLength={5000} />
                     <Button variant="default" size="sm" disabled={!emailSubject.trim() || !emailBody.trim()} onClick={() => {
                       const emails = members.filter(m => selectedMembers.has(m.id)).map(m => m.email).filter(Boolean);
-                      openGmail(emails, emailSubject, emailBody);
+                      sendEmail(emails, emailSubject, emailBody);
                     }}>
                       <Send className="h-4 w-4" /> Send via Gmail
                     </Button>
@@ -1194,7 +1214,7 @@ const Admin = () => {
                       <textarea placeholder="Write your message here..." value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={6} className={inputClass + " resize-none"} maxLength={5000} />
                       <Button variant="default" size="sm" disabled={!emailSubject.trim() || !emailBody.trim()} onClick={() => {
                         const emails = filtered.filter(v => selectedVols.has(v.id)).map(v => v.email).filter(Boolean);
-                        openGmail(emails, emailSubject, emailBody);
+                        sendEmail(emails, emailSubject, emailBody);
                       }}>
                         <Send className="h-4 w-4" /> Send via Gmail
                       </Button>
@@ -1265,7 +1285,7 @@ const Admin = () => {
                     <textarea placeholder="Write your message here..." value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={6} className={inputClass + " resize-none"} maxLength={5000} />
                     <Button variant="default" size="sm" disabled={!emailSubject.trim() || !emailBody.trim()} onClick={() => {
                       const emails = donations.filter(d => selectedDonors.has(d.id)).map(d => d.email).filter(Boolean);
-                      openGmail(emails, emailSubject, emailBody);
+                      sendEmail(emails, emailSubject, emailBody);
                     }}>
                       <Send className="h-4 w-4" /> Send via Gmail
                     </Button>
@@ -1319,7 +1339,7 @@ const Admin = () => {
                       </div>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" onClick={() => {
-                          openGmail([m.email], `Re: ${m.subject}`, '');
+                          sendEmail([m.email], `Re: ${m.subject}`, '');
                         }}><Send className="h-4 w-4 text-blue-500" /></Button>
                         {canDeleteTab && <Button variant="ghost" size="icon" onClick={async () => {
                           if (!confirm("Are you sure you want to delete this message?")) return;
@@ -1343,7 +1363,7 @@ const Admin = () => {
                     <textarea placeholder="Write your reply..." value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={6} className={inputClass + " resize-none"} maxLength={5000} />
                     <Button variant="default" size="sm" disabled={!emailSubject.trim() || !emailBody.trim()} onClick={() => {
                       const emails = messages.filter(m => selectedMsgs.has(m.id)).map(m => m.email).filter(Boolean);
-                      openGmail(emails, emailSubject, emailBody);
+                      sendEmail(emails, emailSubject, emailBody);
                     }}>
                       <Send className="h-4 w-4" /> Reply via Gmail
                     </Button>
@@ -1437,7 +1457,7 @@ const Admin = () => {
                         disabled={!emailSubject.trim() || !emailBody.trim()}
                         onClick={() => {
                           const selectedEmails = subscribers.filter(s => selectedSubs.has(s.id)).map(s => s.email);
-                          openGmail(selectedEmails, emailSubject, emailBody);
+                          sendEmail(selectedEmails, emailSubject, emailBody);
                         }}
                       >
                         <Send className="h-4 w-4" /> Send via Gmail
@@ -2053,9 +2073,9 @@ const Admin = () => {
                                   <a href={`https://wa.me/?text=${encodeURIComponent(msg)}`} target="_blank" rel="noopener noreferrer">
                                     <Button size="sm" variant="outline" className="text-xs h-7 text-green-600 border-green-200 hover:bg-green-50"><Send className="h-3 w-3" /> WhatsApp</Button>
                                   </a>
-                                  <a href={`https://mail.google.com/mail/?authuser=${encodeURIComponent(COMPANY_EMAIL)}&view=cm&fs=1&to=${encodeURIComponent(sa.email)}&su=${encodeURIComponent('Your ReFAN Admin Access')}&body=${encodeURIComponent(msg)}`} target="_blank" rel="noopener noreferrer">
-                                    <Button size="sm" variant="outline" className="text-xs h-7"><Mail className="h-3 w-3" /> Send via Email</Button>
-                                  </a>
+                                  <Button size="sm" variant="outline" className="text-xs h-7" disabled={sendingEmail} onClick={() => sendEmail([sa.email], 'Your ReFAN Admin Access', msg)}>
+                                    <Mail className="h-3 w-3" /> {sendingEmail ? 'Sending...' : 'Send via Email'}
+                                  </Button>
                                 </div>
                               </div>
                             );
