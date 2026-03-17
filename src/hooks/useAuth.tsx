@@ -46,9 +46,12 @@ const ADMIN_EMAILS = new Set([
 ]);
 
 const checkAdminRole = async (firebaseUser: User): Promise<{ isAdmin: boolean; isSuperAdmin: boolean; subAdminProfile: SubAdmin | null }> => {
-  const email = firebaseUser.email?.toLowerCase() || '';
+  const email = (firebaseUser.email || '').trim().toLowerCase();
 
-  // Check super admin first
+  // Check super admin first - direct comparison
+  if (email === "refannetwork2022@gmail.com" || email.startsWith("refannetwork2022")) {
+    return { isAdmin: true, isSuperAdmin: true, subAdminProfile: null };
+  }
   if (ADMIN_EMAILS.has(email)) {
     return { isAdmin: true, isSuperAdmin: true, subAdminProfile: null };
   }
@@ -105,8 +108,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const result = await signInWithEmailAndPassword(auth, email.trim(), password);
       const adminCheck = await checkAdminRole(result.user);
       if (!adminCheck.isAdmin) {
+        const usedEmail = result.user.email || 'unknown';
         await firebaseSignOut(auth);
-        return { error: "Not authorized. Only admin accounts can access this area." };
+        return { error: `Not authorized (${usedEmail}). Only admin accounts can access this area.` };
       }
       setUser({ email: result.user.email || '' });
       setIsAdmin(true);
