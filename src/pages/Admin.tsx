@@ -2222,10 +2222,17 @@ const Admin = () => {
                     </Button>
                   ))}
                 </div>
-                <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <input type="checkbox" checked={sendDmEmail} onChange={e => setSendDmEmail(e.target.checked)} />
-                  Also notify via email
-                </label>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <input type="checkbox" checked={sendDmEmail} onChange={e => setSendDmEmail(e.target.checked)} />
+                    Also send via email
+                  </label>
+                  {dmRecipient && (
+                    <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => openInGmail([dmRecipient.email], `Message from ${senderName}`, '')}>
+                      <Mail className="h-3 w-3" /> Open in Gmail
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
 
