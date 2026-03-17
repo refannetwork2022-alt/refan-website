@@ -129,8 +129,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const result = await signInWithPopup(auth, provider);
       const adminCheck = await checkAdminRole(result.user);
       if (!adminCheck.isAdmin) {
+        const usedEmail = result.user.email || 'unknown';
         await firebaseSignOut(auth);
-        return { error: "Not authorized. Only admin accounts can access this area." };
+        return { error: `Not authorized (${usedEmail}). Only admin accounts can access this area.` };
       }
       setUser({ email: result.user.email || '' });
       setIsAdmin(true);
