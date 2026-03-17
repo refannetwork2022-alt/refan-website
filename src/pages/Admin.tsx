@@ -58,7 +58,7 @@ const phoneCodes = [
 
 const Admin = () => {
   const { toast } = useToast();
-  const { user, signOut, changePassword, isSuperAdmin, subAdminProfile, canEdit, canView, canDelete, shouldHideExisting } = useAuth();
+  const { user, signOut, changePassword, setPasswordForGoogle, isSuperAdmin, subAdminProfile, canEdit, canView, canDelete, shouldHideExisting } = useAuth();
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [tab, setTab] = useState<Tab>('dashboard');
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -198,6 +198,8 @@ const Admin = () => {
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [showSetPasswordForm, setShowSetPasswordForm] = useState(false);
+  const [setPasswordForm, setSetPasswordForm] = useState({ newPw: '', confirm: '' });
   const [showSecurityForm, setShowSecurityForm] = useState(false);
   const [showMemberForm, setShowMemberForm] = useState(false);
   const [pwForm, setPwForm] = useState({ current: '', newPw: '', confirm: '' });
@@ -608,6 +610,9 @@ const Admin = () => {
           </Button>
           <Button variant="ghost" size="sm" className="w-full justify-start text-secondary-foreground/70" onClick={() => setShowPasswordForm(true)}>
             <KeyRound className="h-4 w-4" /> Change Password
+          </Button>
+          <Button variant="ghost" size="sm" className="w-full justify-start text-secondary-foreground/70" onClick={() => setShowSetPasswordForm(true)}>
+            <KeyRound className="h-4 w-4" /> Set Email Password
           </Button>
           <Button variant="ghost" size="sm" className="w-full justify-start text-secondary-foreground/70" onClick={() => setShowSecurityForm(true)}>
             <Shield className="h-4 w-4" /> Security Question
@@ -2330,6 +2335,66 @@ const Admin = () => {
                 Save Password
               </Button>
               <Button variant="ghost" size="sm" onClick={() => { setShowPasswordForm(false); setPwForm({ current: '', newPw: '', confirm: '' }); }}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Set Email Password Modal (for Google-authenticated users) */}
+      {showSetPasswordForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-2xl p-8 shadow-elevated w-full max-w-md space-y-4">
+            <h2 className="font-heading text-xl font-bold">Set Email & Password Login</h2>
+            <p className="text-sm text-muted-foreground">
+              Set a password so you can also sign in with your email and password (in addition to Google sign-in).
+              A Google popup will appear to verify your identity first.
+            </p>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">New Password</label>
+              <input
+                type="password"
+                value={setPasswordForm.newPw}
+                onChange={(e) => setSetPasswordForm({ ...setPasswordForm, newPw: e.target.value })}
+                className={inputClass}
+                placeholder="Min 6 characters"
+                minLength={6}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Confirm Password</label>
+              <input
+                type="password"
+                value={setPasswordForm.confirm}
+                onChange={(e) => setSetPasswordForm({ ...setPasswordForm, confirm: e.target.value })}
+                className={inputClass}
+                placeholder="Repeat password"
+                minLength={6}
+              />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button variant="default" size="sm" onClick={async () => {
+                if (setPasswordForm.newPw.length < 6) {
+                  toast({ title: "Password must be at least 6 characters", variant: "destructive" });
+                  return;
+                }
+                if (setPasswordForm.newPw !== setPasswordForm.confirm) {
+                  toast({ title: "Passwords do not match", variant: "destructive" });
+                  return;
+                }
+                const result = await setPasswordForGoogle(setPasswordForm.newPw);
+                if (result.error) {
+                  toast({ title: result.error, variant: "destructive" });
+                } else {
+                  toast({ title: "Email & password login set successfully! You can now sign in with either Google or email/password." });
+                  setSetPasswordForm({ newPw: '', confirm: '' });
+                  setShowSetPasswordForm(false);
+                }
+              }}>
+                Set Password
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => { setShowSetPasswordForm(false); setSetPasswordForm({ newPw: '', confirm: '' }); }}>
                 Cancel
               </Button>
             </div>
