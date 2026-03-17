@@ -216,6 +216,8 @@ export interface AdminChatMessage {
   senderRole: 'super_admin' | 'sub_admin';
   message: string;
   timestamp: string;
+  recipientEmail?: string;  // if set, it's a direct message
+  recipientName?: string;
 }
 
 // ── Helpers ─────────────────────────────────────────────────

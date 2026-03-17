@@ -76,6 +76,9 @@ const Admin = () => {
   const [viewPhoto, setViewPhoto] = useState<{ url: string; name: string } | null>(null);
   const [chatMessages, setChatMessages] = useState<AdminChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
+  const [chatMode, setChatMode] = useState<'group' | 'direct'>('group');
+  const [dmRecipient, setDmRecipient] = useState<{ email: string; name: string } | null>(null);
+  const [sendDmEmail, setSendDmEmail] = useState(false);
   const [footerForm, setFooterForm] = useState<FooterSettings>({
     email: "refannetwork2022@gmail.com", phone: "+265 997 561 852",
     address: "Dzaleka Refugee Camp, Dowa District, Malawi", whatsapp: "265997561852",
@@ -2130,22 +2133,40 @@ const Admin = () => {
         })()}
 
         {tab === 'chat' && (() => {
+          const myEmail = user?.email || '';
+          const senderName = isSuperAdmin ? 'Super Admin' : (subAdminProfile?.name || myEmail || 'Admin');
+
+          // Get list of admins for DM selection
+          const adminList = [
+            ...(isSuperAdmin ? [] : [{ name: 'Super Admin', email: COMPANY_EMAIL }]),
+            ...subAdmins.filter(sa => sa.email !== myEmail).map(sa => ({ name: sa.name, email: sa.email })),
+          ];
+
           const sendMessage = async () => {
             const text = chatInput.trim();
             if (!text) return;
+            if (chatMode === 'direct' && !dmRecipient) {
+              toast({ title: "Please select a recipient", variant: "destructive" });
+              return;
+            }
             setChatInput('');
-            const senderName = isSuperAdmin ? 'Super Admin' : (subAdminProfile?.name || user?.email || 'Admin');
             try {
-              const sent = await store.sendAdminMessage({
+              const msgData: Omit<AdminChatMessage, 'id'> = {
                 senderName,
-                senderEmail: user?.email || '',
+                senderEmail: myEmail,
                 senderRole: isSuperAdmin ? 'super_admin' : 'sub_admin',
                 message: text,
                 timestamp: new Date().toISOString(),
-              });
+                ...(chatMode === 'direct' && dmRecipient ? { recipientEmail: dmRecipient.email, recipientName: dmRecipient.name } : {}),
+              };
+              const sent = await store.sendAdminMessage(msgData);
               if (sent) {
                 setChatMessages(prev => [...prev, sent]);
                 setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+                // Also send email notification for DMs if option is checked
+                if (chatMode === 'direct' && dmRecipient && sendDmEmail) {
+                  sendEmail([dmRecipient.email], `Message from ${senderName}`, text);
+                }
               } else {
                 toast({ title: "Failed to send message. Try again.", variant: "destructive" });
                 setChatInput(text);
@@ -2155,22 +2176,69 @@ const Admin = () => {
               setChatInput(text);
             }
           };
-          // Auto-refresh messages every 10 seconds
+
           const refreshChat = () => { store.getAdminMessages().then(setChatMessages); };
+
+          // Filter messages based on chat mode
+          const visibleMessages = chatMessages.filter(msg => {
+            if (chatMode === 'group') {
+              return !msg.recipientEmail; // only show group messages
+            }
+            // Direct messages: show only messages between me and selected recipient
+            if (!dmRecipient) return false;
+            return (
+              (msg.senderEmail === myEmail && msg.recipientEmail === dmRecipient.email) ||
+              (msg.senderEmail === dmRecipient.email && msg.recipientEmail === myEmail)
+            );
+          });
+
           return (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="font-heading text-xl font-bold flex items-center gap-2"><Send className="h-5 w-5" /> Admin Chat</h2>
               <Button variant="outline" size="sm" onClick={refreshChat} className="text-xs"><Loader2 className="h-3 w-3 mr-1" /> Refresh</Button>
             </div>
-            <div className="bg-card rounded-xl border border-border flex flex-col" style={{ height: 'calc(100vh - 220px)', minHeight: 400 }}>
+
+            {/* Chat mode tabs */}
+            <div className="flex gap-2">
+              <Button variant={chatMode === 'group' ? 'default' : 'outline'} size="sm" onClick={() => { setChatMode('group'); setDmRecipient(null); }}>
+                <Users className="h-4 w-4" /> Group Chat
+              </Button>
+              <Button variant={chatMode === 'direct' ? 'default' : 'outline'} size="sm" onClick={() => setChatMode('direct')}>
+                <Mail className="h-4 w-4" /> Direct Message
+              </Button>
+            </div>
+
+            {/* DM recipient selector */}
+            {chatMode === 'direct' && (
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  {adminList.length === 0 && <p className="text-sm text-muted-foreground">No other admins available</p>}
+                  {adminList.map(a => (
+                    <Button key={a.email} size="sm" variant={dmRecipient?.email === a.email ? 'default' : 'outline'}
+                      onClick={() => setDmRecipient(dmRecipient?.email === a.email ? null : a)}
+                      className="text-xs">
+                      {a.name}
+                    </Button>
+                  ))}
+                </div>
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <input type="checkbox" checked={sendDmEmail} onChange={e => setSendDmEmail(e.target.checked)} />
+                  Also notify via email
+                </label>
+              </div>
+            )}
+
+            <div className="bg-card rounded-xl border border-border flex flex-col" style={{ height: 'calc(100vh - 340px)', minHeight: 350 }}>
               {/* Messages area */}
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {chatMessages.length === 0 && (
-                  <p className="text-center text-muted-foreground text-sm py-10">No messages yet. Start the conversation!</p>
+                {visibleMessages.length === 0 && (
+                  <p className="text-center text-muted-foreground text-sm py-10">
+                    {chatMode === 'direct' && !dmRecipient ? 'Select an admin to start a conversation' : 'No messages yet. Start the conversation!'}
+                  </p>
                 )}
-                {chatMessages.map((msg) => {
-                  const isMe = msg.senderEmail === (user?.email || '');
+                {visibleMessages.map((msg) => {
+                  const isMe = msg.senderEmail === myEmail;
                   return (
                     <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                       {isMe && isSuperAdmin && (
@@ -2179,7 +2247,10 @@ const Admin = () => {
                         </button>
                       )}
                       <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${isMe ? 'bg-primary text-white rounded-br-md' : 'bg-muted rounded-bl-md'}`}>
-                        <p className={`text-xs font-bold mb-0.5 ${isMe ? 'text-white/80' : 'opacity-80'}`}>{msg.senderName}{isMe ? ' (You)' : ''}</p>
+                        <p className={`text-xs font-bold mb-0.5 ${isMe ? 'text-white/80' : 'opacity-80'}`}>
+                          {msg.senderName}{isMe ? ' (You)' : ''}
+                          {msg.recipientEmail && <span className="font-normal"> → {msg.recipientName || msg.recipientEmail}</span>}
+                        </p>
                         <p className="text-sm whitespace-pre-wrap break-words">{msg.message}</p>
                         <p className={`text-[10px] mt-1 ${isMe ? 'text-white/60' : 'text-muted-foreground'}`}>
                           {new Date(msg.timestamp).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
@@ -2196,14 +2267,15 @@ const Admin = () => {
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-                  placeholder="Type a message..."
+                  placeholder={chatMode === 'direct' ? `Message ${dmRecipient?.name || 'select admin...'}` : 'Type a message...'}
                   className="flex-1 px-4 py-2.5 rounded-full border border-input bg-background text-sm focus:ring-2 focus:ring-ring outline-none"
                   maxLength={2000}
+                  disabled={chatMode === 'direct' && !dmRecipient}
                 />
                 <Button
                   size="icon"
                   className="rounded-full shrink-0 h-10 w-10"
-                  disabled={!chatInput.trim()}
+                  disabled={!chatInput.trim() || (chatMode === 'direct' && !dmRecipient)}
                   onClick={sendMessage}
                 >
                   <Send className="h-4 w-4" />
