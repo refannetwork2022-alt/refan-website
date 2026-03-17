@@ -516,13 +516,20 @@ const Admin = () => {
         setEmailSubject('');
         setEmailBody('');
       } else {
-        toast({ title: "Failed to send email. Please try again.", variant: "destructive" });
+        toast({ title: "Failed to send email. Opening Gmail instead...", variant: "destructive" });
+        openInGmail(emails, subject, body);
       }
     } catch {
-      toast({ title: "Failed to send email. Please try again.", variant: "destructive" });
+      toast({ title: "Failed to send email. Opening Gmail instead...", variant: "destructive" });
+      openInGmail(emails, subject, body);
     } finally {
       setSendingEmail(false);
     }
+  };
+
+  const openInGmail = (emails: string[], subject: string, body: string) => {
+    const params = new URLSearchParams({ view: 'cm', fs: '1', to: emails.join(','), su: subject, body: body });
+    window.open(`https://mail.google.com/mail/?authuser=${encodeURIComponent(COMPANY_EMAIL)}&${params.toString()}`, '_blank');
   };
 
   const copyRegLink = () => {
@@ -905,13 +912,20 @@ const Admin = () => {
                   <div className="space-y-3">
                     <input placeholder="Subject" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} className={inputClass} maxLength={200} />
                     <textarea placeholder="Write your message here..." value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={6} className={inputClass + " resize-none"} maxLength={5000} />
-                    <Button variant="default" size="sm" disabled={!emailSubject.trim() || !emailBody.trim()} onClick={() => {
-                      const emails = members.filter(m => selectedMembers.has(m.id)).map(m => m.email).filter(Boolean);
-                      sendEmail(emails, emailSubject, emailBody);
-                    }}>
-                      <Send className="h-4 w-4" /> Send via Gmail
-                    </Button>
-                    <p className="text-xs text-muted-foreground">Opens Gmail in a new tab with selected members in BCC.</p>
+                    <div className="flex gap-2">
+                      <Button variant="default" size="sm" disabled={!emailSubject.trim() || !emailBody.trim() || sendingEmail} onClick={() => {
+                        const emails = members.filter(m => selectedMembers.has(m.id)).map(m => m.email).filter(Boolean);
+                        sendEmail(emails, emailSubject, emailBody);
+                      }}>
+                        <Send className="h-4 w-4" /> {sendingEmail ? 'Sending...' : 'Send Direct'}
+                      </Button>
+                      <Button variant="outline" size="sm" disabled={!emailSubject.trim() || !emailBody.trim()} onClick={() => {
+                        const emails = members.filter(m => selectedMembers.has(m.id)).map(m => m.email).filter(Boolean);
+                        openInGmail(emails, emailSubject, emailBody);
+                      }}>
+                        <Mail className="h-4 w-4" /> Open in Gmail
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1212,13 +1226,20 @@ const Admin = () => {
                     <div className="space-y-3">
                       <input placeholder="Subject" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} className={inputClass} maxLength={200} />
                       <textarea placeholder="Write your message here..." value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={6} className={inputClass + " resize-none"} maxLength={5000} />
-                      <Button variant="default" size="sm" disabled={!emailSubject.trim() || !emailBody.trim()} onClick={() => {
-                        const emails = filtered.filter(v => selectedVols.has(v.id)).map(v => v.email).filter(Boolean);
-                        sendEmail(emails, emailSubject, emailBody);
-                      }}>
-                        <Send className="h-4 w-4" /> Send via Gmail
-                      </Button>
-                      <p className="text-xs text-muted-foreground">Opens Gmail in a new tab with selected {title.toLowerCase()} in BCC.</p>
+                      <div className="flex gap-2">
+                        <Button variant="default" size="sm" disabled={!emailSubject.trim() || !emailBody.trim() || sendingEmail} onClick={() => {
+                          const emails = filtered.filter(v => selectedVols.has(v.id)).map(v => v.email).filter(Boolean);
+                          sendEmail(emails, emailSubject, emailBody);
+                        }}>
+                          <Send className="h-4 w-4" /> {sendingEmail ? 'Sending...' : 'Send Direct'}
+                        </Button>
+                        <Button variant="outline" size="sm" disabled={!emailSubject.trim() || !emailBody.trim()} onClick={() => {
+                          const emails = filtered.filter(v => selectedVols.has(v.id)).map(v => v.email).filter(Boolean);
+                          openInGmail(emails, emailSubject, emailBody);
+                        }}>
+                          <Mail className="h-4 w-4" /> Open in Gmail
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1283,13 +1304,20 @@ const Admin = () => {
                   <div className="space-y-3">
                     <input placeholder="Subject" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} className={inputClass} maxLength={200} />
                     <textarea placeholder="Write your message here..." value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={6} className={inputClass + " resize-none"} maxLength={5000} />
-                    <Button variant="default" size="sm" disabled={!emailSubject.trim() || !emailBody.trim()} onClick={() => {
-                      const emails = donations.filter(d => selectedDonors.has(d.id)).map(d => d.email).filter(Boolean);
-                      sendEmail(emails, emailSubject, emailBody);
-                    }}>
-                      <Send className="h-4 w-4" /> Send via Gmail
-                    </Button>
-                    <p className="text-xs text-muted-foreground">Opens Gmail in a new tab with selected donors in BCC.</p>
+                    <div className="flex gap-2">
+                      <Button variant="default" size="sm" disabled={!emailSubject.trim() || !emailBody.trim() || sendingEmail} onClick={() => {
+                        const emails = donations.filter(d => selectedDonors.has(d.id)).map(d => d.email).filter(Boolean);
+                        sendEmail(emails, emailSubject, emailBody);
+                      }}>
+                        <Send className="h-4 w-4" /> {sendingEmail ? 'Sending...' : 'Send Direct'}
+                      </Button>
+                      <Button variant="outline" size="sm" disabled={!emailSubject.trim() || !emailBody.trim()} onClick={() => {
+                        const emails = donations.filter(d => selectedDonors.has(d.id)).map(d => d.email).filter(Boolean);
+                        openInGmail(emails, emailSubject, emailBody);
+                      }}>
+                        <Mail className="h-4 w-4" /> Open in Gmail
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1338,9 +1366,9 @@ const Admin = () => {
                         <p className="text-xs text-muted-foreground mt-2">{new Date(m.date).toLocaleString()}</p>
                       </div>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => {
-                          sendEmail([m.email], `Re: ${m.subject}`, '');
-                        }}><Send className="h-4 w-4 text-blue-500" /></Button>
+                        <Button variant="ghost" size="icon" title="Open in Gmail" onClick={() => {
+                          openInGmail([m.email], `Re: ${m.subject}`, '');
+                        }}><Mail className="h-4 w-4 text-blue-500" /></Button>
                         {canDeleteTab && <Button variant="ghost" size="icon" onClick={async () => {
                           if (!confirm("Are you sure you want to delete this message?")) return;
                           await store.deleteMessage(m.id);
@@ -1361,13 +1389,20 @@ const Admin = () => {
                   <div className="space-y-3">
                     <input placeholder="Subject" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} className={inputClass} maxLength={200} />
                     <textarea placeholder="Write your reply..." value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={6} className={inputClass + " resize-none"} maxLength={5000} />
-                    <Button variant="default" size="sm" disabled={!emailSubject.trim() || !emailBody.trim()} onClick={() => {
-                      const emails = messages.filter(m => selectedMsgs.has(m.id)).map(m => m.email).filter(Boolean);
-                      sendEmail(emails, emailSubject, emailBody);
-                    }}>
-                      <Send className="h-4 w-4" /> Reply via Gmail
-                    </Button>
-                    <p className="text-xs text-muted-foreground">Opens Gmail in a new tab with selected senders in BCC.</p>
+                    <div className="flex gap-2">
+                      <Button variant="default" size="sm" disabled={!emailSubject.trim() || !emailBody.trim() || sendingEmail} onClick={() => {
+                        const emails = messages.filter(m => selectedMsgs.has(m.id)).map(m => m.email).filter(Boolean);
+                        sendEmail(emails, emailSubject, emailBody);
+                      }}>
+                        <Send className="h-4 w-4" /> {sendingEmail ? 'Sending...' : 'Send Direct'}
+                      </Button>
+                      <Button variant="outline" size="sm" disabled={!emailSubject.trim() || !emailBody.trim()} onClick={() => {
+                        const emails = messages.filter(m => selectedMsgs.has(m.id)).map(m => m.email).filter(Boolean);
+                        openInGmail(emails, emailSubject, emailBody);
+                      }}>
+                        <Mail className="h-4 w-4" /> Open in Gmail
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1451,18 +1486,20 @@ const Admin = () => {
                     <div className="space-y-3">
                       <input placeholder="Subject" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} className={inputClass} maxLength={200} />
                       <textarea placeholder="Write your message here..." value={emailBody} onChange={(e) => setEmailBody(e.target.value)} rows={6} className={inputClass + " resize-none"} maxLength={5000} />
-                      <Button
-                        variant="default"
-                        size="sm"
-                        disabled={!emailSubject.trim() || !emailBody.trim()}
-                        onClick={() => {
+                      <div className="flex gap-2">
+                        <Button variant="default" size="sm" disabled={!emailSubject.trim() || !emailBody.trim() || sendingEmail} onClick={() => {
                           const selectedEmails = subscribers.filter(s => selectedSubs.has(s.id)).map(s => s.email);
                           sendEmail(selectedEmails, emailSubject, emailBody);
-                        }}
-                      >
-                        <Send className="h-4 w-4" /> Send via Gmail
-                      </Button>
-                      <p className="text-xs text-muted-foreground">Opens Gmail in a new tab with selected subscribers in BCC.</p>
+                        }}>
+                          <Send className="h-4 w-4" /> {sendingEmail ? 'Sending...' : 'Send Direct'}
+                        </Button>
+                        <Button variant="outline" size="sm" disabled={!emailSubject.trim() || !emailBody.trim()} onClick={() => {
+                          const selectedEmails = subscribers.filter(s => selectedSubs.has(s.id)).map(s => s.email);
+                          openInGmail(selectedEmails, emailSubject, emailBody);
+                        }}>
+                          <Mail className="h-4 w-4" /> Open in Gmail
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )}
