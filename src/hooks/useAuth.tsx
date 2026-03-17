@@ -33,12 +33,13 @@ interface AuthContext {
   getTabPermission: (tab: string) => TabPermission;
   canEdit: (tab: string) => boolean;
   canView: (tab: string) => boolean;
+  canDelete: (tab: string) => boolean;
   shouldHideExisting: (tab: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContext | undefined>(undefined);
 
-const ADMIN_EMAIL = (import.meta.env.VITE_ADMIN_EMAIL || "").toLowerCase();
+const ADMIN_EMAIL = (import.meta.env.VITE_ADMIN_EMAIL || "").trim().toLowerCase();
 
 const checkAdminRole = async (firebaseUser: User): Promise<{ isAdmin: boolean; isSuperAdmin: boolean; subAdminProfile: SubAdmin | null }> => {
   const email = firebaseUser.email?.toLowerCase() || '';
@@ -185,10 +186,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return subAdminProfile.permissions[tab] || 'hidden';
   };
 
-  const canEdit = (tab: string): boolean => getTabPermission(tab) === 'edit';
+  const canEdit = (tab: string): boolean => {
+    const p = getTabPermission(tab);
+    return p === 'edit' || p === 'full';
+  };
   const canView = (tab: string): boolean => {
     const p = getTabPermission(tab);
-    return p === 'edit' || p === 'view';
+    return p === 'edit' || p === 'view' || p === 'full';
+  };
+  const canDelete = (tab: string): boolean => {
+    if (isSuperAdmin) return true;
+    if (!subAdminProfile) return false;
+    const p = getTabPermission(tab);
+    if (p === 'full') return true;
+    return (p === 'edit' || p === 'view') && subAdminProfile.allowDelete?.[tab] === true;
   };
   const shouldHideExisting = (tab: string): boolean => {
     if (isSuperAdmin) return false;
@@ -197,7 +208,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin, isSuperAdmin, subAdminProfile, loading, signIn, signInWithGoogle, signOut, changePassword, resetPassword, getTabPermission, canEdit, canView, shouldHideExisting }}>
+    <AuthContext.Provider value={{ user, isAdmin, isSuperAdmin, subAdminProfile, loading, signIn, signInWithGoogle, signOut, changePassword, resetPassword, getTabPermission, canEdit, canView, canDelete, shouldHideExisting }}>
       {children}
     </AuthContext.Provider>
   );
