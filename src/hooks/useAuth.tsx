@@ -39,7 +39,7 @@ interface AuthContext {
 
 const AuthContext = createContext<AuthContext | undefined>(undefined);
 
-const ADMIN_EMAIL = (import.meta.env.VITE_ADMIN_EMAIL || "").trim().toLowerCase();
+const ADMIN_EMAIL = (import.meta.env.VITE_ADMIN_EMAIL || "refannetwork2022@gmail.com").trim().toLowerCase();
 
 const checkAdminRole = async (firebaseUser: User): Promise<{ isAdmin: boolean; isSuperAdmin: boolean; subAdminProfile: SubAdmin | null }> => {
   const email = firebaseUser.email?.toLowerCase() || '';
