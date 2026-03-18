@@ -202,6 +202,7 @@ const Admin = () => {
   const [setPasswordForm, setSetPasswordForm] = useState({ newPw: '', confirm: '' });
   const [showSecurityForm, setShowSecurityForm] = useState(false);
   const [showMemberForm, setShowMemberForm] = useState(false);
+  const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [pwForm, setPwForm] = useState({ current: '', newPw: '', confirm: '' });
   const [sqForm, setSqForm] = useState({ question: store.getSecurityQuestion(), answer: '' });
   const photoRef = useRef<HTMLInputElement>(null);
@@ -416,6 +417,63 @@ const Admin = () => {
     } catch (err: any) {
       console.error("addMember error:", err);
       toast({ title: "Error saving member. Please try again.", variant: "destructive" });
+    } finally {
+      setMemberSaving(false);
+    }
+  };
+
+  const startEditMember = (m: Member) => {
+    const dob = m.dateOfBirth ? m.dateOfBirth.split('-') : ['', '', ''];
+    setMemberForm({
+      surname: m.surname, firstName: m.firstName, otherName: m.otherName,
+      email: m.email, countryOfOrigin: m.countryOfOrigin, countryOfResidence: m.countryOfResidence,
+      unhcrId: m.unhcrId, phone: m.phone, phoneCode: m.phoneCode || '+265',
+      gender: m.gender, maritalStatus: m.maritalStatus,
+      dobYear: dob[0] || '', dobMonth: dob[1] ? String(Number(dob[1])) : '', dobDay: dob[2] ? String(Number(dob[2])) : '',
+      familySize: String(m.familySize || ''), photo: m.photo, document: m.document,
+      paymentCurrency: m.paymentCurrency || 'MWK', paymentAmount: String(m.paymentAmount || ''),
+      branchName: m.branchName, username: m.username, expiryDate: m.expiryDate || '',
+    });
+    setEditingMember(m);
+    setShowMemberForm(true);
+  };
+
+  const saveMemberEdit = async () => {
+    if (!editingMember) return;
+    if (!memberForm.surname.trim() || !memberForm.firstName.trim()) {
+      toast({ title: "Surname and First Name are required", variant: "destructive" });
+      return;
+    }
+    if (memberSaving) return;
+    setMemberSaving(true);
+    try {
+      const dob = memberForm.dobYear ? `${memberForm.dobYear}-${(memberForm.dobMonth || '1').padStart(2, '0')}-${(memberForm.dobDay || '1').padStart(2, '0')}` : '';
+      const compressedPhoto = await compressImage(memberForm.photo);
+      const compressedDoc = await compressImage(memberForm.document, 600);
+      const success = await store.updateMember(editingMember.id, {
+        surname: memberForm.surname.trim(), firstName: memberForm.firstName.trim(),
+        otherName: memberForm.otherName.trim(), email: memberForm.email.trim(),
+        countryOfOrigin: memberForm.countryOfOrigin, countryOfResidence: memberForm.countryOfResidence,
+        unhcrId: memberForm.unhcrId.trim(), phone: memberForm.phone.trim(), phoneCode: memberForm.phoneCode,
+        gender: memberForm.gender, maritalStatus: memberForm.maritalStatus,
+        dateOfBirth: dob, familySize: Number(memberForm.familySize) || 0,
+        photo: compressedPhoto, document: compressedDoc,
+        paymentCurrency: memberForm.paymentCurrency, paymentAmount: Number(memberForm.paymentAmount) || 0,
+        expiryDate: memberForm.expiryDate || editingMember.expiryDate,
+        branchName: memberForm.branchName.trim(), username: memberForm.username.trim(),
+      });
+      if (success) {
+        setMembers(await store.getMembers());
+        setMemberForm(emptyMemberForm);
+        setEditingMember(null);
+        setShowMemberForm(false);
+        toast({ title: `Member ${editingMember.regNumber} updated successfully!` });
+      } else {
+        toast({ title: "Failed to update member.", variant: "destructive" });
+      }
+    } catch (err: any) {
+      console.error("saveMemberEdit error:", err);
+      toast({ title: "Error updating member.", variant: "destructive" });
     } finally {
       setMemberSaving(false);
     }
@@ -744,7 +802,7 @@ const Admin = () => {
             {/* Add Member Form */}
             {showMemberForm && (
               <div className="bg-card rounded-xl p-6 shadow-soft mb-8 space-y-4">
-                <h3 className="font-heading font-bold">Register New Member</h3>
+                <h3 className="font-heading font-bold">{editingMember ? `Edit Member - ${editingMember.regNumber}` : 'Register New Member'}</h3>
                 <div className="grid sm:grid-cols-3 gap-3">
                   <input placeholder="Surname *" value={memberForm.surname} onChange={e => setMemberForm({ ...memberForm, surname: e.target.value })} className={inputClass} maxLength={100} />
                   <input placeholder="First Name *" value={memberForm.firstName} onChange={e => setMemberForm({ ...memberForm, firstName: e.target.value })} className={inputClass} maxLength={100} />
@@ -802,10 +860,21 @@ const Admin = () => {
                   <input placeholder="Username" value={memberForm.username} onChange={e => setMemberForm({ ...memberForm, username: e.target.value })} className={inputClass} maxLength={50} />
                   <input placeholder="Branch Name" value={memberForm.branchName} onChange={e => setMemberForm({ ...memberForm, branchName: e.target.value })} className={inputClass} maxLength={100} />
                 </div>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex gap-6 text-sm">
-                  <div><span className="text-blue-600 font-medium">Registration Date:</span> <strong>{new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</strong></div>
-                  <div><span className="text-blue-600 font-medium">Expiry Date:</span> <strong>{(() => { const d = new Date(); d.setMonth(d.getMonth() + 3); return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); })()}</strong></div>
-                </div>
+                {editingMember ? (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2 text-sm">
+                    <div><span className="text-blue-600 font-medium">Reg Number:</span> <strong>{editingMember.regNumber}</strong></div>
+                    <div><span className="text-blue-600 font-medium">Registration Date:</span> <strong>{editingMember.registrationDate ? new Date(editingMember.registrationDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}</strong></div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-blue-600 font-medium">Expiry Date:</span>
+                      <input type="date" value={memberForm.expiryDate} onChange={e => setMemberForm({ ...memberForm, expiryDate: e.target.value })} className="px-2 py-1 rounded border border-input bg-background text-sm" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex gap-6 text-sm">
+                    <div><span className="text-blue-600 font-medium">Registration Date:</span> <strong>{new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</strong></div>
+                    <div><span className="text-blue-600 font-medium">Expiry Date:</span> <strong>{(() => { const d = new Date(); d.setMonth(d.getMonth() + 3); return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); })()}</strong></div>
+                  </div>
+                )}
                 <div className="flex gap-4">
                   <div>
                     <input ref={photoRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleFileToBase64(e.target.files[0], 'photo')} />
@@ -821,8 +890,10 @@ const Admin = () => {
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <Button onClick={addMember} size="sm" disabled={memberSaving}><Plus className="h-4 w-4" /> {memberSaving ? 'Saving...' : 'Register Member'}</Button>
-                  <Button variant="ghost" size="sm" onClick={() => { setShowMemberForm(false); setMemberForm(emptyMemberForm); }}>Cancel</Button>
+                  <Button onClick={editingMember ? saveMemberEdit : addMember} size="sm" disabled={memberSaving}>
+                    {editingMember ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />} {memberSaving ? 'Saving...' : editingMember ? 'Save Changes' : 'Register Member'}
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => { setShowMemberForm(false); setEditingMember(null); setMemberForm(emptyMemberForm); }}>Cancel</Button>
                 </div>
               </div>
             )}
@@ -907,6 +978,7 @@ const Admin = () => {
                           }}>
                             <Mail className="h-3 w-3" /> Renew
                           </Button>
+                          {!isViewOnly && <Button variant="ghost" size="icon" title="Edit Member" onClick={() => startEditMember(m)}><Pencil className="h-4 w-4 text-primary" /></Button>}
                           {canDeleteTab && <Button variant="ghost" size="icon" onClick={() => deleteMember(m.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
                         </td>
                       </tr>

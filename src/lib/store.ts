@@ -535,6 +535,12 @@ export const store = {
       return { id: ref.id, regNumber, ...item };
     } catch (e) { console.error("addMember:", e); return null; }
   },
+  updateMember: async (id: string, data: Partial<Omit<Member, 'id' | 'regNumber'>>): Promise<boolean> => {
+    try {
+      await updateDoc(doc(db, "members", id), data);
+      return true;
+    } catch (e) { console.error("updateMember:", e); return false; }
+  },
   deleteMember: async (id: string): Promise<boolean> => {
     try { await deleteDoc(doc(db, "members", id)); return true; }
     catch (e) { console.error("deleteMember:", e); return false; }
