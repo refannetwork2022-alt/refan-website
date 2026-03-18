@@ -381,9 +381,30 @@ const Admin = () => {
     });
   };
 
+  const validateMemberForm = (): string | null => {
+    const missing: string[] = [];
+    if (!memberForm.surname.trim()) missing.push('Surname');
+    if (!memberForm.firstName.trim()) missing.push('First Name');
+    if (!memberForm.email.trim()) missing.push('Email');
+    if (!memberForm.countryOfOrigin) missing.push('Country of Origin');
+    if (!memberForm.countryOfResidence) missing.push('Country of Residence');
+    if (!memberForm.phone.trim()) missing.push('Phone');
+    if (!memberForm.gender) missing.push('Gender');
+    if (!memberForm.maritalStatus) missing.push('Marital Status');
+    if (!memberForm.dobYear) missing.push('Date of Birth (Year)');
+    if (!memberForm.username.trim()) missing.push('Username');
+    if (!memberForm.branchName.trim()) missing.push('Branch Name');
+    if (missing.length > 0) return `Tafadhali jaza: ${missing.join(', ')}`;
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(memberForm.email.trim())) return 'Email address si sahihi. Tafadhali ingiza email halali.';
+    return null;
+  };
+
   const addMember = async () => {
-    if (!memberForm.surname.trim() || !memberForm.firstName.trim()) {
-      toast({ title: "Surname and First Name are required", variant: "destructive" });
+    const error = validateMemberForm();
+    if (error) {
+      toast({ title: error, variant: "destructive" });
       return;
     }
     if (memberSaving) return;
@@ -440,8 +461,9 @@ const Admin = () => {
 
   const saveMemberEdit = async () => {
     if (!editingMember) return;
-    if (!memberForm.surname.trim() || !memberForm.firstName.trim()) {
-      toast({ title: "Surname and First Name are required", variant: "destructive" });
+    const error = validateMemberForm();
+    if (error) {
+      toast({ title: error, variant: "destructive" });
       return;
     }
     if (memberSaving) return;
@@ -808,14 +830,14 @@ const Admin = () => {
                   <input placeholder="First Name *" value={memberForm.firstName} onChange={e => setMemberForm({ ...memberForm, firstName: e.target.value })} className={inputClass} maxLength={100} />
                   <input placeholder="Other Name" value={memberForm.otherName} onChange={e => setMemberForm({ ...memberForm, otherName: e.target.value })} className={inputClass} maxLength={100} />
                 </div>
-                <input type="email" placeholder="Email Address" value={memberForm.email} onChange={e => setMemberForm({ ...memberForm, email: e.target.value })} className={inputClass} maxLength={200} />
+                <input type="email" placeholder="Email Address *" value={memberForm.email} onChange={e => setMemberForm({ ...memberForm, email: e.target.value })} className={inputClass} maxLength={200} />
                 <div className="grid sm:grid-cols-2 gap-3">
                   <select value={memberForm.countryOfOrigin} onChange={e => setMemberForm({ ...memberForm, countryOfOrigin: e.target.value })} className={inputClass}>
-                    <option value="">Country of Origin</option>
+                    <option value="">Country of Origin *</option>
                     {countries.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                   <select value={memberForm.countryOfResidence} onChange={e => setMemberForm({ ...memberForm, countryOfResidence: e.target.value })} className={inputClass}>
-                    <option value="">Country of Residence</option>
+                    <option value="">Country of Residence *</option>
                     {countries.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
@@ -824,17 +846,17 @@ const Admin = () => {
                   <select value={memberForm.phoneCode} onChange={e => setMemberForm({ ...memberForm, phoneCode: e.target.value })} className="w-28 px-2 py-2.5 rounded-lg border border-input bg-background text-sm">
                     {phoneCodes.map(p => <option key={p.code} value={p.code}>{p.country} ({p.code})</option>)}
                   </select>
-                  <input placeholder="Phone number" value={memberForm.phone} onChange={e => setMemberForm({ ...memberForm, phone: e.target.value })} className={inputClass} maxLength={15} />
+                  <input placeholder="Phone number *" value={memberForm.phone} onChange={e => setMemberForm({ ...memberForm, phone: e.target.value })} className={inputClass} maxLength={15} />
                 </div>
                 <div className="grid sm:grid-cols-2 gap-3">
                   <select value={memberForm.gender} onChange={e => setMemberForm({ ...memberForm, gender: e.target.value })} className={inputClass}>
-                    <option value="">Gender</option>
+                    <option value="">Gender *</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                     <option value="Other">Other</option>
                   </select>
                   <select value={memberForm.maritalStatus} onChange={e => setMemberForm({ ...memberForm, maritalStatus: e.target.value })} className={inputClass}>
-                    <option value="">Marital Status</option>
+                    <option value="">Marital Status *</option>
                     <option value="Single">Single</option>
                     <option value="Married">Married</option>
                     <option value="Widowed">Widowed</option>
@@ -843,7 +865,7 @@ const Admin = () => {
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <select value={memberForm.dobYear} onChange={e => setMemberForm({ ...memberForm, dobYear: e.target.value })} className={inputClass}>
-                    <option value="">Year</option>
+                    <option value="">Year *</option>
                     {years.map(y => <option key={y} value={String(y)}>{y}</option>)}
                   </select>
                   <select value={memberForm.dobMonth} onChange={e => setMemberForm({ ...memberForm, dobMonth: e.target.value })} className={inputClass}>
@@ -857,8 +879,8 @@ const Admin = () => {
                 </div>
                 <div className="grid sm:grid-cols-3 gap-3">
                   <input type="number" placeholder="Family Size" value={memberForm.familySize} onChange={e => setMemberForm({ ...memberForm, familySize: e.target.value })} className={inputClass} min={0} />
-                  <input placeholder="Username" value={memberForm.username} onChange={e => setMemberForm({ ...memberForm, username: e.target.value })} className={inputClass} maxLength={50} />
-                  <input placeholder="Branch Name" value={memberForm.branchName} onChange={e => setMemberForm({ ...memberForm, branchName: e.target.value })} className={inputClass} maxLength={100} />
+                  <input placeholder="Username *" value={memberForm.username} onChange={e => setMemberForm({ ...memberForm, username: e.target.value })} className={inputClass} maxLength={50} />
+                  <input placeholder="Branch Name *" value={memberForm.branchName} onChange={e => setMemberForm({ ...memberForm, branchName: e.target.value })} className={inputClass} maxLength={100} />
                 </div>
                 {editingMember ? (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2 text-sm">
@@ -978,7 +1000,7 @@ const Admin = () => {
                           }}>
                             <Mail className="h-3 w-3" /> Renew
                           </Button>
-                          {!isViewOnly && <Button variant="ghost" size="icon" title="Edit Member" onClick={() => startEditMember(m)}><Pencil className="h-4 w-4 text-primary" /></Button>}
+                          {isSuperAdmin && <Button variant="ghost" size="icon" title="Edit Member" onClick={() => startEditMember(m)}><Pencil className="h-4 w-4 text-primary" /></Button>}
                           {canDeleteTab && <Button variant="ghost" size="icon" onClick={() => deleteMember(m.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
                         </td>
                       </tr>

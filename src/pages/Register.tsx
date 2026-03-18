@@ -96,8 +96,25 @@ const Register = () => {
     // Prevent double-click / multiple submissions
     if (submitting) return;
 
-    if (!form.surname.trim() || !form.firstName.trim()) {
-      toast({ title: "Please enter Surname and First Name", variant: "destructive" });
+    const missing: string[] = [];
+    if (!form.surname.trim()) missing.push('Surname');
+    if (!form.firstName.trim()) missing.push('First Name');
+    if (!form.email.trim()) missing.push('Email');
+    if (!form.countryOfOrigin) missing.push('Country of Origin');
+    if (!form.countryOfResidence) missing.push('Country of Residence');
+    if (!form.phone.trim()) missing.push('Phone');
+    if (!form.gender) missing.push('Gender');
+    if (!form.maritalStatus) missing.push('Marital Status');
+    if (!form.dobYear) missing.push('Date of Birth');
+    if (!form.username.trim()) missing.push('Username');
+    if (!form.branchName.trim()) missing.push('Branch Name');
+    if (missing.length > 0) {
+      toast({ title: `Tafadhali jaza: ${missing.join(', ')}`, variant: "destructive" });
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email.trim())) {
+      toast({ title: "Email address si sahihi. Tafadhali ingiza email halali.", variant: "destructive" });
       return;
     }
     setSubmitting(true);
