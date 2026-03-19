@@ -670,21 +670,7 @@ const Admin = () => {
         <div className="p-6">
           <h2 className="font-heading text-xl font-extrabold"><span className="text-primary">ReFA</span><span className="text-white">N</span> Admin</h2>
         </div>
-        <nav className="flex-1 px-3 space-y-1">
-          {visibleSidebar.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setTab(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                tab === item.id ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-secondary-foreground/70 hover:bg-sidebar-accent/50'
-              }`}
-            >
-              <item.icon className="h-4 w-4" />
-              {item.label}
-            </button>
-          ))}
-        </nav>
-        <div className="p-4 border-t border-sidebar-border space-y-1">
+        <div className="px-3 pb-3 space-y-1 border-b border-sidebar-border">
           <Button asChild variant="ghost" size="sm" className="w-full justify-start text-secondary-foreground/70">
             <Link to="/"><ArrowLeft className="h-4 w-4" /> Back to Site</Link>
           </Button>
@@ -701,6 +687,20 @@ const Admin = () => {
             <LogOut className="h-4 w-4" /> Sign Out
           </Button>
         </div>
+        <nav className="flex-1 px-3 pt-3 space-y-1 overflow-y-auto">
+          {visibleSidebar.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setTab(item.id)}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                tab === item.id ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-secondary-foreground/70 hover:bg-sidebar-accent/50'
+              }`}
+            >
+              <item.icon className="h-4 w-4" />
+              {item.label}
+            </button>
+          ))}
+        </nav>
       </aside>
 
       {/* Mobile nav */}
