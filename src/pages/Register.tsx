@@ -109,12 +109,12 @@ const Register = () => {
     if (!form.username.trim()) missing.push('Username');
     if (!form.branchName.trim()) missing.push('Branch Name');
     if (missing.length > 0) {
-      toast({ title: `Tafadhali jaza: ${missing.join(', ')}`, variant: "destructive" });
+      toast({ title: `Please fill in: ${missing.join(', ')}`, variant: "destructive" });
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(form.email.trim())) {
-      toast({ title: "Email address si sahihi. Tafadhali ingiza email halali.", variant: "destructive" });
+      toast({ title: "Invalid email address. Please enter a valid email.", variant: "destructive" });
       return;
     }
     setSubmitting(true);
