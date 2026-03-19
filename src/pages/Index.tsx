@@ -3,18 +3,13 @@ import { useEffect, useRef, useState } from "react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Heart, Users, BookOpen, ArrowRight, Target, Globe, Shield, Baby, User, Home, Grid3X3, Quote, Megaphone, X, Share2, Facebook, Twitter, Link2 } from "lucide-react";
-import { store, Announcement, HeroSettings, HomeSettings } from "@/lib/store";
+import { store, Announcement, HeroSettings, HomeSettings, GalleryItem } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 const heroBg = "/holi.jpg";
 import educationImg from "@/assets/programs-education.jpg";
 import healthImg from "@/assets/programs-health.jpg";
 import livelihoodImg from "@/assets/programs-livelihood.jpg";
 
-const galleryPreview = [
-  { src: "/gallery-community.jpg", alt: "Community gathering" },
-  { src: "/gallery-classroom.jpg", alt: "Children in classroom" },
-  { src: "/gallery-children-playing.jpg", alt: "Children playing" },
-];
 
 const STATS_DEFAULTS = [
   { number: 2022, label: "Founded", icon: Home, suffix: "" },
@@ -164,6 +159,7 @@ const Index = () => {
   const [hero, setHero] = useState<HeroSettings>(HERO_DEFAULTS);
   const [home, setHome] = useState<HomeSettings>(HOME_DEFAULTS);
   const [stats, setStats] = useState(STATS_DEFAULTS);
+  const [galleryPreview, setGalleryPreview] = useState<GalleryItem[]>([]);
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const copyLink = () => { navigator.clipboard.writeText(shareUrl); toast({ title: "Link copied!" }); };
 
@@ -191,6 +187,9 @@ const Index = () => {
         }));
       }
     });
+    store.getGallery().then((data) => {
+      setGalleryPreview(data.filter(g => g.type === 'photo').slice(0, 3));
+    }).catch(() => setGalleryPreview([]));
   }, []);
 
 
@@ -250,8 +249,8 @@ const Index = () => {
           {announcements.slice(0, 4).map((item) => (
             <div key={item.id} onClick={() => setSelectedAnnouncement(item)} className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col sm:flex-row group hover:shadow-elevated transition-all cursor-pointer">
               {item.image && (
-                <div className="w-full h-48 sm:w-48 sm:h-auto md:w-56 shrink-0 overflow-hidden">
-                  <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div className="w-full sm:w-48 md:w-56 shrink-0 overflow-hidden bg-muted">
+                  <img src={item.image} alt={item.title} className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-500" />
                 </div>
               )}
               <div className="p-5 flex flex-col flex-1 min-w-0">
@@ -360,29 +359,31 @@ const Index = () => {
       </section>
 
       {/* Gallery Preview */}
-      <section className="container py-12">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
-          <div>
-            <h2 className="font-heading text-3xl font-extrabold tracking-tight">
-              <span className="text-secondary">Life</span> in Dzaleka
-            </h2>
-            <p className="text-muted-foreground">Capturing moments of growth, joy, and community action.</p>
-          </div>
-          <Button asChild variant="outline" className="font-bold border-border btn-hover">
-            <Link to="/gallery">View Full Gallery <Grid3X3 className="h-4 w-4" /></Link>
-          </Button>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {galleryPreview.map((img) => (
-            <div
-              key={img.src}
-              className="aspect-[4/3] rounded-2xl overflow-hidden hover:scale-[1.02] transition-transform shadow-soft"
-            >
-              <img src={img.src} alt={img.alt} className="w-full h-full object-cover" loading="lazy" />
+      {galleryPreview.length > 0 && (
+        <section className="container py-12">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+            <div>
+              <h2 className="font-heading text-3xl font-extrabold tracking-tight">
+                <span className="text-secondary">Life</span> in Dzaleka
+              </h2>
+              <p className="text-muted-foreground">Capturing moments of growth, joy, and community action.</p>
             </div>
-          ))}
-        </div>
-      </section>
+            <Button asChild variant="outline" className="font-bold border-border btn-hover">
+              <Link to="/gallery">View Full Gallery <Grid3X3 className="h-4 w-4" /></Link>
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {galleryPreview.map((img) => (
+              <div
+                key={img.id}
+                className="aspect-[4/3] rounded-2xl overflow-hidden hover:scale-[1.02] transition-transform shadow-soft"
+              >
+                <img src={img.url} alt={img.title} className="w-full h-full object-cover" loading="lazy" />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* CTA */}
       <section className="container py-12 pb-20">
