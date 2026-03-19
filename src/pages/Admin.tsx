@@ -697,7 +697,7 @@ const Admin = () => {
           <Button variant="ghost" size="sm" className="w-full justify-start text-secondary-foreground/70" onClick={() => setShowSecurityForm(true)}>
             <Shield className="h-4 w-4" /> Security Question
           </Button>
-          <Button variant="ghost" size="sm" className="w-full justify-start text-secondary-foreground/70" onClick={signOut}>
+          <Button variant="ghost" size="sm" className="w-full justify-start text-secondary-foreground/70" onClick={() => { if (confirm("Una uhakika unataka kutoka?")) signOut(); }}>
             <LogOut className="h-4 w-4" /> Sign Out
           </Button>
         </div>
