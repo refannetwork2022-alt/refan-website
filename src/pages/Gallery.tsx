@@ -10,28 +10,6 @@ import aboutTeam from "@/assets/about-team.jpg";
 
 const fallbackImages = [educationImg, healthImg, livelihoodImg, heroBg, aboutTeam];
 
-const sampleGalleryItems: GalleryItem[] = [
-  { id: "g1", title: "ReFAN Community", url: "/IMG-20260217-WA0038.jpg", type: "photo", date: "2026-02-17" },
-  { id: "g2", title: "Community Outreach", url: "/IMG-20260217-WA0039.jpg", type: "photo", date: "2026-02-17" },
-  { id: "g3", title: "Community Support", url: "/IMG-20260217-WA0040.jpg", type: "photo", date: "2026-02-17" },
-  { id: "g4", title: "Dzaleka Activities", url: "/IMG-20260217-WA0041.jpg", type: "photo", date: "2026-02-17" },
-  { id: "g5", title: "Team Meeting", url: "/IMG-20260217-WA0042.jpg", type: "photo", date: "2026-02-17" },
-  { id: "g6", title: "Community Resilience Workshop", url: "/IMG-20260217-WA0043.jpg", type: "photo", date: "2026-02-17" },
-  { id: "g7", title: "Youth Program", url: "/IMG-20260217-WA0044.jpg", type: "photo", date: "2026-02-17" },
-  { id: "g8", title: "Field Activities", url: "/IMG-20260217-WA0045.jpg", type: "photo", date: "2026-02-17" },
-  { id: "g9", title: "Education Support Program", url: "/IMG-20260217-WA0046.jpg", type: "photo", date: "2026-02-17" },
-  { id: "g10", title: "Empowerment Session", url: "/IMG-20260217-WA0047.jpg", type: "photo", date: "2026-02-17" },
-  { id: "g11", title: "Youth Skills Training", url: "/IMG-20260217-WA0048.jpg", type: "photo", date: "2026-02-17" },
-  { id: "g12", title: "Community Celebration", url: "/IMG-20260217-WA0049.jpg", type: "photo", date: "2026-02-17" },
-  { id: "g13", title: "Annual Gathering", url: "/IMG-20260217-WA0050.jpg", type: "photo", date: "2026-02-17" },
-  { id: "g14", title: "ReFAN Activities", url: "/IMG-20260217-WA0051.jpg", type: "photo", date: "2026-02-17" },
-  { id: "g15", title: "Widows Empowerment", url: "/IMG-20260217-WA0054.jpg", type: "photo", date: "2026-02-17" },
-  { id: "g16", title: "Widows Support Program", url: "/IMG-20260217-WA0055.jpg", type: "photo", date: "2026-02-17" },
-  { id: "g17", title: "Community Building", url: "/IMG-20260217-WA0056.jpg", type: "photo", date: "2026-02-17" },
-  { id: "g18", title: "Team ReFAN", url: "/team-refan.jpg", type: "photo", date: "2026-02-10" },
-  { id: "g19", title: "ReFAN Giving", url: "/refan_give.jpg", type: "photo", date: "2026-02-05" },
-  { id: "g20", title: "Teaching Program", url: "/modam_teach.jpg", type: "photo", date: "2026-02-01" },
-];
 
 const GALLERY_DEFAULTS = {
   pageTitle: '<span class="text-primary">Life</span> in <span class="text-secondary">Dzaleka</span>',
@@ -45,9 +23,8 @@ const Gallery = () => {
 
   useEffect(() => {
     store.getGallery().then((data) => {
-      const combined = [...data, ...sampleGalleryItems];
-      setItems(combined);
-    }).catch(() => setItems(sampleGalleryItems));
+      setItems(data);
+    }).catch(() => setItems([]));
     store.getPageSettings<typeof GALLERY_DEFAULTS>("gallerypage").then((d) => { if (d) setPg({ ...GALLERY_DEFAULTS, ...d }); });
   }, []);
 
