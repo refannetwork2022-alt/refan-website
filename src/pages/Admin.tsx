@@ -261,7 +261,7 @@ const Admin = () => {
   };
 
   const deleteAnnouncement = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this announcement?")) return;
+    if (!confirm("Una uhakika unataka kufuta tangazo hili?")) return;
     await store.deleteAnnouncement(id);
     setAnnouncements(await store.getAnnouncements());
     toast({ title: "Announcement deleted" });
@@ -289,7 +289,7 @@ const Admin = () => {
   };
 
   const deleteStory = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this story?")) return;
+    if (!confirm("Una uhakika unataka kufuta hadithi hii?")) return;
     await store.deleteStory(id);
     setStories(await store.getStories());
     toast({ title: "Story deleted" });
@@ -340,7 +340,7 @@ const Admin = () => {
   };
 
   const deleteBlog = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this blog post?")) return;
+    if (!confirm("Una uhakika unataka kufuta blog hii?")) return;
     await store.deleteBlog(id);
     setBlogs(await store.getBlogs());
     toast({ title: "Blog post deleted" });
@@ -355,7 +355,7 @@ const Admin = () => {
   };
 
   const deleteGalleryItem = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this gallery item?")) return;
+    if (!confirm("Una uhakika unataka kufuta picha/video hii kwenye gallery?")) return;
     await store.deleteGalleryItem(id);
     setGallery(await store.getGallery());
     toast({ title: "Gallery item deleted" });
@@ -502,7 +502,7 @@ const Admin = () => {
   };
 
   const deleteMember = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this member?")) return;
+    if (!confirm("Una uhakika unataka kufuta member huyu?")) return;
     try {
       const success = await store.deleteMember(id);
       if (success) {
@@ -518,7 +518,7 @@ const Admin = () => {
   };
 
   const removeDuplicateMembers = async () => {
-    if (!confirm("This will keep the first registration for each name and remove duplicates. Continue?")) return;
+    if (!confirm("Hii itahifadhi usajili wa kwanza kwa kila jina na kuondoa nakala. Endelea?")) return;
     const seen = new Map<string, string>();
     const toDelete: string[] = [];
     for (const m of members) {
@@ -1313,7 +1313,7 @@ const Admin = () => {
                           {v.message && <p className="text-sm mt-2 text-muted-foreground whitespace-pre-line">{v.message}</p>}
                         </div>
                         {canDeleteTab && <Button variant="destructive" size="sm" className="shrink-0" onClick={async () => {
-                          if (!confirm(`Delete ${v.name}?`)) return;
+                          if (!confirm(`Una uhakika unataka kufuta volunteer ${v.name}?`)) return;
                           await store.deleteVolunteer(v.id);
                           setVolunteers(await store.getVolunteers());
                           toast({ title: "Deleted" });
@@ -1391,7 +1391,7 @@ const Admin = () => {
                         {d.message && <p className="text-sm mt-2 text-muted-foreground whitespace-pre-line">{d.message}</p>}
                       </div>
                       {canDeleteTab && <Button variant="destructive" size="sm" className="shrink-0" onClick={async () => {
-                        if (!confirm(`Delete donation from ${d.name}?`)) return;
+                        if (!confirm(`Una uhakika unataka kufuta donation ya ${d.name}?`)) return;
                         await store.deleteDonation(d.id);
                         setDonations(await store.getDonations());
                         toast({ title: "Donation deleted" });
@@ -1472,7 +1472,7 @@ const Admin = () => {
                           openInGmail([m.email], `Re: ${m.subject}`, '');
                         }}><Mail className="h-4 w-4 text-blue-500" /></Button>
                         {canDeleteTab && <Button variant="ghost" size="icon" onClick={async () => {
-                          if (!confirm("Are you sure you want to delete this message?")) return;
+                          if (!confirm("Una uhakika unataka kufuta ujumbe huu?")) return;
                           await store.deleteMessage(m.id);
                           setMessages(await store.getMessages());
                           const next = new Set(selectedMsgs); next.delete(m.id); setSelectedMsgs(next);
@@ -1568,7 +1568,7 @@ const Admin = () => {
                         <span className="text-xs text-muted-foreground">{new Date(s.date).toLocaleDateString()}</span>
                       </label>
                       {canDeleteTab && <Button variant="ghost" size="icon" onClick={async () => {
-                        if (!confirm("Are you sure you want to remove this subscriber?")) return;
+                        if (!confirm("Una uhakika unataka kuondoa subscriber huyu?")) return;
                         await store.deleteSubscriber(s.id);
                         setSubscribers(await store.getSubscribers());
                         const next = new Set(selectedSubs);
@@ -2080,7 +2080,7 @@ const Admin = () => {
           };
 
           const deleteSA = async (id: string) => {
-            if (!confirm("Delete this sub-admin?")) return;
+            if (!confirm("Una uhakika unataka kufuta sub-admin huyu?")) return;
             await store.deleteSubAdmin(id);
             setSubAdmins(await store.getSubAdmins());
             toast({ title: "Sub-admin deleted" });
@@ -2348,7 +2348,7 @@ const Admin = () => {
                   return (
                     <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                       {isMe && isSuperAdmin && (
-                        <button onClick={async () => { await store.deleteAdminMessage(msg.id); setChatMessages(prev => prev.filter(m => m.id !== msg.id)); }} className="mr-1 text-destructive/50 hover:text-destructive self-center" title="Delete">
+                        <button onClick={async () => { if (!confirm("Una uhakika unataka kufuta ujumbe huu wa chat?")) return; await store.deleteAdminMessage(msg.id); setChatMessages(prev => prev.filter(m => m.id !== msg.id)); }} className="mr-1 text-destructive/50 hover:text-destructive self-center" title="Delete">
                           <Trash2 className="h-3 w-3" />
                         </button>
                       )}
