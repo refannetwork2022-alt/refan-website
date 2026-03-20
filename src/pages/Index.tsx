@@ -315,7 +315,7 @@ const Index = () => {
       {/* Testimonials */}
       <section className="container py-12">
         <h2 className="font-heading text-3xl font-extrabold tracking-tight text-center mb-3">
-          Voices from <span className="text-primary">Dzaleka</span>
+          Voices from <span className="text-primary">Displaced Community</span>
         </h2>
         <p className="text-muted-foreground text-center mb-10">Real stories from those whose lives have been transformed.</p>
         <div className="grid md:grid-cols-3 gap-8">
