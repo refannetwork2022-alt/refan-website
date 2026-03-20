@@ -126,7 +126,7 @@ const Admin = () => {
   });
   const [pageTab, setPageTab] = useState<'about' | 'programs' | 'home' | 'contact' | 'donate' | 'getinvolved' | 'stories' | 'gallery' | 'blog'>('about');
   const [storiesPageForm, setStoriesPageForm] = useState({ pageTitle: '<span class="text-secondary">Stories</span> & <span class="text-primary">Announcements</span>', pageSubtitle: 'Real impact stories from the communities we serve in Dzaleka.' });
-  const [galleryPageForm, setGalleryPageForm] = useState({ pageTitle: '<span class="text-primary">Life</span> in <span class="text-secondary">Dzaleka</span>', pageSubtitle: 'Capturing moments of growth, joy, and community action.' });
+  const [galleryPageForm, setGalleryPageForm] = useState({ pageTitle: '<span class="text-primary">Life</span> in <span class="text-secondary">Displaced Community</span>', pageSubtitle: 'Capturing moments of growth, joy, and community action.' });
   const [blogPageForm, setBlogPageForm] = useState({ pageTitle: '<span class="text-primary">Blog</span> & <span class="text-secondary">News</span>', pageSubtitle: 'Insights, updates, and perspectives on community development.' });
 
   const loadData = async () => {

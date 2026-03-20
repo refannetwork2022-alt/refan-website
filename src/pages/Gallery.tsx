@@ -12,7 +12,7 @@ const fallbackImages = [educationImg, healthImg, livelihoodImg, heroBg, aboutTea
 
 
 const GALLERY_DEFAULTS = {
-  pageTitle: '<span class="text-primary">Life</span> in <span class="text-secondary">Dzaleka</span>',
+  pageTitle: '<span class="text-primary">Life</span> in <span class="text-secondary">Displaced Community</span>',
   pageSubtitle: 'Capturing moments of growth, joy, and community action.',
 };
 

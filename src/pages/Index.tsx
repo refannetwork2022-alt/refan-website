@@ -364,7 +364,7 @@ const Index = () => {
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
             <div>
               <h2 className="font-heading text-3xl font-extrabold tracking-tight">
-                <span className="text-secondary">Life</span> in Dzaleka
+                <span className="text-secondary">Life</span> in Displaced Community
               </h2>
               <p className="text-muted-foreground">Capturing moments of growth, joy, and community action.</p>
             </div>
