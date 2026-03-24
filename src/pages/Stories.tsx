@@ -24,6 +24,11 @@ const STORIES_DEFAULTS = {
   pageSubtitle: 'Real impact stories from the communities we serve in Dzaleka.',
 };
 
+const stripHtml = (html: string) => {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return doc.body.textContent || '';
+};
+
 const Stories = () => {
   const { toast } = useToast();
   const [filter, setFilter] = useState<'all' | 'story' | 'announcement'>('all');
@@ -91,15 +96,15 @@ const Stories = () => {
                       className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col sm:flex-row group hover:shadow-elevated transition-all cursor-pointer"
                     >
                       {item.image && (
-                        <div className="w-full h-48 sm:w-48 sm:h-auto md:w-56 shrink-0 overflow-hidden">
-                          <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        <div className="w-full sm:w-48 md:w-56 shrink-0 overflow-hidden bg-muted">
+                          <img src={item.image} alt={item.title} className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-500" />
                         </div>
                       )}
                       <div className="p-5 flex flex-col flex-1 min-w-0">
                         <span className="inline-block w-fit px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-2">Announcement</span>
                         <h3 className="font-heading text-sm font-bold mb-1 group-hover:text-primary transition-colors leading-snug">{item.title}</h3>
                         {item.subtitle && <p className="text-xs text-primary font-medium mb-2">{item.subtitle}</p>}
-                        <p className="text-xs text-muted-foreground leading-relaxed flex-1">{item.content.length > 150 ? item.content.slice(0, 150) + '...' : item.content}</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed flex-1">{(() => { const t = stripHtml(item.content); return t.length > 150 ? t.slice(0, 150) + '...' : t; })()}</p>
                         <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
                           {item.showDate !== false && item.date ? (
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -136,15 +141,15 @@ const Stories = () => {
                       className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col sm:flex-row group hover:shadow-elevated transition-all cursor-pointer"
                     >
                       {story.image && (
-                        <div className="w-full h-48 sm:w-48 sm:h-auto md:w-56 shrink-0 overflow-hidden">
-                          <img src={story.image} alt={story.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        <div className="w-full sm:w-48 md:w-56 shrink-0 overflow-hidden bg-muted">
+                          <img src={story.image} alt={story.title} className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-500" />
                         </div>
                       )}
                       <div className="p-5 flex flex-col flex-1 min-w-0">
                         <span className="inline-block w-fit px-2.5 py-0.5 rounded-full bg-secondary/10 text-secondary text-xs font-semibold mb-2">Story</span>
                         <h3 className="font-heading text-sm font-bold mb-1 group-hover:text-primary transition-colors leading-snug">{story.title}</h3>
                         {story.subtitle && <p className="text-xs text-primary font-medium mb-2">{story.subtitle}</p>}
-                        <p className="text-xs text-muted-foreground leading-relaxed flex-1">{story.excerpt.length > 150 ? story.excerpt.slice(0, 150) + '...' : story.excerpt}</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed flex-1">{(() => { const t = stripHtml(story.excerpt); return t.length > 150 ? t.slice(0, 150) + '...' : t; })()}</p>
                         <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
                           {story.showDate !== false && story.date ? (
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">

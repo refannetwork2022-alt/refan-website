@@ -1078,7 +1078,7 @@ const Admin = () => {
                     <div className="flex-1">
                       {a.image && <img src={a.image} alt={a.title} className="w-full max-h-48 object-contain rounded-md mb-3" />}
                       <h4 className="font-medium text-sm">{a.title}</h4>
-                      <p className="text-xs text-muted-foreground mt-1">{a.content.slice(0, 80)}...</p>
+                      <p className="text-xs text-muted-foreground mt-1">{(() => { const doc = new DOMParser().parseFromString(a.content, 'text/html'); return (doc.body.textContent || '').slice(0, 80); })()}...</p>
                       <p className="text-xs text-primary font-medium mt-2">Donations: {a.donationCount}</p>
                     </div>
                     <div className="flex gap-1">

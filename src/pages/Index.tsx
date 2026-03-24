@@ -152,6 +152,11 @@ const HOME_DEFAULTS: HomeSettings = {
 
 const defaultProgramImages = [educationImg, healthImg, livelihoodImg];
 
+const stripHtml = (html: string) => {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return doc.body.textContent || '';
+};
+
 const Index = () => {
   const { toast } = useToast();
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
@@ -256,7 +261,7 @@ const Index = () => {
               <div className="p-5 flex flex-col flex-1 min-w-0">
                 <h3 className="font-heading text-sm font-bold mb-1 group-hover:text-primary transition-colors leading-snug">{item.title}</h3>
                 {item.subtitle && <p className="text-xs text-primary font-medium mb-2">{item.subtitle}</p>}
-                <p className="text-xs text-muted-foreground leading-relaxed flex-1">{item.content.length > 150 ? item.content.slice(0, 150) + '...' : item.content}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed flex-1">{(() => { const t = stripHtml(item.content); return t.length > 150 ? t.slice(0, 150) + '...' : t; })()}</p>
                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
                   <Button asChild size="sm" className="bg-primary hover:bg-primary/90 text-white font-bold text-xs px-4" onClick={(e) => e.stopPropagation()}>
                     <Link to="/donate"><Heart className="h-3 w-3" /> Donate</Link>
