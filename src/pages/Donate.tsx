@@ -47,6 +47,7 @@ const Donate = () => {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [redirectingName, setRedirectingName] = useState<string | null>(null);
 
   const payHref = toHref(d.payLink || "");
 
@@ -77,7 +78,9 @@ const Donate = () => {
         if (currency === "MWK") url.searchParams.set("amount", String(Number(amount)));
         target = url.toString();
       } catch { /* keep the link exactly as the admin entered it */ }
-      window.location.href = target;
+      // Short thank-you before leaving the site, so the move to DzalekaPay isn't abrupt.
+      setRedirectingName(name.trim());
+      setTimeout(() => { window.location.href = target; }, 1800);
       return;
     }
     setSubmitting(false);
@@ -90,6 +93,16 @@ const Donate = () => {
 
   return (
     <Layout>
+      {redirectingName && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-sm p-4">
+          <div className="bg-card rounded-2xl shadow-elevated p-8 max-w-md w-full text-center space-y-3">
+            <Heart className="h-10 w-10 text-primary mx-auto" />
+            <h2 className="font-heading text-2xl font-bold">Thank you, {redirectingName}!</h2>
+            <p className="text-muted-foreground">Taking you to our secure payment page…</p>
+            <div className="h-6 w-6 mx-auto rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+          </div>
+        </div>
+      )}
       <section className="container pt-12 pb-8 text-center">
         <Heart className="h-12 w-12 text-primary mx-auto mb-4" />
         <h1 className="font-heading text-3xl lg:text-5xl font-extrabold mb-3" dangerouslySetInnerHTML={{ __html: d.pageTitle }} />

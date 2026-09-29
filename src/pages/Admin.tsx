@@ -1416,14 +1416,35 @@ const Admin = () => {
                           {!isViewOnly && d.status !== 'approved' && (
                             <Button variant="outline" size="sm" className="h-7 text-xs text-green-700 border-green-300 hover:bg-green-50" onClick={async () => {
                               const ok = await store.updateDonationStatus(d.id, 'approved');
-                              if (ok) setDonations(donations.map(x => x.id === d.id ? { ...x, status: 'approved' } : x));
-                              toast({ title: ok ? "Marked as payment received" : "Failed to update", variant: ok ? undefined : "destructive" });
+                              if (!ok) { toast({ title: "Failed to update", variant: "destructive" }); return; }
+                              setDonations(prev => prev.map(x => x.id === d.id ? { ...x, status: 'approved' } : x));
+                              // Thank the donor once, the first time their payment is confirmed.
+                              let emailed = false;
+                              if (!d.thankYouSent && d.email) {
+                                try {
+                                  const res = await fetch('/api/send-email', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                      to: d.email,
+                                      subject: "Thank you for your donation to ReFAN",
+                                      body: `Dear ${d.name},\n\nWe have received your donation of ${d.currency || 'MWK'} ${Number(d.amount).toLocaleString()}. Thank you for supporting orphans and widows in Dzaleka Refugee Camp.\n\nYour generosity makes our work of Holistic Continuity of Care possible.\n\nWith gratitude,\nReFAN - Resilient Foundation Assistance Network`,
+                                    }),
+                                  });
+                                  emailed = !!(await res.json()).success;
+                                } catch { emailed = false; }
+                                if (emailed) {
+                                  await store.updateDonationStatus(d.id, 'approved', { thank_you_sent: true });
+                                  setDonations(prev => prev.map(x => x.id === d.id ? { ...x, thankYouSent: true } : x));
+                                }
+                              }
+                              toast({ title: emailed ? "Payment received — thank-you email sent" : d.thankYouSent ? "Marked as payment received" : "Marked as payment received (thank-you email could not be sent)" });
                             }}>Approve</Button>
                           )}
                           {!isViewOnly && d.status !== 'rejected' && (
                             <Button variant="outline" size="sm" className="h-7 text-xs text-red-700 border-red-300 hover:bg-red-50" onClick={async () => {
                               const ok = await store.updateDonationStatus(d.id, 'rejected');
-                              if (ok) setDonations(donations.map(x => x.id === d.id ? { ...x, status: 'rejected' } : x));
+                              if (ok) setDonations(prev => prev.map(x => x.id === d.id ? { ...x, status: 'rejected' } : x));
                               toast({ title: ok ? "Marked as payment not received" : "Failed to update", variant: ok ? undefined : "destructive" });
                             }}>Reject</Button>
                           )}
