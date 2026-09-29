@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import ImageUpload from "@/components/ImageUpload";
 import RichTextEditor from "@/components/RichTextEditor";
+import { postEmail } from "@/lib/sendEmail";
 
 type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'sponsors' | 'donations' | 'subscribers' | 'messages' | 'members' | 'footer' | 'hero' | 'site' | 'pages' | 'chat';
 
@@ -332,12 +333,7 @@ const SubAdminAccess = () => {
     if (sendingEmail) return;
     setSendingEmail(true);
     try {
-      const res = await fetch('/api/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: emails, subject, body }),
-      });
-      const data = await res.json();
+      const data = await postEmail({ to: emails, subject, body }, { token: token || '', password: profile?.password || '' });
       if (data.success) {
         toast({ title: "Email sent successfully!" });
       } else {

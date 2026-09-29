@@ -13,6 +13,7 @@ import { db } from "@/integrations/firebase/client";
 import { useAuth } from "@/hooks/useAuth";
 import ImageUpload from "@/components/ImageUpload";
 import { CONTACT_ICONS, getContactIcon } from "@/lib/contactLinks";
+import { postEmail } from "@/lib/sendEmail";
 import { DEFAULT_DONATE_PAY_LINK } from "@/lib/store";
 import RichTextEditor from "@/components/RichTextEditor";
 
@@ -592,12 +593,7 @@ const Admin = () => {
     if (sendingEmail) return;
     setSendingEmail(true);
     try {
-      const res = await fetch('/api/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: emails, subject, body }),
-      });
-      const data = await res.json();
+      const data = await postEmail({ to: emails, subject, body });
       if (data.success) {
         toast({ title: "Email sent successfully!" });
         setEmailSubject('');
@@ -1422,16 +1418,12 @@ const Admin = () => {
                               let emailed = false;
                               if (!d.thankYouSent && d.email) {
                                 try {
-                                  const res = await fetch('/api/send-email', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                      to: d.email,
-                                      subject: "Thank you for your donation to ReFAN",
-                                      body: `Dear ${d.name},\n\nWe have received your donation of ${d.currency || 'MWK'} ${Number(d.amount).toLocaleString()}. Thank you for supporting orphans and widows in Dzaleka Refugee Camp.\n\nYour generosity makes our work of Holistic Continuity of Care possible.\n\nWith gratitude,\nReFAN - Resilient Foundation Assistance Network`,
-                                    }),
+                                  const result = await postEmail({
+                                    to: d.email,
+                                    subject: "Thank you for your donation to ReFAN",
+                                    body: `Dear ${d.name},\n\nWe have received your donation of ${d.currency || 'MWK'} ${Number(d.amount).toLocaleString()}. Thank you for supporting orphans and widows in Dzaleka Refugee Camp.\n\nYour generosity makes our work of Holistic Continuity of Care possible.\n\nWith gratitude,\nReFAN - Resilient Foundation Assistance Network`,
                                   });
-                                  emailed = !!(await res.json()).success;
+                                  emailed = !!result.success;
                                 } catch { emailed = false; }
                                 if (emailed) {
                                   await store.updateDonationStatus(d.id, 'approved', { thank_you_sent: true });
