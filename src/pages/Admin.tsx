@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   LayoutDashboard, FileText, Image, Megaphone, Users, Heart,
   Plus, Trash2, ArrowLeft, LogOut, Download, Mail, Send, MessageSquare, KeyRound,
-  UserPlus, Copy, Camera, Upload, Shield, ChevronUp, ChevronDown, Type, ImagePlus, Video, Pencil, Save, Loader2, Settings, Globe, Power, Link2
+  UserPlus, Copy, Camera, Upload, Shield, ChevronUp, ChevronDown, Type, ImagePlus, Video, Pencil, Save, Loader2, Settings, Globe, Power, Link2, User
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { doc, updateDoc } from "firebase/firestore";
@@ -1850,17 +1850,32 @@ const Admin = () => {
                   </div>
                 ))}
                 <h4 className="font-bold text-sm">Testimonials</h4>
+                <div className="space-y-1"><label className="text-xs font-medium">Section Title</label>
+                  <RichTextEditor value={homeForm.testimonialsHeading ?? 'Voices from <span class="text-primary">Displaced Community</span>'} onChange={(v) => setHomeForm({ ...homeForm, testimonialsHeading: v })} rows={2} /></div>
+                <div className="space-y-1"><label className="text-xs font-medium">Section Subtitle</label>
+                  <RichTextEditor value={homeForm.testimonialsSubtitle ?? 'Real stories from those whose lives have been transformed.'} onChange={(v) => setHomeForm({ ...homeForm, testimonialsSubtitle: v })} rows={2} /></div>
                 {homeForm.testimonials.map((t, i) => (
                   <div key={i} className="border border-border rounded-lg p-3 space-y-2">
-                    <textarea placeholder="Quote" value={t.quote} onChange={(e) => { const arr = [...homeForm.testimonials]; arr[i] = { ...t, quote: e.target.value }; setHomeForm({ ...homeForm, testimonials: arr }); }} className={inputClass + " resize-none"} rows={2} />
+                    <RichTextEditor value={t.quote} onChange={(v) => { const arr = [...homeForm.testimonials]; arr[i] = { ...arr[i], quote: v }; setHomeForm({ ...homeForm, testimonials: arr }); }} placeholder="Write the testimonial here..." rows={6} />
                     <div className="flex gap-2">
                       <input placeholder="Name" value={t.name} onChange={(e) => { const arr = [...homeForm.testimonials]; arr[i] = { ...t, name: e.target.value }; setHomeForm({ ...homeForm, testimonials: arr }); }} className={inputClass} />
                       <input placeholder="Role" value={t.role} onChange={(e) => { const arr = [...homeForm.testimonials]; arr[i] = { ...t, role: e.target.value }; setHomeForm({ ...homeForm, testimonials: arr }); }} className={inputClass} />
                     </div>
+                    <div className="flex items-center gap-3">
+                      {t.image ? (
+                        <img src={t.image} alt={t.name} className="w-14 h-14 rounded-full object-cover border border-border" />
+                      ) : (
+                        <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center"><User className="h-6 w-6 text-primary" /></div>
+                      )}
+                      <div className="space-y-1">
+                        <ImageUpload label={t.image ? "Change Photo" : "Add Photo (optional)"} onUploaded={(url) => { const arr = [...homeForm.testimonials]; arr[i] = { ...arr[i], image: url }; setHomeForm({ ...homeForm, testimonials: arr }); }} />
+                        {t.image && <Button type="button" variant="ghost" size="sm" onClick={() => { const arr = [...homeForm.testimonials]; arr[i] = { ...arr[i], image: "" }; setHomeForm({ ...homeForm, testimonials: arr }); }}>Remove photo</Button>}
+                      </div>
+                    </div>
                     {homeForm.testimonials.length > 1 && <Button variant="destructive" size="sm" onClick={() => setHomeForm({ ...homeForm, testimonials: homeForm.testimonials.filter((_, j) => j !== i) })}><Trash2 className="h-3 w-3" /> Remove</Button>}
                   </div>
                 ))}
-                <Button variant="outline" size="sm" onClick={() => setHomeForm({ ...homeForm, testimonials: [...homeForm.testimonials, { quote: "", name: "", role: "" }] })}><Plus className="h-3 w-3" /> Add Testimonial</Button>
+                <Button variant="outline" size="sm" onClick={() => setHomeForm({ ...homeForm, testimonials: [...homeForm.testimonials, { quote: "", name: "", role: "", image: "" }] })}><Plus className="h-3 w-3" /> Add Testimonial</Button>
                 <h4 className="font-bold text-sm">Why ReFAN Values</h4>
                 {homeForm.values.map((v, i) => (
                   <div key={i} className="flex gap-2">

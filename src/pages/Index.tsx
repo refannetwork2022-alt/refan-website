@@ -319,19 +319,30 @@ const Index = () => {
 
       {/* Testimonials */}
       <section className="container py-12">
-        <h2 className="font-heading text-3xl font-extrabold tracking-tight text-center mb-3">
-          Voices from <span className="text-primary">Displaced Community</span>
-        </h2>
-        <p className="text-muted-foreground text-center mb-10">Real stories from those whose lives have been transformed.</p>
+        <h2
+          className="font-heading text-3xl font-extrabold tracking-tight text-center mb-3"
+          dangerouslySetInnerHTML={{ __html: home.testimonialsHeading || 'Voices from <span class="text-primary">Displaced Community</span>' }}
+        />
+        <div
+          className="text-muted-foreground text-center mb-10"
+          dangerouslySetInnerHTML={{ __html: home.testimonialsSubtitle || "Real stories from those whose lives have been transformed." }}
+        />
         <div className="grid md:grid-cols-3 gap-8">
           {home.testimonials.map((t, i) => (
-            <div key={i} className="bg-card rounded-2xl p-8 border border-border hover:border-primary/30 hover:shadow-card transition-all relative">
+            <div key={i} className="bg-card rounded-2xl p-6 sm:p-8 border border-border hover:border-primary/30 hover:shadow-card transition-all relative flex flex-col">
               <Quote className="h-8 w-8 text-primary/20 absolute top-6 right-6" />
-              <p className="text-muted-foreground leading-relaxed mb-6 italic">"{t.quote}"</p>
-              <div className="flex items-center gap-3 border-t border-border pt-4">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User className="h-5 w-5 text-primary" />
-                </div>
+              <div
+                className={`testimonial-content text-muted-foreground leading-relaxed mb-6 pr-8 break-words ${/<[a-z][\s\S]*>/i.test(t.quote) ? "" : "whitespace-pre-line"}`}
+                dangerouslySetInnerHTML={{ __html: t.quote }}
+              />
+              <div className="flex items-center gap-3 border-t border-border pt-4 mt-auto">
+                {t.image ? (
+                  <img src={t.image} alt={t.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <User className="h-5 w-5 text-primary" />
+                  </div>
+                )}
                 <div>
                   <p className="font-bold text-sm">{t.name}</p>
                   <p className="text-xs text-muted-foreground">{t.role}</p>

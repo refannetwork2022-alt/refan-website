@@ -155,7 +155,9 @@ export interface ProgramsSettings {
 export interface HomeSettings {
   impactStats: Array<{ number: number; label: string; suffix: string }>;
   programs: Array<{ title: string; desc: string; image: string }>;
-  testimonials: Array<{ quote: string; name: string; role: string }>;
+  testimonials: Array<{ quote: string; name: string; role: string; image?: string }>;
+  testimonialsHeading?: string;
+  testimonialsSubtitle?: string;
   values: Array<{ title: string; desc: string }>;
   ctaHeading: string;
   ctaBody: string;

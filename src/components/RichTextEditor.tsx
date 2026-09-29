@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Bold, Italic, Underline, Heading2, Type, Palette } from "lucide-react";
+import { Bold, Italic, Underline, Heading2, Type, Palette, Highlighter, AlignLeft, AlignCenter, AlignRight, List, ListOrdered } from "lucide-react";
 
 interface RichTextEditorProps {
   value: string;
@@ -16,10 +16,17 @@ const COLORS = [
   "#795548", "#607d8b", "#000000", "#ffffff",
 ];
 
+const HIGHLIGHTS = [
+  "#fff59d", "#ffe082", "#ffcc80", "#ffab91", "#f8bbd0",
+  "#e1bee7", "#c5cae9", "#b3e5fc", "#b2ebf2", "#c8e6c9",
+  "#dcedc8", "#d7ccc8", "#cfd8dc", "transparent",
+];
+
 const RichTextEditor = ({ value, onChange, placeholder = "Write here...", rows = 4 }: RichTextEditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const showColorRef = useRef(false);
   const colorPanelRef = useRef<HTMLDivElement>(null);
+  const highlightPanelRef = useRef<HTMLDivElement>(null);
   const isUserInput = useRef(false);
 
   useEffect(() => {
@@ -55,6 +62,20 @@ const RichTextEditor = ({ value, onChange, placeholder = "Write here...", rows =
     exec("foreColor", color);
     if (colorPanelRef.current) {
       colorPanelRef.current.style.display = "none";
+    }
+  };
+
+  const toggleHighlightPanel = () => {
+    if (highlightPanelRef.current) {
+      const isVisible = highlightPanelRef.current.style.display !== "none";
+      highlightPanelRef.current.style.display = isVisible ? "none" : "flex";
+    }
+  };
+
+  const applyHighlight = (color: string) => {
+    exec("hiliteColor", color);
+    if (highlightPanelRef.current) {
+      highlightPanelRef.current.style.display = "none";
     }
   };
 
@@ -103,6 +124,43 @@ const RichTextEditor = ({ value, onChange, placeholder = "Write here...", rows =
             ))}
           </div>
         </div>
+        <div className="relative">
+          <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={toggleHighlightPanel} title="Highlight">
+            <Highlighter className="h-4 w-4" />
+          </Button>
+          <div
+            ref={highlightPanelRef}
+            style={{ display: "none" }}
+            className="absolute top-full left-0 mt-1 p-2 bg-card border border-border rounded-lg shadow-lg z-50 flex flex-wrap gap-1 w-[200px]"
+          >
+            {HIGHLIGHTS.map((color) => (
+              <button
+                key={color}
+                type="button"
+                title={color === "transparent" ? "No highlight" : "Highlight"}
+                className="w-6 h-6 rounded border border-border hover:scale-110 transition-transform"
+                style={{ backgroundColor: color }}
+                onClick={() => applyHighlight(color)}
+              />
+            ))}
+          </div>
+        </div>
+        <div className="w-px h-6 bg-border mx-1" />
+        <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => exec("justifyLeft")} title="Align left">
+          <AlignLeft className="h-4 w-4" />
+        </Button>
+        <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => exec("justifyCenter")} title="Align center">
+          <AlignCenter className="h-4 w-4" />
+        </Button>
+        <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => exec("justifyRight")} title="Align right">
+          <AlignRight className="h-4 w-4" />
+        </Button>
+        <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => exec("insertUnorderedList")} title="Bullet list">
+          <List className="h-4 w-4" />
+        </Button>
+        <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => exec("insertOrderedList")} title="Numbered list">
+          <ListOrdered className="h-4 w-4" />
+        </Button>
       </div>
 
       {/* Editor */}

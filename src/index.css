@@ -201,3 +201,15 @@ input, textarea, [contenteditable] {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
 }
+
+/* Testimonial rich-text content: keep paragraph spacing, lists and alignment as written in the admin editor */
+.testimonial-content div,
+.testimonial-content p {
+  margin-bottom: 0.75rem;
+}
+.testimonial-content div:last-child,
+.testimonial-content p:last-child {
+  margin-bottom: 0;
+}
+.testimonial-content ul { list-style: disc; padding-left: 1.25rem; margin-bottom: 0.75rem; }
+.testimonial-content ol { list-style: decimal; padding-left: 1.25rem; margin-bottom: 0.75rem; }
