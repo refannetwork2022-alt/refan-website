@@ -9,7 +9,9 @@ import {
   updatePassword,
   EmailAuthProvider,
   reauthenticateWithCredential,
+  reauthenticateWithPopup,
   sendPasswordResetEmail,
+  linkWithCredential,
   type User,
 } from "firebase/auth";
 import { collection, query, where, getDocs } from "firebase/firestore";
@@ -29,6 +31,7 @@ interface AuthContext {
   signInWithGoogle: () => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<{ error: string | null }>;
+  setPasswordForGoogle: (newPassword: string) => Promise<{ error: string | null }>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
   getTabPermission: (tab: string) => TabPermission;
   canEdit: (tab: string) => boolean;
@@ -143,7 +146,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSubAdminProfile(adminCheck.subAdminProfile);
       return { error: null };
     } catch (e: any) {
-      if (e.code === 'auth/popup-closed-by-user') return { error: null };
+      if (e.code === 'auth/popup-closed-by-user') return { error: "Password was not set: the Google sign-in window was closed." };
       return { error: e.message || 'Google sign in failed.' };
     }
   };
@@ -172,6 +175,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (e: any) {
       if (e.code === 'auth/wrong-password') return { error: "Current password is incorrect" };
       return { error: e.message || "Password change failed" };
+    }
+  };
+
+  const setPasswordForGoogle = async (newPassword: string) => {
+    if (newPassword.length < 6) {
+      return { error: "Password must be at least 6 characters" };
+    }
+    const currentUser = auth.currentUser;
+    if (!currentUser || !currentUser.email) {
+      return { error: "No user session found. Please sign in with Google first." };
+    }
+    try {
+      // Re-authenticate with Google first
+      const provider = new GoogleAuthProvider();
+      await reauthenticateWithPopup(currentUser, provider);
+      // Try to link email/password credential
+      const credential = EmailAuthProvider.credential(currentUser.email, newPassword);
+      try {
+        await linkWithCredential(currentUser, credential);
+      } catch (linkErr: any) {
+        if (linkErr.code === 'auth/provider-already-linked') {
+          // Already has password, just update it
+          await updatePassword(currentUser, newPassword);
+        } else {
+          throw linkErr;
+        }
+      }
+      return { error: null };
+    } catch (e: any) {
+      if (e.code === 'auth/popup-closed-by-user') return { error: null };
+      return { error: e.message || "Failed to set password" };
     }
   };
 
@@ -217,7 +251,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin, isSuperAdmin, subAdminProfile, loading, signIn, signInWithGoogle, signOut, changePassword, resetPassword, getTabPermission, canEdit, canView, canDelete, shouldHideExisting }}>
+    <AuthContext.Provider value={{ user, isAdmin, isSuperAdmin, subAdminProfile, loading, signIn, signInWithGoogle, signOut, changePassword, setPasswordForGoogle, resetPassword, getTabPermission, canEdit, canView, canDelete, shouldHideExisting }}>
       {children}
     </AuthContext.Provider>
   );
