@@ -179,7 +179,12 @@ export interface ContactPageSettings {
 export interface DonateSettings {
   pageTitle: string;
   pageSubtitle: string;
+  // Online payment page the donation form sends people to; empty = old "request" behaviour.
+  payLink?: string;
 }
+
+// DzalekaPay checkout for ReFAN; accepts ?amount= (MWK) to prefill the amount.
+export const DEFAULT_DONATE_PAY_LINK = "https://pay.dzaleka.com/pay/94fce2f2-b725-4547-8e47-5c167a5d5750";
 
 export interface GetInvolvedSettings {
   pageTitle: string;

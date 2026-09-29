@@ -13,6 +13,7 @@ import { db } from "@/integrations/firebase/client";
 import { useAuth } from "@/hooks/useAuth";
 import ImageUpload from "@/components/ImageUpload";
 import { CONTACT_ICONS, getContactIcon } from "@/lib/contactLinks";
+import { DEFAULT_DONATE_PAY_LINK } from "@/lib/store";
 import RichTextEditor from "@/components/RichTextEditor";
 
 type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'sponsors' | 'donations' | 'subscribers' | 'messages' | 'members' | 'footer' | 'hero' | 'site' | 'pages' | 'admins' | 'chat';
@@ -1968,6 +1969,8 @@ const Admin = () => {
                   <RichTextEditor value={donateForm2.pageTitle} onChange={(v) => setDonateForm2({ ...donateForm2, pageTitle: v })} rows={2} /></div>
                 <div><label className="text-xs font-semibold text-muted-foreground">Page Subtitle</label>
                   <RichTextEditor value={donateForm2.pageSubtitle} onChange={(v) => setDonateForm2({ ...donateForm2, pageSubtitle: v })} rows={3} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">Online Payment Link (the donation form sends people here; leave empty to go back to "donation request" only)</label>
+                  <input value={donateForm2.payLink ?? DEFAULT_DONATE_PAY_LINK} onChange={(e) => setDonateForm2({ ...donateForm2, payLink: e.target.value })} className={inputClass} maxLength={500} placeholder="https://..." /></div>
                 <Button variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("donate", donateForm2); setSaving(false); toast({ title: ok ? "Donate page saved!" : "Failed" }); }}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Donate Page
                 </Button>

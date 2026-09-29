@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { Heart, Shield, Send } from "lucide-react";
+import { Heart, Shield, Send, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { store, DonateSettings } from "@/lib/store";
+import { store, DonateSettings, DEFAULT_DONATE_PAY_LINK } from "@/lib/store";
+import { toHref } from "@/lib/contactLinks";
 
 const DONATE_DEFAULTS: DonateSettings = {
   pageTitle: 'Make a <span class="text-primary">Donation</span>',
   pageSubtitle: "Your generosity transforms the lives of orphaned children and widows in Dzaleka Refugee Camp. Every contribution goes directly to education, community resilience, and bereavement support.",
+  payLink: DEFAULT_DONATE_PAY_LINK,
 };
 
 const currencies = [
@@ -46,6 +48,8 @@ const Donate = () => {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const payHref = toHref(d.payLink || "");
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !amount || Number(amount) <= 0) {
@@ -65,6 +69,17 @@ const Donate = () => {
       message: message.trim(),
       date: new Date().toISOString(),
     });
+    if (payHref) {
+      // DzalekaPay only takes MWK, so the amount is prefilled only for MWK donations.
+      let target = payHref;
+      try {
+        const url = new URL(payHref);
+        if (currency === "MWK") url.searchParams.set("amount", String(Number(amount)));
+        target = url.toString();
+      } catch { /* keep the link exactly as the admin entered it */ }
+      window.location.href = target;
+      return;
+    }
     setSubmitting(false);
     toast({
       title: "Thank you for your donation request!",
@@ -125,13 +140,19 @@ const Donate = () => {
             </div>
 
             <Button type="submit" size="lg" className="w-full bg-primary hover:bg-primary/90 text-white font-bold rounded-lg text-sm sm:text-base" disabled={submitting}>
-              <Send className="h-5 w-5 shrink-0" />
-              <span className="truncate">{submitting ? 'Sending...' : `Send Donation Request (${currency} ${amount || '0'})`}</span>
+              {payHref ? <CreditCard className="h-5 w-5 shrink-0" /> : <Send className="h-5 w-5 shrink-0" />}
+              <span className="truncate">
+                {payHref
+                  ? (submitting ? 'Opening payment...' : `Continue to Payment (${currency} ${amount || '0'})`)
+                  : (submitting ? 'Sending...' : `Send Donation Request (${currency} ${amount || '0'})`)}
+              </span>
             </Button>
 
             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <Shield className="h-4 w-4" />
-              <span>Your donation request will be sent to our admin who will provide payment instructions.</span>
+              <span>{payHref
+                ? "You will be taken to our secure DzalekaPay checkout (Mobile money or Card, paid in MWK)."
+                : "Your donation request will be sent to our admin who will provide payment instructions."}</span>
             </div>
           </form>
         </div>
