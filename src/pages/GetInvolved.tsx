@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { Heart, Users, Handshake, ArrowRight, UserPlus } from "lucide-react";
+import { Heart, Users, Handshake, ArrowRight, UserPlus, CreditCard, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { store, GetInvolvedSettings } from "@/lib/store";
+import { store, GetInvolvedSettings, DEFAULT_DONATE_PAY_LINK, type DonateSettings } from "@/lib/store";
+import { toHref } from "@/lib/contactLinks";
 import CountrySearch from "@/components/CountrySearch";
 
 const waysDefault = [
@@ -44,6 +45,15 @@ const GetInvolved = () => {
     type: 'volunteer' as 'volunteer' | 'sponsor', message: '',
   });
   const [submitting, setSubmitting] = useState(false);
+  const [sponsorThanks, setSponsorThanks] = useState<string | null>(null);
+  const [payLink, setPayLink] = useState(DEFAULT_DONATE_PAY_LINK);
+  useEffect(() => {
+    // Same DzalekaPay checkout as the Donate page (admin sets it under Page Content > Donate).
+    store.getPageSettings<DonateSettings>("donate").then((data) => {
+      if (data && typeof data.payLink === "string") setPayLink(data.payLink);
+    });
+  }, []);
+  const payHref = toHref(payLink);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +76,13 @@ const GetInvolved = () => {
       date: new Date().toISOString(),
     });
     setSubmitting(false);
-    toast({ title: "Registration submitted!", description: "Thank you for your interest. We'll be in touch soon." });
+    if (form.type === 'sponsor' && payHref) {
+      // Sponsors get a thank-you panel with the option to pay their sponsorship right away.
+      setSponsorThanks(form.name.trim());
+      document.getElementById('registration-form')?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      toast({ title: "Registration submitted!", description: "Thank you for your interest. We'll be in touch soon." });
+    }
     setForm({ name: '', email: '', phoneCode: '+265', phone: '', country: '', countryOfOrigin: '', idNumber: '', type: 'volunteer', message: '' });
   };
 
@@ -115,6 +131,17 @@ const GetInvolved = () => {
       <section id="registration-form" className="py-20 bg-muted">
         <div className="container max-w-2xl">
           <h2 className="font-heading text-3xl font-extrabold text-center mb-10">Volunteer / Sponsor Registration</h2>
+          {sponsorThanks && (
+            <div className="bg-card rounded-2xl p-8 shadow-elevated text-center space-y-4 mb-8">
+              <CheckCircle className="h-12 w-12 text-green-500 mx-auto" />
+              <h3 className="font-heading text-2xl font-bold">Thank you, {sponsorThanks}!</h3>
+              <p className="text-muted-foreground">Your sponsorship registration has been received. You can make your sponsorship payment now through our secure DzalekaPay checkout (Mobile money or Card).</p>
+              <Button asChild size="lg" className="w-full bg-primary hover:bg-primary/90 text-white font-bold rounded-lg">
+                <a href={payHref}><CreditCard className="h-5 w-5" /> Pay Sponsorship Now</a>
+              </Button>
+              <button type="button" onClick={() => setSponsorThanks(null)} className="text-sm text-muted-foreground hover:text-primary transition-colors">I will pay later — our team will contact you</button>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="bg-card rounded-2xl p-8 lg:p-10 shadow-elevated space-y-6">
             <div className="flex gap-4">
               {(['volunteer', 'sponsor'] as const).map((t) => (

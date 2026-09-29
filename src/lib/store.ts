@@ -61,6 +61,9 @@ export interface VolunteerSubmission {
   type: 'volunteer' | 'sponsor';
   message: string;
   date: string;
+  // Sponsors only: set by the admin after checking DzalekaPay.
+  paymentStatus?: PaymentStatus;
+  thankYouSent?: boolean;
 }
 
 export interface DonationSubmission {
@@ -374,7 +377,7 @@ export const store = {
       const snap = await getDocs(q);
       return snap.docs.map(d => {
         const r = d.data();
-        return { id: d.id, name: r.name, email: r.email, phone: r.phone, country: r.country || '', type: r.type, message: r.message, date: r.date || ts(r.created_at) };
+        return { id: d.id, name: r.name, email: r.email, phone: r.phone, country: r.country || '', type: r.type, message: r.message, date: r.date || ts(r.created_at), paymentStatus: (r.paymentStatus as PaymentStatus) || 'pending', thankYouSent: !!r.thank_you_sent };
       });
     } catch (e) { console.error("getVolunteers:", e); return []; }
   },
@@ -386,6 +389,12 @@ export const store = {
       });
       return { id: ref.id, ...item };
     } catch (e) { console.error("addVolunteer:", e); return null; }
+  },
+  updateVolunteerStatus: async (id: string, paymentStatus: PaymentStatus, extra: Record<string, unknown> = {}): Promise<boolean> => {
+    try {
+      await updateDoc(doc(db, "volunteer_submissions", id), { paymentStatus, status_updated_at: new Date().toISOString(), ...extra });
+      return true;
+    } catch (e) { console.error("updateVolunteerStatus:", e); return false; }
   },
   deleteVolunteer: async (id: string): Promise<boolean> => {
     try { await deleteDoc(doc(db, "volunteer_submissions", id)); return true; }

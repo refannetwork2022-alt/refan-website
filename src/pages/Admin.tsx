@@ -16,7 +16,7 @@ import { CONTACT_ICONS, getContactIcon } from "@/lib/contactLinks";
 import { postEmail } from "@/lib/sendEmail";
 import { setMemberPaymentStatus } from "@/lib/memberApproval";
 import MemberPaymentCell from "@/components/MemberPaymentCell";
-import { DEFAULT_DONATE_PAY_LINK, DEFAULT_MEMBERSHIP_FEES, type MembershipSettings, type PaymentStatus } from "@/lib/store";
+import { DEFAULT_DONATE_PAY_LINK, DEFAULT_MEMBERSHIP_FEES, type MembershipSettings, type PaymentStatus, type VolunteerSubmission } from "@/lib/store";
 import RichTextEditor from "@/components/RichTextEditor";
 
 type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'sponsors' | 'donations' | 'subscribers' | 'messages' | 'members' | 'footer' | 'hero' | 'site' | 'pages' | 'admins' | 'chat';
@@ -598,6 +598,30 @@ const Admin = () => {
     setMembers(prev => prev.map(x => x.id === m.id ? { ...x, paymentStatus: status, ...(result.expiryDate ? { expiryDate: result.expiryDate } : {}), ...(result.emailed ? { welcomeSent: true } : {}) } : x));
     if (status !== 'approved') toast({ title: "Marked as payment not received" });
     else toast({ title: result.emailed ? "Member approved — welcome email sent" : m.welcomeSent || !m.email ? "Member approved" : "Member approved (welcome email could not be sent)" });
+  };
+
+  // Sponsors: admin confirms the sponsorship payment arrived; the sponsor is thanked by email once.
+  const changeSponsorPaymentStatus = async (v: VolunteerSubmission, status: PaymentStatus) => {
+    const ok = await store.updateVolunteerStatus(v.id, status);
+    if (!ok) { toast({ title: "Failed to update", variant: "destructive" }); return; }
+    setVolunteers(prev => prev.map(x => x.id === v.id ? { ...x, paymentStatus: status } : x));
+    if (status !== 'approved') { toast({ title: "Marked as payment not received" }); return; }
+    let emailed = false;
+    if (!v.thankYouSent && v.email) {
+      try {
+        const result = await postEmail({
+          to: v.email,
+          subject: "Thank you for sponsoring with ReFAN",
+          body: `Dear ${v.name},\n\nWe have received your sponsorship payment. Thank you for partnering with ReFAN to support orphans and widows in Dzaleka Refugee Camp.\n\nOur team will keep you updated on the impact of your support.\n\nWith gratitude,\nReFAN - Resilient Foundation Assistance Network`,
+        });
+        emailed = !!result.success;
+      } catch { emailed = false; }
+      if (emailed) {
+        await store.updateVolunteerStatus(v.id, 'approved', { thank_you_sent: true });
+        setVolunteers(prev => prev.map(x => x.id === v.id ? { ...x, thankYouSent: true } : x));
+      }
+    }
+    toast({ title: emailed ? "Payment received — thank-you email sent" : v.thankYouSent || !v.email ? "Marked as payment received" : "Marked as payment received (thank-you email could not be sent)" });
   };
 
   const COMPANY_EMAIL = "refannetwork2022@gmail.com";
@@ -1362,6 +1386,19 @@ const Admin = () => {
                           <p className="text-sm text-muted-foreground">{v.email} {v.phone && `• ${v.phone}`}</p>
                           {v.country && <p className="text-sm text-muted-foreground">Country: {v.country}</p>}
                           {v.message && <p className="text-sm mt-2 text-muted-foreground whitespace-pre-line">{v.message}</p>}
+                          {v.type === 'sponsor' && (
+                            <div className="flex flex-wrap items-center gap-2 mt-3">
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${v.paymentStatus === 'approved' ? 'bg-green-100 text-green-700' : v.paymentStatus === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                                {v.paymentStatus === 'approved' ? 'Payment received' : v.paymentStatus === 'rejected' ? 'Payment not received' : 'Pending check'}
+                              </span>
+                              {!isViewOnly && v.paymentStatus !== 'approved' && (
+                                <Button variant="outline" size="sm" className="h-7 text-xs text-green-700 border-green-300 hover:bg-green-50" onClick={() => changeSponsorPaymentStatus(v, 'approved')}>Approve</Button>
+                              )}
+                              {!isViewOnly && v.paymentStatus !== 'rejected' && (
+                                <Button variant="outline" size="sm" className="h-7 text-xs text-red-700 border-red-300 hover:bg-red-50" onClick={() => changeSponsorPaymentStatus(v, 'rejected')}>Reject</Button>
+                              )}
+                            </div>
+                          )}
                         </div>
                         {canDeleteTab && <Button variant="destructive" size="sm" className="shrink-0" onClick={async () => {
                           if (!confirm(`Are you sure you want to delete volunteer ${v.name}?`)) return;
