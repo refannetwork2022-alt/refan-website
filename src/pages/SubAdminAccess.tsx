@@ -75,6 +75,11 @@ const SubAdminAccess = () => {
   // Auth states
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<SubAdmin | null>(null);
+  // Lets the sticky Save buttons work (see body.admin-page in index.css).
+  useEffect(() => {
+    document.body.classList.add('admin-page');
+    return () => document.body.classList.remove('admin-page');
+  }, []);
   const [authenticated, setAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [error, setError] = useState('');
@@ -468,7 +473,7 @@ const SubAdminAccess = () => {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 p-6 lg:p-10 overflow-auto">
+      <main className="flex-1 min-w-0 p-6 lg:p-10 overflow-x-clip">
         {/* Mobile top bar */}
         <div className="md:hidden flex items-center justify-between mb-4">
           <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-lg bg-muted"><Menu className="h-5 w-5" /></button>
@@ -594,7 +599,7 @@ const SubAdminAccess = () => {
                     </Button>
                   </div>
                 </div>
-                <div className="flex gap-3">
+                <div className="sticky bottom-4 z-20 flex gap-3">
                   <Button onClick={addMember} size="sm" disabled={memberSaving}><Plus className="h-4 w-4" /> {memberSaving ? 'Saving...' : 'Register Member'}</Button>
                   <Button variant="ghost" size="sm" onClick={() => { setShowMemberForm(false); setMemberForm(emptyMemberForm); }}>Cancel</Button>
                 </div>
@@ -799,7 +804,7 @@ const SubAdminAccess = () => {
                   <input type="date" value={announcementForm.date} onChange={e => setAnnouncementForm({ ...announcementForm, date: e.target.value })} className={inputClass + " w-auto"} />
                   <label className="flex items-center gap-1 text-sm"><input type="checkbox" checked={announcementForm.showDate} onChange={e => setAnnouncementForm({ ...announcementForm, showDate: e.target.checked })} /> Show date</label>
                 </div>
-                <div className="flex gap-3">
+                <div className="sticky bottom-4 z-20 flex gap-3">
                   <Button onClick={saveAnnouncement} size="sm" disabled={saving}><Save className="h-4 w-4" /> {saving ? 'Saving...' : 'Save'}</Button>
                   <Button variant="ghost" size="sm" onClick={() => { setShowAnnouncementForm(false); setEditingAnnouncement(null); }}>Cancel</Button>
                 </div>
@@ -863,7 +868,7 @@ const SubAdminAccess = () => {
                   <input type="date" value={storyForm.date} onChange={e => setStoryForm({ ...storyForm, date: e.target.value })} className={inputClass + " w-auto"} />
                   <label className="flex items-center gap-1 text-sm"><input type="checkbox" checked={storyForm.showDate} onChange={e => setStoryForm({ ...storyForm, showDate: e.target.checked })} /> Show date</label>
                 </div>
-                <div className="flex gap-3">
+                <div className="sticky bottom-4 z-20 flex gap-3">
                   <Button onClick={saveStory} size="sm" disabled={saving}><Save className="h-4 w-4" /> {saving ? 'Saving...' : 'Save'}</Button>
                   <Button variant="ghost" size="sm" onClick={() => { setShowStoryForm(false); setEditingStory(null); }}>Cancel</Button>
                 </div>
@@ -945,7 +950,7 @@ const SubAdminAccess = () => {
                     <Button size="sm" variant="outline" className="text-xs" onClick={() => setContentBlocks([...contentBlocks, { type: 'video', url: '' }])}>+ Video</Button>
                   </div>
                 </div>
-                <div className="flex gap-3">
+                <div className="sticky bottom-4 z-20 flex gap-3">
                   <Button onClick={saveBlog} size="sm" disabled={saving}><Save className="h-4 w-4" /> {saving ? 'Saving...' : 'Save'}</Button>
                   <Button variant="ghost" size="sm" onClick={() => { setShowBlogForm(false); setEditingBlog(null); }}>Cancel</Button>
                 </div>
@@ -1001,7 +1006,7 @@ const SubAdminAccess = () => {
                   <option value="photo">Photo</option>
                   <option value="video">Video</option>
                 </select>
-                <div className="flex gap-3">
+                <div className="sticky bottom-4 z-20 flex gap-3">
                   <Button onClick={saveGalleryItem} size="sm" disabled={saving}><Save className="h-4 w-4" /> {saving ? 'Saving...' : 'Save'}</Button>
                   <Button variant="ghost" size="sm" onClick={() => setShowGalleryForm(false)}>Cancel</Button>
                 </div>

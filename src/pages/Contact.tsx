@@ -90,9 +90,10 @@ const Contact = () => {
           {/* Contact info */}
           <div className="space-y-6">
             {[
-              { icon: Mail, label: "Email Us", value: d.email, sub: d.emailSub },
-              { icon: Phone, label: "Call Us", value: d.phone, sub: d.phoneSub },
-              { icon: MapPin, label: "Our Location", value: d.location, sub: d.locationSub },
+              // Email opens a Gmail message, the number opens a WhatsApp chat.
+              { icon: Mail, label: "Email Us", value: d.email, sub: d.emailSub, href: d.email ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(d.email.trim())}` : "" },
+              { icon: Phone, label: "Call Us", value: d.phone, sub: d.phoneSub, href: d.phone.replace(/\D/g, "") ? `https://wa.me/${d.phone.replace(/\D/g, "")}` : "" },
+              { icon: MapPin, label: "Our Location", value: d.location, sub: d.locationSub, href: "" },
             ].map((item) => (
               <div key={item.label} className="flex items-start gap-4 p-4 rounded-xl border border-border bg-card">
                 <div className="p-3 rounded-full bg-primary/10 shrink-0">
@@ -100,7 +101,11 @@ const Contact = () => {
                 </div>
                 <div>
                   <p className="font-bold text-sm">{item.label}</p>
-                  <p className="text-muted-foreground text-sm">{item.value}</p>
+                  {item.href ? (
+                    <a href={item.href} target="_blank" rel="noopener noreferrer" className="block text-muted-foreground text-sm hover:text-primary transition-colors">{item.value}</a>
+                  ) : (
+                    <p className="text-muted-foreground text-sm">{item.value}</p>
+                  )}
                   <p className="text-muted-foreground text-xs">{item.sub}</p>
                 </div>
               </div>

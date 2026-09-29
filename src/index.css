@@ -19,6 +19,12 @@ html, body {
   max-width: 100vw;
 }
 
+/* Admin pages: "clip" cuts off overflow like "hidden" but doesn't turn body into a scroll box,
+   so the sticky Save buttons stay on screen. Scoped to admin so the public site looks unchanged. */
+body.admin-page {
+  overflow-x: clip;
+}
+
 /* Text copy protection */
 body {
   -webkit-user-select: none;

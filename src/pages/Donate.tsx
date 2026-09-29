@@ -91,7 +91,7 @@ const Donate = () => {
       } catch { /* keep the link exactly as the admin entered it */ }
       // Short thank-you before leaving the site, so the move to DzalekaPay isn't abrupt.
       setRedirectingName(name.trim());
-      setTimeout(() => { window.location.href = target; }, 1800);
+      setTimeout(() => { window.location.href = target; }, 3000);
       return;
     }
     setSubmitting(false);
@@ -110,6 +110,7 @@ const Donate = () => {
             <Heart className="h-10 w-10 text-primary mx-auto" />
             <h2 className="font-heading text-2xl font-bold">Thank you, {redirectingName}!</h2>
             <p className="text-muted-foreground">Taking you to our secure payment page…</p>
+            <p className="text-sm text-muted-foreground">There, choose how you want to pay: <strong className="text-foreground">Mobile money</strong> or <strong className="text-foreground">Card</strong> (Visa / Mastercard).</p>
             <div className="h-6 w-6 mx-auto rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
           </div>
         </div>

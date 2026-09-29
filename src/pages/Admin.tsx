@@ -65,6 +65,11 @@ const Admin = () => {
   const { toast } = useToast();
   const { user, signOut, changePassword, setPasswordForGoogle, isSuperAdmin, subAdminProfile, canEdit, canView, canDelete, shouldHideExisting } = useAuth();
   const chatEndRef = useRef<HTMLDivElement>(null);
+  // Lets the sticky Save buttons work (see body.admin-page in index.css).
+  useEffect(() => {
+    document.body.classList.add('admin-page');
+    return () => document.body.classList.remove('admin-page');
+  }, []);
   const [tab, setTab] = useState<Tab>('dashboard');
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [stories, setStories] = useState<Story[]>([]);
@@ -775,7 +780,7 @@ const Admin = () => {
       </div>
 
       {/* Main content */}
-      <main className="flex-1 p-6 lg:p-10 pb-24 md:pb-10 overflow-auto">
+      <main className="flex-1 min-w-0 p-6 lg:p-10 pb-24 md:pb-10 overflow-x-clip">
         {!isSuperAdmin && !canEdit(tab) && canView(tab) && (
           <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-4 py-2 mb-4 text-sm font-medium">
             View only — you cannot make changes to this section.
@@ -967,7 +972,7 @@ const Admin = () => {
                     </Button>
                   </div>
                 </div>
-                <div className="flex gap-3">
+                <div className="sticky bottom-20 md:bottom-4 z-20 flex gap-3">
                   <Button onClick={editingMember ? saveMemberEdit : addMember} size="sm" disabled={memberSaving}>
                     {editingMember ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />} {memberSaving ? 'Saving...' : editingMember ? 'Save Changes' : 'Register Member'}
                   </Button>
@@ -1137,7 +1142,7 @@ const Admin = () => {
                   </label>
                 </div>
                 <input type="number" placeholder="Donation Count" value={announcementForm.donationCount || ''} onChange={(e) => setAnnouncementForm({ ...announcementForm, donationCount: e.target.value === '' ? 0 : Number(e.target.value) })} className={inputClass + " w-48"} min={0} />
-                <div className="flex gap-2">
+                <div className="sticky bottom-20 md:bottom-4 z-20 flex gap-2">
                   <Button onClick={addAnnouncement} variant="default" size="sm" disabled={saving}>
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingAnnouncement ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                     {editingAnnouncement ? 'Update' : 'Add Announcement'}
@@ -1199,7 +1204,7 @@ const Admin = () => {
                   </label>
                 </div>
                 <input type="number" placeholder="Donation Count" value={storyForm.donationCount || ''} onChange={(e) => setStoryForm({ ...storyForm, donationCount: e.target.value === '' ? 0 : Number(e.target.value) })} className={inputClass + " w-48"} min={0} />
-                <div className="flex gap-2">
+                <div className="sticky bottom-20 md:bottom-4 z-20 flex gap-2">
                   <Button onClick={addStory} variant="default" size="sm" disabled={saving}>
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingStory ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                     {editingStory ? 'Update' : 'Add Story'}
@@ -1280,7 +1285,7 @@ const Admin = () => {
                     <Button type="button" variant="outline" size="sm" onClick={() => setContentBlocks(prev => [...prev, { type: 'video', url: '', caption: '' }])}><Video className="h-4 w-4" /> Add Video</Button>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="sticky bottom-20 md:bottom-4 z-20 flex gap-2">
                   <Button onClick={addBlog} variant="default" size="sm" disabled={saving}>
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingBlog ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                     {editingBlog ? 'Update Post' : 'Add Post'}
@@ -1319,7 +1324,7 @@ const Admin = () => {
                   <option value="photo">Photo</option>
                   <option value="video">Video</option>
                 </select>
-                <Button onClick={addGalleryItem} variant="default" size="sm"><Plus className="h-4 w-4" /> Add Item</Button>
+                <Button className="sticky bottom-20 md:bottom-4 z-20 shadow-lg" onClick={addGalleryItem} variant="default" size="sm"><Plus className="h-4 w-4" /> Add Item</Button>
               </div>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1788,7 +1793,7 @@ const Admin = () => {
                   })}
                   <Button variant="outline" size="sm" onClick={() => setFooterForm({ ...footerForm, extraLinks: [...(footerForm.extraLinks || []), { label: "", url: "", icon: "link" }] })}><Plus className="h-3 w-3" /> Add Link</Button>
                 </div>
-                <Button variant="default" size="sm" disabled={saving} onClick={async () => {
+                <Button className="sticky bottom-20 md:bottom-4 z-20 shadow-lg" variant="default" size="sm" disabled={saving} onClick={async () => {
                   setSaving(true);
                   const ok = await store.saveFooterSettings(footerForm);
                   setSaving(false);
@@ -1829,7 +1834,7 @@ const Admin = () => {
                   <label className="text-xs font-semibold text-muted-foreground">Subtitle</label>
                   <RichTextEditor value={heroForm.subtitle} onChange={(v) => setHeroForm({ ...heroForm, subtitle: v })} placeholder="Subtitle..." rows={3} />
                 </div>
-                <Button variant="default" size="sm" disabled={saving} onClick={async () => {
+                <Button className="sticky bottom-20 md:bottom-4 z-20 shadow-lg" variant="default" size="sm" disabled={saving} onClick={async () => {
                   setSaving(true);
                   const ok = await store.saveHeroSettings(heroForm);
                   setSaving(false);
@@ -1865,7 +1870,7 @@ const Admin = () => {
                   <RichTextEditor value={siteForm.maintenanceMessage} onChange={(v) => setSiteForm({ ...siteForm, maintenanceMessage: v })} placeholder="We are currently updating our website..." rows={3} />
                 </div>
               )}
-              <Button variant="default" size="sm" disabled={saving} onClick={async () => {
+              <Button className="sticky bottom-20 md:bottom-4 z-20 shadow-lg" variant="default" size="sm" disabled={saving} onClick={async () => {
                 setSaving(true);
                 const ok = await store.saveSiteSettings(siteForm);
                 setSaving(false);
@@ -1947,7 +1952,7 @@ const Admin = () => {
                   </div>
                 ))}
                 <Button variant="outline" size="sm" onClick={() => setAboutForm({ ...aboutForm, values: [...aboutForm.values, { title: "", description: "" }] })}><Plus className="h-3 w-3" /> Add Value</Button>
-                <Button variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("about", aboutForm); setSaving(false); toast({ title: ok ? "About page saved!" : "Failed" }); }}>
+                <Button className="sticky bottom-20 md:bottom-4 z-20 shadow-lg" variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("about", aboutForm); setSaving(false); toast({ title: ok ? "About page saved!" : "Failed" }); }}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save About Page
                 </Button>
               </div>
@@ -1972,7 +1977,7 @@ const Admin = () => {
                   </div>
                 ))}
                 <Button variant="outline" size="sm" onClick={() => setProgramsForm({ ...programsForm, programs: [...programsForm.programs, { title: "", description: "", stats: "", image: "" }] })}><Plus className="h-3 w-3" /> Add Program</Button>
-                <Button variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("programs", programsForm); setSaving(false); toast({ title: ok ? "Programs page saved!" : "Failed" }); }}>
+                <Button className="sticky bottom-20 md:bottom-4 z-20 shadow-lg" variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("programs", programsForm); setSaving(false); toast({ title: ok ? "Programs page saved!" : "Failed" }); }}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Programs Page
                 </Button>
               </div>
@@ -2039,7 +2044,7 @@ const Admin = () => {
                 <div><label className="text-xs font-semibold text-muted-foreground">CTA Background Image</label>
                   <ImageUpload label="Upload" onUploaded={(url) => setHomeForm({ ...homeForm, ctaImage: url })} />
                   <input value={homeForm.ctaImage} onChange={(e) => setHomeForm({ ...homeForm, ctaImage: e.target.value })} className={inputClass} /></div>
-                <Button variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("home", homeForm); setSaving(false); toast({ title: ok ? "Home page saved!" : "Failed" }); }}>
+                <Button className="sticky bottom-20 md:bottom-4 z-20 shadow-lg" variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("home", homeForm); setSaving(false); toast({ title: ok ? "Home page saved!" : "Failed" }); }}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Home Page
                 </Button>
               </div>
@@ -2060,7 +2065,7 @@ const Admin = () => {
                   <div><label className="text-xs font-semibold text-muted-foreground">Location</label><input value={contactForm2.location} onChange={(e) => setContactForm2({ ...contactForm2, location: e.target.value })} className={inputClass} /></div>
                   <div><label className="text-xs font-semibold text-muted-foreground">Location Sub-text</label><input value={contactForm2.locationSub} onChange={(e) => setContactForm2({ ...contactForm2, locationSub: e.target.value })} className={inputClass} /></div>
                 </div>
-                <Button variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("contact", contactForm2); setSaving(false); toast({ title: ok ? "Contact page saved!" : "Failed" }); }}>
+                <Button className="sticky bottom-20 md:bottom-4 z-20 shadow-lg" variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("contact", contactForm2); setSaving(false); toast({ title: ok ? "Contact page saved!" : "Failed" }); }}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Contact Page
                 </Button>
               </div>
@@ -2075,7 +2080,7 @@ const Admin = () => {
                   <RichTextEditor value={donateForm2.pageSubtitle} onChange={(v) => setDonateForm2({ ...donateForm2, pageSubtitle: v })} rows={3} /></div>
                 <div><label className="text-xs font-semibold text-muted-foreground">Online Payment Link (the donation form sends people here; leave empty to go back to "donation request" only)</label>
                   <input value={donateForm2.payLink ?? DEFAULT_DONATE_PAY_LINK} onChange={(e) => setDonateForm2({ ...donateForm2, payLink: e.target.value })} className={inputClass} maxLength={500} placeholder="https://..." /></div>
-                <Button variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("donate", donateForm2); setSaving(false); toast({ title: ok ? "Donate page saved!" : "Failed" }); }}>
+                <Button className="sticky bottom-20 md:bottom-4 z-20 shadow-lg" variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("donate", donateForm2); setSaving(false); toast({ title: ok ? "Donate page saved!" : "Failed" }); }}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Donate Page
                 </Button>
               </div>
@@ -2098,7 +2103,7 @@ const Admin = () => {
                     <textarea placeholder="Description" value={w.desc} onChange={(e) => { const arr = [...giForm.ways]; arr[i] = { ...w, desc: e.target.value }; setGiForm({ ...giForm, ways: arr }); }} className={inputClass + " resize-none"} rows={2} />
                   </div>
                 ))}
-                <Button variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("getinvolved", giForm); setSaving(false); toast({ title: ok ? "Get Involved page saved!" : "Failed" }); }}>
+                <Button className="sticky bottom-20 md:bottom-4 z-20 shadow-lg" variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("getinvolved", giForm); setSaving(false); toast({ title: ok ? "Get Involved page saved!" : "Failed" }); }}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Get Involved Page
                 </Button>
               </div>
@@ -2110,7 +2115,7 @@ const Admin = () => {
                   <RichTextEditor value={storiesPageForm.pageTitle} onChange={(v) => setStoriesPageForm({ ...storiesPageForm, pageTitle: v })} rows={2} /></div>
                 <div><label className="text-xs font-semibold text-muted-foreground">Page Subtitle</label>
                   <RichTextEditor value={storiesPageForm.pageSubtitle} onChange={(v) => setStoriesPageForm({ ...storiesPageForm, pageSubtitle: v })} rows={2} /></div>
-                <Button variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("storiespage", storiesPageForm); setSaving(false); toast({ title: ok ? "Stories page saved!" : "Failed" }); }}>
+                <Button className="sticky bottom-20 md:bottom-4 z-20 shadow-lg" variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("storiespage", storiesPageForm); setSaving(false); toast({ title: ok ? "Stories page saved!" : "Failed" }); }}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Stories Page
                 </Button>
               </div>
@@ -2122,7 +2127,7 @@ const Admin = () => {
                   <RichTextEditor value={galleryPageForm.pageTitle} onChange={(v) => setGalleryPageForm({ ...galleryPageForm, pageTitle: v })} rows={2} /></div>
                 <div><label className="text-xs font-semibold text-muted-foreground">Page Subtitle</label>
                   <RichTextEditor value={galleryPageForm.pageSubtitle} onChange={(v) => setGalleryPageForm({ ...galleryPageForm, pageSubtitle: v })} rows={2} /></div>
-                <Button variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("gallerypage", galleryPageForm); setSaving(false); toast({ title: ok ? "Gallery page saved!" : "Failed" }); }}>
+                <Button className="sticky bottom-20 md:bottom-4 z-20 shadow-lg" variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("gallerypage", galleryPageForm); setSaving(false); toast({ title: ok ? "Gallery page saved!" : "Failed" }); }}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Gallery Page
                 </Button>
               </div>
@@ -2134,7 +2139,7 @@ const Admin = () => {
                   <RichTextEditor value={blogPageForm.pageTitle} onChange={(v) => setBlogPageForm({ ...blogPageForm, pageTitle: v })} rows={2} /></div>
                 <div><label className="text-xs font-semibold text-muted-foreground">Page Subtitle</label>
                   <RichTextEditor value={blogPageForm.pageSubtitle} onChange={(v) => setBlogPageForm({ ...blogPageForm, pageSubtitle: v })} rows={2} /></div>
-                <Button variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("blogpage", blogPageForm); setSaving(false); toast({ title: ok ? "Blog page saved!" : "Failed" }); }}>
+                <Button className="sticky bottom-20 md:bottom-4 z-20 shadow-lg" variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("blogpage", blogPageForm); setSaving(false); toast({ title: ok ? "Blog page saved!" : "Failed" }); }}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Blog Page
                 </Button>
               </div>
