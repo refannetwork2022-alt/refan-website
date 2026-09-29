@@ -2,10 +2,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Routes, Route, useLocation } from "react-router-dom";
+import { HashRouter, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { AuthProvider } from "@/hooks/useAuth";
 import AdminRoute from "@/components/AdminRoute";
+import { SHARED_KINDS, getSharedId } from "@/lib/share";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Programs from "./pages/Programs";
@@ -27,6 +28,19 @@ const ScrollToTop = () => {
   return null;
 };
 
+// Shared story/announcement links arrive as /?story=ID (apps like Facebook drop the "#/stories" part),
+// so send them to the Stories page, which opens the item.
+const SharedLinkRedirect = () => {
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  // Only when the site is first opened from a shared link, so normal browsing afterwards isn't redirected.
+  useEffect(() => {
+    if (pathname !== "/stories" && SHARED_KINDS.some((k) => getSharedId(k))) navigate("/stories", { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return null;
+};
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -37,6 +51,7 @@ const App = () => (
       <HashRouter>
         <AuthProvider>
           <ScrollToTop />
+          <SharedLinkRedirect />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/about" element={<About />} />

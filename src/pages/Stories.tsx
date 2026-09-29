@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { store, Story, Announcement } from "@/lib/store";
-import { Calendar, X, ChevronRight, Share2, Facebook, Twitter, Link2, Heart } from "lucide-react";
+import { Calendar, X, ChevronRight, Heart } from "lucide-react";
+import ShareButtons from "@/components/ShareButtons";
+import { buildShareUrl, getSharedId, clearSharedId } from "@/lib/share";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
@@ -37,18 +39,31 @@ const Stories = () => {
   const [stories, setStories] = useState<Story[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [pg, setPg] = useState(STORIES_DEFAULTS);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    store.getStories().then(setStories);
-    store.getAnnouncements().then(setAnnouncements);
+    Promise.all([store.getStories(), store.getAnnouncements()]).then(([st, an]) => {
+      setStories(st);
+      setAnnouncements(an);
+      // Open the story/announcement a shared link points to (?story=ID or ?announcement=ID).
+      const storyId = getSharedId("story");
+      const announcementId = getSharedId("announcement");
+      const story = storyId ? st.find((x) => x.id === storyId) : undefined;
+      const announcement = announcementId ? an.find((x) => x.id === announcementId) : undefined;
+      if (story) setSelectedStory(story);
+      else if (announcement) setSelectedAnnouncement(announcement);
+      setLoaded(true);
+    });
     store.getPageSettings<typeof STORIES_DEFAULTS>("storiespage").then((d) => { if (d) setPg({ ...STORIES_DEFAULTS, ...d }); });
   }, []);
 
   const filteredStories = filter === 'all' || filter === 'story' ? stories : [];
   const filteredAnnouncements = filter === 'all' || filter === 'announcement' ? announcements : [];
 
-  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
-  const copyLink = () => { navigator.clipboard.writeText(shareUrl); toast({ title: "Link copied!" }); };
+  // Once the pop-up is closed, drop the id from the address so it doesn't reopen.
+  useEffect(() => {
+    if (loaded && !selectedStory && !selectedAnnouncement) clearSharedId();
+  }, [loaded, selectedStory, selectedAnnouncement]);
 
   const hasContent = filteredStories.length > 0 || filteredAnnouncements.length > 0;
 
@@ -221,12 +236,7 @@ const Stories = () => {
                   <Link to="/donate"><Heart className="h-4 w-4" /> Donate</Link>
                 </Button>
               </div>
-              <div className="flex items-center gap-1">
-                <Share2 className="h-4 w-4 text-muted-foreground mr-1" />
-                <button onClick={copyLink} className="p-2 rounded-lg hover:bg-muted transition-colors" title="Copy link"><Link2 className="h-4 w-4" /></button>
-                <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg hover:bg-muted transition-colors text-[#1877F2]"><Facebook className="h-4 w-4" /></a>
-                <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(selectedStory.title)}&url=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg hover:bg-muted transition-colors text-[#1DA1F2]"><Twitter className="h-4 w-4" /></a>
-              </div>
+              <ShareButtons title={selectedStory.title} url={buildShareUrl("story", selectedStory.id)} />
             </div>
           </div>
         </div>
@@ -276,12 +286,7 @@ const Stories = () => {
                   <Link to="/donate"><Heart className="h-4 w-4" /> Donate</Link>
                 </Button>
               </div>
-              <div className="flex items-center gap-1">
-                <Share2 className="h-4 w-4 text-muted-foreground mr-1" />
-                <button onClick={copyLink} className="p-2 rounded-lg hover:bg-muted transition-colors" title="Copy link"><Link2 className="h-4 w-4" /></button>
-                <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg hover:bg-muted transition-colors text-[#1877F2]"><Facebook className="h-4 w-4" /></a>
-                <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(selectedAnnouncement.title)}&url=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg hover:bg-muted transition-colors text-[#1DA1F2]"><Twitter className="h-4 w-4" /></a>
-              </div>
+              <ShareButtons title={selectedAnnouncement.title} url={buildShareUrl("announcement", selectedAnnouncement.id)} />
             </div>
           </div>
         </div>
