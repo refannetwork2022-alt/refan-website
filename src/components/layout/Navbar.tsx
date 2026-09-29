@@ -21,7 +21,7 @@ const Navbar = () => {
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-border">
       <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2 shrink-0">
           <img src="/logo.png" alt="ReFAN" className="h-12 w-12 rounded-md" />
           <span className="font-heading text-xl font-extrabold tracking-tight">
             <span className="text-primary">ReFA</span><span className="text-foreground">N</span>
@@ -29,12 +29,12 @@ const Navbar = () => {
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden lg:flex items-center gap-8">
+        <nav className="hidden lg:flex items-center gap-5 xl:gap-8">
           {navLinks.map((link) => (
             <Link
               key={link.path}
               to={link.path}
-              className={`text-sm font-semibold transition-colors hover:text-primary ${
+              className={`text-sm font-semibold whitespace-nowrap transition-colors hover:text-primary ${
                 location.pathname === link.path ? "text-primary" : "text-foreground"
               }`}
             >
@@ -43,7 +43,7 @@ const Navbar = () => {
           ))}
         </nav>
 
-        <div className="hidden lg:flex items-center gap-3">
+        <div className="hidden lg:flex items-center gap-3 shrink-0">
           <Button asChild size="sm" variant="outline" className="btn-hover font-bold rounded-lg px-5">
             <Link to="/register"><UserPlus className="h-4 w-4" /> Register</Link>
           </Button>
