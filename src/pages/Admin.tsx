@@ -12,6 +12,7 @@ import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/integrations/firebase/client";
 import { useAuth } from "@/hooks/useAuth";
 import ImageUpload from "@/components/ImageUpload";
+import { CONTACT_ICONS, getContactIcon } from "@/lib/contactLinks";
 import RichTextEditor from "@/components/RichTextEditor";
 
 type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'sponsors' | 'donations' | 'subscribers' | 'messages' | 'members' | 'footer' | 'hero' | 'site' | 'pages' | 'admins' | 'chat';
@@ -1657,6 +1658,30 @@ const Admin = () => {
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground">LinkedIn URL</label>
                   <input value={footerForm.linkedin} onChange={(e) => setFooterForm({ ...footerForm, linkedin: e.target.value })} className={inputClass} maxLength={300} />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-muted-foreground">Extra Contact Links (shown under LinkedIn)</label>
+                  <p className="text-xs text-muted-foreground">Add Facebook, Instagram, a payment link or any other link. Choose the icon, the name shown, and the link.</p>
+                  {(footerForm.extraLinks || []).map((l, i) => {
+                    const Icon = getContactIcon(l.icon);
+                    const update = (patch: Partial<typeof l>) => { const arr = [...(footerForm.extraLinks || [])]; arr[i] = { ...arr[i], ...patch }; setFooterForm({ ...footerForm, extraLinks: arr }); };
+                    return (
+                      <div key={i} className="border border-border rounded-lg p-3 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="p-2 rounded-full bg-primary/10 shrink-0"><Icon className="h-4 w-4 text-primary" /></div>
+                          <select value={l.icon} onChange={(e) => update({ icon: e.target.value })} className={inputClass}>
+                            {Object.entries(CONTACT_ICONS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                          </select>
+                        </div>
+                        <div className="grid sm:grid-cols-2 gap-2">
+                          <input placeholder="Name shown (e.g. Facebook)" value={l.label} onChange={(e) => update({ label: e.target.value })} className={inputClass} maxLength={60} />
+                          <input placeholder="Link (e.g. https://facebook.com/...)" value={l.url} onChange={(e) => update({ url: e.target.value })} className={inputClass} maxLength={500} />
+                        </div>
+                        <Button variant="destructive" size="sm" onClick={() => setFooterForm({ ...footerForm, extraLinks: (footerForm.extraLinks || []).filter((_, j) => j !== i) })}><Trash2 className="h-3 w-3" /> Remove</Button>
+                      </div>
+                    );
+                  })}
+                  <Button variant="outline" size="sm" onClick={() => setFooterForm({ ...footerForm, extraLinks: [...(footerForm.extraLinks || []), { label: "", url: "", icon: "link" }] })}><Plus className="h-3 w-3" /> Add Link</Button>
                 </div>
                 <Button variant="default" size="sm" disabled={saving} onClick={async () => {
                   setSaving(true);

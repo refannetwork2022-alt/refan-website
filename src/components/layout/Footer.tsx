@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Mail, Phone, MapPin, Linkedin, MessageCircle } from "lucide-react";
 import NewsletterForm from "@/components/NewsletterForm";
 import { store, FooterSettings } from "@/lib/store";
+import { getContactIcon, toHref } from "@/lib/contactLinks";
 
 const DEFAULTS: FooterSettings = {
   email: "refannetwork2022@gmail.com",
@@ -64,11 +65,17 @@ const Footer = () => {
           <div className="col-span-2 md:col-span-1">
             <h4 className="font-heading font-bold text-sm uppercase tracking-wider mb-4 text-primary">Contact</h4>
             <ul className="space-y-3 text-sm text-white/60">
-              <li className="flex items-start gap-2"><Mail className="h-4 w-4 mt-0.5 shrink-0 text-primary" /> <span className="break-all">{info.email}</span></li>
-              <li className="flex items-start gap-2"><Phone className="h-4 w-4 mt-0.5 shrink-0 text-primary" /> {info.phone}</li>
+              <li className="flex items-start gap-2"><Mail className="h-4 w-4 mt-0.5 shrink-0 text-primary" /> <a href={`mailto:${info.email.trim()}`} className="break-all hover:text-primary transition-colors">{info.email}</a></li>
+              <li className="flex items-start gap-2"><Phone className="h-4 w-4 mt-0.5 shrink-0 text-primary" /> <a href={`tel:${info.phone.replace(/[\s()-]/g, "")}`} className="hover:text-primary transition-colors">{info.phone}</a></li>
               <li className="flex items-start gap-2"><MapPin className="h-4 w-4 mt-0.5 shrink-0 text-primary" /> {info.address}</li>
               <li className="flex items-start gap-2"><MessageCircle className="h-4 w-4 mt-0.5 shrink-0 text-primary" /> <a href={`https://api.whatsapp.com/send?phone=${info.whatsapp}`} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">WhatsApp</a></li>
               <li className="flex items-start gap-2"><Linkedin className="h-4 w-4 mt-0.5 shrink-0 text-primary" /> <a href={info.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">LinkedIn</a></li>
+              {(info.extraLinks || []).filter((l) => l.label.trim() && toHref(l.url)).map((l, i) => {
+                const Icon = getContactIcon(l.icon);
+                return (
+                  <li key={i} className="flex items-start gap-2"><Icon className="h-4 w-4 mt-0.5 shrink-0 text-primary" /> <a href={toHref(l.url)} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">{l.label}</a></li>
+                );
+              })}
             </ul>
           </div>
 

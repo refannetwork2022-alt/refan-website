@@ -112,6 +112,7 @@ export interface FooterSettings {
   whatsapp: string;
   linkedin: string;
   description: string;
+  extraLinks?: Array<{ label: string; url: string; icon: string }>;
 }
 
 export interface HeroSettings {
