@@ -102,7 +102,17 @@ export interface Member {
   expiryDate: string;
   branchName: string;
   username: string;
+  // Self-registered members start 'pending' until the admin confirms their payment; older/admin-added members are 'approved'.
+  paymentStatus?: PaymentStatus;
+  welcomeSent?: boolean;
 }
+
+export interface MembershipSettings {
+  registrationFee: number;
+  termFee: number;
+}
+
+export const DEFAULT_MEMBERSHIP_FEES: MembershipSettings = { registrationFee: 1000, termFee: 2000 };
 
 export interface NewsletterSubscriber {
   id: string;
@@ -525,6 +535,7 @@ export const store = {
           photo: r.photo, document: r.document, paymentCurrency: r.paymentCurrency,
           paymentAmount: Number(r.paymentAmount), registrationDate: r.registrationDate,
           expiryDate: r.expiryDate, branchName: r.branchName, username: r.username,
+          paymentStatus: (r.paymentStatus as PaymentStatus) || 'approved', welcomeSent: !!r.welcome_sent,
         };
       });
     } catch (e) { console.error("getMembers:", e); return []; }
@@ -550,9 +561,16 @@ export const store = {
         paymentCurrency: item.paymentCurrency, paymentAmount: item.paymentAmount,
         registrationDate: item.registrationDate, expiryDate: item.expiryDate,
         branchName: item.branchName, username: item.username, created_at: new Date().toISOString(),
+        paymentStatus: item.paymentStatus || 'approved',
       });
-      return { id: ref.id, regNumber, ...item };
+      return { id: ref.id, regNumber, ...item, paymentStatus: item.paymentStatus || 'approved' };
     } catch (e) { console.error("addMember:", e); return null; }
+  },
+  updateMemberStatus: async (id: string, paymentStatus: PaymentStatus, extra: Record<string, unknown> = {}): Promise<boolean> => {
+    try {
+      await updateDoc(doc(db, "members", id), { paymentStatus, status_updated_at: new Date().toISOString(), ...extra });
+      return true;
+    } catch (e) { console.error("updateMemberStatus:", e); return false; }
   },
   updateMember: async (id: string, data: Partial<Omit<Member, 'id' | 'regNumber'>>): Promise<boolean> => {
     try {

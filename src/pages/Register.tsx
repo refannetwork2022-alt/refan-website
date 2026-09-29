@@ -1,9 +1,10 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { UserPlus, Upload, Camera, CheckCircle } from "lucide-react";
+import { UserPlus, Upload, Camera, CheckCircle, CreditCard, Heart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { store } from "@/lib/store";
+import { store, DEFAULT_MEMBERSHIP_FEES, DEFAULT_DONATE_PAY_LINK, type MembershipSettings, type DonateSettings } from "@/lib/store";
+import { toHref } from "@/lib/contactLinks";
 import CountrySearch from "@/components/CountrySearch";
 
 const WEB3FORMS_KEY = "2b77a360-efe4-4f8c-926e-a6a7a8e05895";
@@ -16,20 +17,6 @@ const phoneCodes = [
   { code: "+91", country: "IN" }, { code: "+86", country: "CN" }, { code: "+61", country: "AU" },
   { code: "+234", country: "NG" }, { code: "+251", country: "ET" }, { code: "+252", country: "SO" },
   { code: "+211", country: "SS" }, { code: "+249", country: "SD" },
-];
-
-const currencies = [
-  { code: "MWK", label: "MWK (Malawi Kwacha)" },
-  { code: "USD", label: "USD (US Dollar)" },
-  { code: "GBP", label: "GBP (British Pound)" },
-  { code: "EUR", label: "EUR (Euro)" },
-  { code: "KES", label: "KES (Kenyan Shilling)" },
-  { code: "ZAR", label: "ZAR (South African Rand)" },
-  { code: "BIF", label: "BIF (Burundian Franc)" },
-  { code: "CDF", label: "CDF (Congolese Franc)" },
-  { code: "RWF", label: "RWF (Rwandan Franc)" },
-  { code: "TZS", label: "TZS (Tanzanian Shilling)" },
-  { code: "UGX", label: "UGX (Ugandan Shilling)" },
 ];
 
 const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -73,6 +60,25 @@ const Register = () => {
   };
 
   const [memberData, setMemberData] = useState<any>(null);
+  const [fees, setFees] = useState<MembershipSettings>(DEFAULT_MEMBERSHIP_FEES);
+  const [payLink, setPayLink] = useState(DEFAULT_DONATE_PAY_LINK);
+  const [redirectingName, setRedirectingName] = useState<string | null>(null);
+
+  useEffect(() => {
+    store.getPageSettings<MembershipSettings>("membership").then((data) => {
+      if (data) setFees({ ...DEFAULT_MEMBERSHIP_FEES, ...data });
+    });
+    // Same DzalekaPay checkout the Donate page uses (admin sets it under Page Content > Donate).
+    store.getPageSettings<DonateSettings>("donate").then((data) => {
+      if (data && typeof data.payLink === "string") setPayLink(data.payLink);
+    });
+  }, []);
+
+  const registrationFee = Math.max(0, Number(fees.registrationFee) || 0);
+  const termFee = Math.max(0, Number(fees.termFee) || 0);
+  const totalFee = registrationFee + termFee;
+  const payHref = toHref(payLink);
+  const formatMwk = (n: number) => `MWK ${n.toLocaleString()}`;
 
   const compressImage = (base64: string, maxWidth = 400): Promise<string> => {
     return new Promise((resolve) => {
@@ -148,14 +154,14 @@ const Register = () => {
         familySize: Number(form.familySize) || 0,
         photo: compressedPhoto,
         document: compressedDoc,
-        paymentCurrency: form.paymentCurrency,
-        paymentAmount: Number(form.paymentAmount) || 0,
+        paymentCurrency: 'MWK',
+        paymentAmount: totalFee,
         registrationDate: now.toISOString(),
         expiryDate: expiryStr,
         branchName: form.branchName.trim(),
         username: form.username.trim(),
+        paymentStatus: 'pending',
       });
-      setSubmitting(false);
       if (member) {
         // Send email notification to admin about new registration
         try {
@@ -168,12 +174,26 @@ const Register = () => {
               subject: `New Member Registration - ${fullName}`,
               from_name: fullName,
               email: form.email.trim() || "no-email@refan.org",
-              message: `A new member has registered on the ReFAN website.\n\nName: ${fullName}\nReg Number: ${member.regNumber}\nEmail: ${form.email.trim() || 'Not provided'}\nPhone: ${form.phoneCode} ${form.phone.trim()}\nGender: ${form.gender}\nCountry of Origin: ${form.countryOfOrigin}\nCountry of Residence: ${form.countryOfResidence}\nBranch: ${form.branchName.trim()}\nExpiry Date: ${expiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`,
+              message: `A new member has registered on the ReFAN website.\n\nName: ${fullName}\nReg Number: ${member.regNumber}\nEmail: ${form.email.trim() || 'Not provided'}\nPhone: ${form.phoneCode} ${form.phone.trim()}\nGender: ${form.gender}\nCountry of Origin: ${form.countryOfOrigin}\nCountry of Residence: ${form.countryOfResidence}\nBranch: ${form.branchName.trim()}\nMembership fee: ${formatMwk(totalFee)}\nPayment status: PENDING - confirm the payment in DzalekaPay, then approve the member in Admin > Members.`,
             }),
           });
         } catch {
           // Email notification failure should not block registration success
         }
+        const fullName = `${form.surname} ${form.firstName} ${form.otherName}`.trim();
+        if (totalFee > 0 && payHref) {
+          // Thank them, then send them to DzalekaPay with the membership fee prefilled.
+          let target = payHref;
+          try {
+            const url = new URL(payHref);
+            url.searchParams.set("amount", String(totalFee));
+            target = url.toString();
+          } catch { /* keep the link exactly as the admin entered it */ }
+          setRedirectingName(form.firstName.trim() || fullName);
+          setTimeout(() => { window.location.href = target; }, 3500);
+          return;
+        }
+        setSubmitting(false);
         setRegNumber(member.regNumber);
         setMemberData({
           name: `${form.surname} ${form.firstName} ${form.otherName}`.trim(),
@@ -191,6 +211,7 @@ const Register = () => {
         setSuccess(true);
         toast({ title: "Member registered successfully!" });
       } else {
+        setSubmitting(false);
         toast({ title: "Registration failed. Please try again.", variant: "destructive" });
       }
     } catch (err: any) {
@@ -204,70 +225,13 @@ const Register = () => {
     return (
       <Layout>
         <section className="container py-20 max-w-xl mx-auto">
-          <div className="text-center mb-8">
-            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <h1 className="font-heading text-3xl font-extrabold mb-2">Registration Successful!</h1>
-            <p className="text-muted-foreground">Welcome to the ReFAN family.</p>
-          </div>
-          <div className="bg-card rounded-2xl p-8 shadow-elevated space-y-5">
-            {/* Member photo & reg number */}
-            <div className="flex items-center gap-4 pb-4 border-b border-border">
-              {memberData.photo ? (
-                <img src={memberData.photo} alt="Member" className="w-20 h-20 rounded-full object-cover border-2 border-primary" />
-              ) : (
-                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-                  <UserPlus className="h-8 w-8 text-primary" />
-                </div>
-              )}
-              <div>
-                <p className="font-heading text-xl font-bold">{memberData.name}</p>
-                <p className="text-primary font-bold text-2xl">{regNumber}</p>
-                <p className="text-xs text-muted-foreground">Member Registration Number</p>
-              </div>
-            </div>
-
-            {/* Member details */}
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              {memberData.email && (
-                <>
-                  <p className="text-muted-foreground">Email</p>
-                  <p className="font-medium">{memberData.email}</p>
-                </>
-              )}
-              {memberData.phone.trim() && (
-                <>
-                  <p className="text-muted-foreground">Phone</p>
-                  <p className="font-medium">{memberData.phone}</p>
-                </>
-              )}
-              <p className="text-muted-foreground">Gender</p>
-              <p className="font-medium">{memberData.gender}</p>
-              <p className="text-muted-foreground">Date of Birth</p>
-              <p className="font-medium">{memberData.dob}</p>
-              <p className="text-muted-foreground">Country of Origin</p>
-              <p className="font-medium">{memberData.countryOfOrigin}</p>
-              <p className="text-muted-foreground">Country of Residence</p>
-              <p className="font-medium">{memberData.countryOfResidence}</p>
-              <p className="text-muted-foreground">Branch</p>
-              <p className="font-medium">{memberData.branch}</p>
-            </div>
-
-            {/* Membership info */}
-            <div className="border-t border-border pt-4 space-y-2">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <p className="text-muted-foreground">Registration Date</p>
-                <p className="font-medium">{memberData.registrationDate}</p>
-                <p className="text-muted-foreground">Membership Expires</p>
-                <p className="font-medium text-red-600">{memberData.expiryDate}</p>
-              </div>
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-3">
-                <p className="text-sm font-bold text-amber-800">Membership Term: 3 Months</p>
-                <p className="text-xs text-amber-700">Registration fee: 1,000 MWK | Term fee: 2,000 MWK</p>
-                <p className="text-xs text-amber-700 mt-1">Your membership will expire on <strong>{memberData.expiryDate}</strong>. Contact admin to renew.</p>
-              </div>
-            </div>
-
-            <p className="text-center text-sm text-muted-foreground bg-muted p-3 rounded-lg">Please save or screenshot your registration number <strong className="text-primary">{regNumber}</strong> for your records.</p>
+          <div className="bg-card rounded-2xl p-8 shadow-elevated text-center space-y-4">
+            <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+            <h1 className="font-heading text-3xl font-extrabold">Thank you, {memberData.name}!</h1>
+            <p className="text-muted-foreground">Your registration has been received.</p>
+            <p className="text-muted-foreground">
+              Once our team confirms your membership, you will receive an email at <strong className="text-foreground">{memberData.email}</strong> with your membership number.
+            </p>
           </div>
         </section>
       </Layout>
@@ -276,6 +240,17 @@ const Register = () => {
 
   return (
     <Layout>
+      {redirectingName && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-sm p-4">
+          <div className="bg-card rounded-2xl shadow-elevated p-8 max-w-md w-full text-center space-y-3">
+            <Heart className="h-10 w-10 text-primary mx-auto" />
+            <h2 className="font-heading text-2xl font-bold">Thank you, {redirectingName}!</h2>
+            <p className="text-muted-foreground">Your registration has been received. Taking you to our secure payment page to pay {formatMwk(totalFee)}…</p>
+            <p className="text-xs text-muted-foreground">After your payment is confirmed, you will receive your membership number by email.</p>
+            <div className="h-6 w-6 mx-auto rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+          </div>
+        </div>
+      )}
       <section className="container pt-12 pb-8 text-center">
         <UserPlus className="h-12 w-12 text-primary mx-auto mb-4" />
         <h1 className="font-heading text-3xl lg:text-5xl font-extrabold mb-3">Register as <span className="text-primary">New Member</span></h1>
@@ -418,16 +393,12 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Payment */}
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Make Your Payment In</label>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <select value={form.paymentCurrency} onChange={e => setForm({ ...form, paymentCurrency: e.target.value })} className={selectClass}>
-                  {currencies.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
-                </select>
-                <input type="number" value={form.paymentAmount} onChange={e => setForm({ ...form, paymentAmount: e.target.value })} className={inputClass} placeholder="Amount" min={0} />
-              </div>
-              <p className="text-xs text-primary font-medium mt-2 italic">Registration is only 1,000 Malawi Kwacha</p>
+            {/* Membership fee (set by the admin; paid in MWK on DzalekaPay) */}
+            <div className="rounded-lg border border-border p-4 space-y-1 text-sm">
+              <p className="font-medium mb-1">Membership Fee</p>
+              {registrationFee > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Registration fee</span><span>{formatMwk(registrationFee)}</span></div>}
+              {termFee > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Term fee (3 months)</span><span>{formatMwk(termFee)}</span></div>}
+              <div className="flex justify-between font-bold border-t border-border pt-2 mt-2"><span>Total</span><span className="text-primary">{totalFee > 0 ? formatMwk(totalFee) : 'Free'}</span></div>
             </div>
 
             {/* Username + Branch */}
@@ -445,14 +416,14 @@ const Register = () => {
             {/* Membership term info */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-1">
               <p className="text-sm font-bold text-blue-800">Membership Information</p>
-              <p className="text-xs text-blue-700">Registration fee: <strong>1,000 MWK</strong> | Term fee: <strong>2,000 MWK</strong></p>
-              <p className="text-xs text-blue-700">Membership term: <strong>3 months</strong> from the date of registration</p>
-              <p className="text-xs text-blue-700">Your membership will expire on: <strong>{(() => { const d = new Date(); d.setMonth(d.getMonth() + 3); return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); })()}</strong></p>
+              <p className="text-xs text-blue-700">Registration fee: <strong>{formatMwk(registrationFee)}</strong> | Term fee: <strong>{formatMwk(termFee)}</strong></p>
+              <p className="text-xs text-blue-700">Membership term: <strong>3 months</strong> from the date your membership is confirmed</p>
+              <p className="text-xs text-blue-700">You become a member once our team confirms your payment. You will then receive your membership number by email.</p>
             </div>
 
             <Button type="button" onClick={handleSubmit} size="lg" className="w-full bg-primary hover:bg-primary/90 text-white font-bold rounded-lg" disabled={submitting}>
-              <UserPlus className="h-5 w-5" />
-              {submitting ? 'Registering...' : 'Register'}
+              {totalFee > 0 && payHref ? <CreditCard className="h-5 w-5" /> : <UserPlus className="h-5 w-5" />}
+              {submitting ? 'Registering...' : totalFee > 0 && payHref ? `Register & Pay ${formatMwk(totalFee)}` : 'Register'}
             </Button>
           </div>
         </div>

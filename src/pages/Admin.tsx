@@ -14,7 +14,9 @@ import { useAuth } from "@/hooks/useAuth";
 import ImageUpload from "@/components/ImageUpload";
 import { CONTACT_ICONS, getContactIcon } from "@/lib/contactLinks";
 import { postEmail } from "@/lib/sendEmail";
-import { DEFAULT_DONATE_PAY_LINK } from "@/lib/store";
+import { setMemberPaymentStatus } from "@/lib/memberApproval";
+import MemberPaymentCell from "@/components/MemberPaymentCell";
+import { DEFAULT_DONATE_PAY_LINK, DEFAULT_MEMBERSHIP_FEES, type MembershipSettings, type PaymentStatus } from "@/lib/store";
 import RichTextEditor from "@/components/RichTextEditor";
 
 type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'sponsors' | 'donations' | 'subscribers' | 'messages' | 'members' | 'footer' | 'hero' | 'site' | 'pages' | 'admins' | 'chat';
@@ -73,6 +75,7 @@ const Admin = () => {
   const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
+  const [membershipFees, setMembershipFees] = useState<MembershipSettings>(DEFAULT_MEMBERSHIP_FEES);
   const [subAdmins, setSubAdmins] = useState<SubAdmin[]>([]);
   const [subAdminForm, setSubAdminForm] = useState({ name: '', username: '', email: '', permissions: {} as Record<string, TabPermission>, allowDelete: {} as Record<string, boolean>, hideExistingData: {} as Record<string, boolean> });
   const [editingSubAdmin, setEditingSubAdmin] = useState<string | null>(null);
@@ -172,6 +175,8 @@ const Admin = () => {
     }
     const contactData = await store.getPageSettings<ContactPageSettings>("contact");
     if (contactData) setContactForm2(prev => ({ ...prev, ...contactData }));
+    const feesData = await store.getPageSettings<MembershipSettings>("membership");
+    if (feesData) setMembershipFees({ ...DEFAULT_MEMBERSHIP_FEES, ...feesData });
     const donateData = await store.getPageSettings<DonateSettings>("donate");
     if (donateData) setDonateForm2(prev => ({ ...prev, ...donateData }));
     const giData = await store.getPageSettings<GetInvolvedSettings>("getinvolved");
@@ -587,6 +592,14 @@ const Admin = () => {
     exportCSV(data as unknown as Record<string, unknown>[], "refan-members");
   };
 
+  const changeMemberPaymentStatus = async (m: Member, status: PaymentStatus) => {
+    const result = await setMemberPaymentStatus(m, status);
+    if (!result.ok) { toast({ title: "Failed to update", variant: "destructive" }); return; }
+    setMembers(prev => prev.map(x => x.id === m.id ? { ...x, paymentStatus: status, ...(result.expiryDate ? { expiryDate: result.expiryDate } : {}), ...(result.emailed ? { welcomeSent: true } : {}) } : x));
+    if (status !== 'approved') toast({ title: "Marked as payment not received" });
+    else toast({ title: result.emailed ? "Member approved — welcome email sent" : m.welcomeSent || !m.email ? "Member approved" : "Member approved (welcome email could not be sent)" });
+  };
+
   const COMPANY_EMAIL = "refannetwork2022@gmail.com";
   const [sendingEmail, setSendingEmail] = useState(false);
   const sendEmail = async (emails: string[], subject: string, body: string) => {
@@ -804,7 +817,10 @@ const Admin = () => {
             <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
               <div>
                 <h1 className="font-heading text-2xl font-bold">Members</h1>
-                <p className="text-sm text-muted-foreground">Total: {members.length} member{members.length !== 1 ? 's' : ''}</p>
+                <p className="text-sm text-muted-foreground">
+                  Total: {members.length} member{members.length !== 1 ? 's' : ''}
+                  {members.some(m => m.paymentStatus === 'pending') && <span className="ml-2 font-semibold text-amber-700">· {members.filter(m => m.paymentStatus === 'pending').length} waiting for payment check</span>}
+                </p>
               </div>
               <div className="flex gap-2 flex-wrap">
                 {!isViewOnly && <Button variant="outline" size="sm" onClick={copyRegLink}><Copy className="h-4 w-4" /> Copy Registration Link</Button>}
@@ -937,6 +953,23 @@ const Admin = () => {
             )}
 
             {/* Members Table */}
+            <div className="bg-card rounded-xl p-5 shadow-soft mb-6 space-y-3">
+              <h3 className="font-bold">Membership Fees</h3>
+              <p className="text-xs text-muted-foreground">Amounts new members pay (in MWK) when they register online. Set a fee to 0 to leave it out — e.g. Term fee 0 = registration fee only.</p>
+              <div className="grid sm:grid-cols-3 gap-3 items-end">
+                <div><label className="text-xs font-semibold text-muted-foreground">Registration fee (MWK)</label>
+                  <input type="number" min={0} disabled={isViewOnly} value={membershipFees.registrationFee} onChange={(e) => setMembershipFees({ ...membershipFees, registrationFee: Math.max(0, Number(e.target.value) || 0) })} className={inputClass} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">Term fee, 3 months (MWK)</label>
+                  <input type="number" min={0} disabled={isViewOnly} value={membershipFees.termFee} onChange={(e) => setMembershipFees({ ...membershipFees, termFee: Math.max(0, Number(e.target.value) || 0) })} className={inputClass} /></div>
+                <div className="text-sm">Total to pay: <strong className="text-primary">MWK {(membershipFees.registrationFee + membershipFees.termFee).toLocaleString()}</strong></div>
+              </div>
+              {!isViewOnly && (
+                <Button variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("membership", membershipFees); setSaving(false); toast({ title: ok ? "Membership fees saved!" : "Failed" }); }}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Fees
+                </Button>
+              )}
+            </div>
+
             {hideExisting ? (
               <p className="text-muted-foreground text-center py-8">Existing member data is hidden for your account.</p>
             ) : members.length === 0 ? <p className="text-muted-foreground">No members registered yet.</p> : (
@@ -960,6 +993,7 @@ const Admin = () => {
                       <th className="text-left py-3 px-3 font-medium text-xs">Country</th>
                       <th className="text-left py-3 px-3 font-medium text-xs">Names</th>
                       <th className="text-left py-3 px-3 font-medium text-xs">Reg. Number</th>
+                      <th className="text-left py-3 px-3 font-medium text-xs">Payment</th>
                       <th className="text-left py-3 px-3 font-medium text-xs">Profile</th>
                       <th className="text-left py-3 px-3 font-medium text-xs">Email</th>
                       <th className="text-left py-3 px-3 font-medium text-xs">Contact</th>
@@ -983,6 +1017,7 @@ const Admin = () => {
                         <td className="py-3 px-3 text-xs">{m.countryOfOrigin}</td>
                         <td className="py-3 px-3 font-medium">{m.firstName} {m.surname}</td>
                         <td className="py-3 px-3 text-primary font-bold">{m.regNumber}</td>
+                        <MemberPaymentCell member={m} canChange={!isViewOnly} onChange={(status) => changeMemberPaymentStatus(m, status)} />
                         <td className="py-3 px-3">
                           {m.photo ? (
                             <img src={m.photo} alt={m.firstName} className="w-10 h-10 rounded-full object-cover border border-border cursor-pointer hover:ring-2 hover:ring-primary transition-all" onClick={() => setViewPhoto({ url: m.photo, name: `${m.firstName} ${m.surname}` })} />
@@ -1005,7 +1040,7 @@ const Admin = () => {
                             const expiryStr = newExpiry.toISOString().split('T')[0];
                             const name = `${m.firstName} ${m.surname}`;
                             const subject = `ReFAN Membership Renewal - ${name}`;
-                            const body = `Dear ${name},\n\nYour ReFAN membership has been renewed.\n\nNew Expiry Date: ${newExpiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}\nReg Number: ${m.regNumber}\nTerm Fee: 2,000 MWK\n\nThank you for being a member of ReFAN.\n\nBest regards,\nReFAN Admin`;
+                            const body = `Dear ${name},\n\nYour ReFAN membership has been renewed.\n\nNew Expiry Date: ${newExpiry.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}\nReg Number: ${m.regNumber}\nTerm Fee: ${membershipFees.termFee.toLocaleString()} MWK\n\nThank you for being a member of ReFAN.\n\nBest regards,\nReFAN Admin`;
                             if (m.email) {
                               sendEmail([m.email], subject, body);
                             }

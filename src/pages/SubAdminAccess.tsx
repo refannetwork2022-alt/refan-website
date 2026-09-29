@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { store, type SubAdmin, type TabPermission, type Story, type BlogPost, type GalleryItem, type Announcement, type Member, type NewsletterSubscriber, type ContactMessage, type AdminChatMessage } from "@/lib/store";
+import { store, type SubAdmin, type TabPermission, type Story, type BlogPost, type GalleryItem, type Announcement, type Member, type NewsletterSubscriber, type ContactMessage, type AdminChatMessage, type PaymentStatus } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import {
   LayoutDashboard, FileText, Image, Megaphone, Users, Heart,
@@ -12,6 +12,8 @@ import {
 import ImageUpload from "@/components/ImageUpload";
 import RichTextEditor from "@/components/RichTextEditor";
 import { postEmail } from "@/lib/sendEmail";
+import { setMemberPaymentStatus } from "@/lib/memberApproval";
+import MemberPaymentCell from "@/components/MemberPaymentCell";
 
 type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'sponsors' | 'donations' | 'subscribers' | 'messages' | 'members' | 'footer' | 'hero' | 'site' | 'pages' | 'chat';
 
@@ -328,6 +330,15 @@ const SubAdminAccess = () => {
   };
   const hideExisting = (t: string) => profile?.hideExistingData[t] === true;
 
+  // Only sub-admins the admin allowed to edit Members may approve or reject payments.
+  const changeMemberPaymentStatus = async (m: Member, status: PaymentStatus) => {
+    const result = await setMemberPaymentStatus(m, status, { token: token || '', password: profile?.password || '' });
+    if (!result.ok) { toast({ title: "Failed to update", variant: "destructive" }); return; }
+    setMembers(prev => prev.map(x => x.id === m.id ? { ...x, paymentStatus: status, ...(result.expiryDate ? { expiryDate: result.expiryDate } : {}), ...(result.emailed ? { welcomeSent: true } : {}) } : x));
+    if (status !== 'approved') toast({ title: "Marked as payment not received" });
+    else toast({ title: result.emailed ? "Member approved — welcome email sent" : m.welcomeSent || !m.email ? "Member approved" : "Member approved (welcome email could not be sent)" });
+  };
+
   const [sendingEmail, setSendingEmail] = useState(false);
   const sendEmail = async (emails: string[], subject: string, body: string) => {
     if (sendingEmail) return;
@@ -608,6 +619,7 @@ const SubAdminAccess = () => {
                       <th className="text-left py-3 px-3 font-medium text-xs">Country</th>
                       <th className="text-left py-3 px-3 font-medium text-xs">Names</th>
                       <th className="text-left py-3 px-3 font-medium text-xs">Reg. Number</th>
+                      <th className="text-left py-3 px-3 font-medium text-xs">Payment</th>
                       <th className="text-left py-3 px-3 font-medium text-xs">Profile</th>
                       <th className="text-left py-3 px-3 font-medium text-xs">Email</th>
                       <th className="text-left py-3 px-3 font-medium text-xs">Contact</th>
@@ -630,6 +642,7 @@ const SubAdminAccess = () => {
                         <td className="py-3 px-3 text-xs">{m.countryOfOrigin}</td>
                         <td className="py-3 px-3 font-medium">{m.firstName} {m.surname}</td>
                         <td className="py-3 px-3 text-primary font-bold">{m.regNumber}</td>
+                        <MemberPaymentCell member={m} canChange={canEditTab('members')} onChange={(status) => changeMemberPaymentStatus(m, status)} />
                         <td className="py-3 px-3">
                           {m.photo ? (
                             <img src={m.photo} alt={m.firstName} className="w-10 h-10 rounded-full object-cover border border-border cursor-pointer hover:ring-2 hover:ring-primary transition-all" onClick={() => setViewPhoto({ url: m.photo, name: `${m.firstName} ${m.surname}` })} />
