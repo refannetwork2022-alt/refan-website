@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   LayoutDashboard, FileText, Image, Megaphone, Users, Heart,
   Plus, Trash2, ArrowLeft, LogOut, Download, Mail, Send, MessageSquare, KeyRound,
-  UserPlus, Copy, Camera, Upload, Shield, ChevronUp, ChevronDown, Type, ImagePlus, Video, Pencil, Save, Loader2, Settings, Globe, Power, Link2, User
+  UserPlus, Copy, Camera, Upload, Shield, ChevronUp, ChevronDown, Type, ImagePlus, Video, Pencil, Save, Loader2, Settings, Globe, Power, Link2, User, MessageSquareQuote
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { doc, updateDoc } from "firebase/firestore";
@@ -124,7 +124,7 @@ const Admin = () => {
     pageTitle: "", pageSubtitle: "",
     ways: [{ title: "Donate", desc: "", cta: "Donate Now" }, { title: "Volunteer", desc: "", cta: "Sign Up" }, { title: "Sponsor", desc: "", cta: "Become a Sponsor" }, { title: "Become a Member", desc: "", cta: "Register Now" }],
   });
-  const [pageTab, setPageTab] = useState<'about' | 'programs' | 'home' | 'contact' | 'donate' | 'getinvolved' | 'stories' | 'gallery' | 'blog'>('about');
+  const [pageTab, setPageTab] = useState<'about' | 'programs' | 'home' | 'contact' | 'donate' | 'getinvolved' | 'stories' | 'gallery' | 'blog'>('home');
   const [storiesPageForm, setStoriesPageForm] = useState({ pageTitle: '<span class="text-secondary">Stories</span> & <span class="text-primary">Announcements</span>', pageSubtitle: 'Real impact stories from the communities we serve in Dzaleka.' });
   const [galleryPageForm, setGalleryPageForm] = useState({ pageTitle: '<span class="text-primary">Life</span> in <span class="text-secondary">Displaced Community</span>', pageSubtitle: 'Capturing moments of growth, joy, and community action.' });
   const [blogPageForm, setBlogPageForm] = useState({ pageTitle: '<span class="text-primary">Blog</span> & <span class="text-secondary">News</span>', pageSubtitle: 'Insights, updates, and perspectives on community development.' });
@@ -624,7 +624,24 @@ const Admin = () => {
     });
   };
 
-  const sidebarItems: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
+  const [testimonialsShortcut, setTestimonialsShortcut] = useState(false);
+
+  // Sidebar shortcut: Testimonials live inside Page Content > Home Page, so it reuses the 'pages' tab and its permissions.
+  const openTab = (id: Tab | 'testimonials') => {
+    if (id === 'testimonials') {
+      setTab('pages');
+      setPageTab('home');
+      setTestimonialsShortcut(true);
+      setTimeout(() => document.getElementById('admin-testimonials')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    } else {
+      setTab(id);
+      setTestimonialsShortcut(false);
+    }
+  };
+  const isActiveItem = (id: Tab | 'testimonials') =>
+    id === 'testimonials' ? tab === 'pages' && testimonialsShortcut : tab === id && !(id === 'pages' && testimonialsShortcut);
+
+  const sidebarItems: { id: Tab | 'testimonials'; label: string; icon: typeof LayoutDashboard }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'members', label: 'Members', icon: UserPlus },
     { id: 'announcements', label: 'Announcements', icon: Megaphone },
@@ -639,6 +656,7 @@ const Admin = () => {
     { id: 'footer', label: 'Footer Settings', icon: Settings },
     { id: 'hero', label: 'Hero Settings', icon: ImagePlus },
     { id: 'pages', label: 'Page Content', icon: Globe },
+    { id: 'testimonials', label: 'Testimonials', icon: MessageSquareQuote },
     { id: 'site', label: 'Site Settings', icon: Power },
     { id: 'chat' as Tab, label: 'Admin Chat', icon: Send },
     ...(isSuperAdmin ? [{ id: 'admins' as Tab, label: 'Manage Admins', icon: Shield }] : []),
@@ -648,7 +666,7 @@ const Admin = () => {
     if (isSuperAdmin) return true;
     if (item.id === 'admins') return false;
     if (item.id === 'chat') return true;
-    return canView(item.id);
+    return canView(item.id === 'testimonials' ? 'pages' : item.id);
   });
 
   const inputClass = "w-full px-4 py-2.5 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring outline-none text-sm";
@@ -691,9 +709,9 @@ const Admin = () => {
           {visibleSidebar.map((item) => (
             <button
               key={item.id}
-              onClick={() => setTab(item.id)}
+              onClick={() => openTab(item.id)}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                tab === item.id ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-secondary-foreground/70 hover:bg-sidebar-accent/50'
+                isActiveItem(item.id) ? 'bg-sidebar-accent text-sidebar-accent-foreground' : 'text-secondary-foreground/70 hover:bg-sidebar-accent/50'
               }`}
             >
               <item.icon className="h-4 w-4" />
@@ -709,9 +727,9 @@ const Admin = () => {
           {visibleSidebar.map((item) => (
             <button
               key={item.id}
-              onClick={() => setTab(item.id)}
+              onClick={() => openTab(item.id)}
               className={`flex flex-col items-center gap-0.5 py-2 px-2 rounded-md text-[10px] min-w-[52px] shrink-0 ${
-                tab === item.id ? 'text-primary bg-primary/10' : 'text-secondary-foreground/60'
+                isActiveItem(item.id) ? 'text-primary bg-primary/10' : 'text-secondary-foreground/60'
               }`}
             >
               <item.icon className="h-3.5 w-3.5" />
@@ -1735,7 +1753,7 @@ const Admin = () => {
             <h1 className="font-heading text-2xl font-bold mb-4">Edit Page Content</h1>
             <div className="flex flex-wrap gap-2 mb-6">
               {([['home', 'Home Page'], ['programs', 'Programs'], ['stories', 'Stories'], ['gallery', 'Gallery'], ['blog', 'Blog'], ['getinvolved', 'Get Involved'], ['about', 'About'], ['contact', 'Contact'], ['donate', 'Donate']] as const).map(([k, l]) => (
-                <button key={k} onClick={() => setPageTab(k)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${pageTab === k ? 'bg-primary text-white' : 'bg-card border border-border hover:bg-accent'}`}>{l}</button>
+                <button key={k} onClick={() => { setPageTab(k); setTestimonialsShortcut(false); }} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${pageTab === k ? 'bg-primary text-white' : 'bg-card border border-border hover:bg-accent'}`}>{l}</button>
               ))}
             </div>
 
@@ -1849,7 +1867,7 @@ const Admin = () => {
                     <ImageUpload label="Image" onUploaded={(url) => { const arr = [...homeForm.programs]; arr[i] = { ...p, image: url }; setHomeForm({ ...homeForm, programs: arr }); }} />
                   </div>
                 ))}
-                <h4 className="font-bold text-sm">Testimonials</h4>
+                <h4 id="admin-testimonials" className="font-bold text-sm scroll-mt-4">Testimonials</h4>
                 <div className="space-y-1"><label className="text-xs font-medium">Section Title</label>
                   <RichTextEditor value={homeForm.testimonialsHeading ?? 'Voices from <span class="text-primary">Displaced Community</span>'} onChange={(v) => setHomeForm({ ...homeForm, testimonialsHeading: v })} rows={2} /></div>
                 <div className="space-y-1"><label className="text-xs font-medium">Section Subtitle</label>
