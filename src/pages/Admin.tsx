@@ -65,11 +65,6 @@ const Admin = () => {
   const { toast } = useToast();
   const { user, signOut, changePassword, setPasswordForGoogle, isSuperAdmin, subAdminProfile, canEdit, canView, canDelete, shouldHideExisting } = useAuth();
   const chatEndRef = useRef<HTMLDivElement>(null);
-  // Lets the sticky Save buttons work (see body.admin-page in index.css).
-  useEffect(() => {
-    document.body.classList.add('admin-page');
-    return () => document.body.classList.remove('admin-page');
-  }, []);
   const [tab, setTab] = useState<Tab>('dashboard');
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [stories, setStories] = useState<Story[]>([]);

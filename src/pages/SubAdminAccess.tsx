@@ -75,11 +75,6 @@ const SubAdminAccess = () => {
   // Auth states
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<SubAdmin | null>(null);
-  // Lets the sticky Save buttons work (see body.admin-page in index.css).
-  useEffect(() => {
-    document.body.classList.add('admin-page');
-    return () => document.body.classList.remove('admin-page');
-  }, []);
   const [authenticated, setAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [error, setError] = useState('');
