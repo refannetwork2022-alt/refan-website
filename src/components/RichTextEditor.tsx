@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Bold, Italic, Underline, Heading2, Type, Palette, Highlighter, AlignLeft, AlignCenter, AlignRight, List, ListOrdered } from "lucide-react";
+import { Bold, Italic, Underline, Heading2, Type, Palette, Highlighter, AlignLeft, AlignCenter, AlignRight, List, ListOrdered, Link2, Unlink } from "lucide-react";
 
 interface RichTextEditorProps {
   value: string;
@@ -35,6 +35,50 @@ const RichTextEditor = ({ value, onChange, placeholder = "Write here...", rows =
     }
     isUserInput.current = false;
   }, [value]);
+
+  const escapeHtml = (text: string) =>
+    text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+  // Links open in a new tab and carry inline styling so they look like links wherever the HTML is shown.
+  const insertLink = () => {
+    const selection = window.getSelection();
+    const range = selection && selection.rangeCount > 0 && editorRef.current?.contains(selection.anchorNode)
+      ? selection.getRangeAt(0).cloneRange()
+      : null;
+    const input = window.prompt("Paste the link (e.g. https://example.com, an email or a phone number):");
+    if (!input || !input.trim()) return;
+    let url = input.trim();
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(url)) url = "mailto:" + url;
+    else if (/^\+?[\d\s()-]{7,}$/.test(url)) url = "tel:" + url.replace(/[\s()-]/g, "");
+    else if (!/^(https?:|mailto:|tel:)/i.test(url)) url = "https://" + url;
+    if (/^javascript:/i.test(url)) return;
+
+    editorRef.current?.focus();
+    if (range && selection) {
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+    const label = range && !range.collapsed ? range.toString() : input.trim();
+    const html = `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" style="color:#e67e22;text-decoration:underline;">${escapeHtml(label)}</a>`;
+    document.execCommand("insertHTML", false, html);
+    if (editorRef.current) onChange(editorRef.current.innerHTML);
+  };
+
+  // Replace selected links with their plain text so no link styling is left behind.
+  const removeLink = () => {
+    const editor = editorRef.current;
+    const selection = window.getSelection();
+    if (!editor || !selection || selection.rangeCount === 0) return;
+    const range = selection.getRangeAt(0);
+    const start = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+    const anchors = new Set<HTMLAnchorElement>();
+    const closest = start?.closest("a");
+    if (closest && editor.contains(closest)) anchors.add(closest);
+    editor.querySelectorAll("a").forEach((a) => { if (range.intersectsNode(a)) anchors.add(a); });
+    anchors.forEach((a) => a.replaceWith(document.createTextNode(a.textContent || "")));
+    editor.normalize();
+    onChange(editor.innerHTML);
+  };
 
   const exec = (command: string, val?: string) => {
     editorRef.current?.focus();
@@ -160,6 +204,13 @@ const RichTextEditor = ({ value, onChange, placeholder = "Write here...", rows =
         </Button>
         <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => exec("insertOrderedList")} title="Numbered list">
           <ListOrdered className="h-4 w-4" />
+        </Button>
+        <div className="w-px h-6 bg-border mx-1" />
+        <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onMouseDown={(e) => e.preventDefault()} onClick={insertLink} title="Add link (select text first)">
+          <Link2 className="h-4 w-4" />
+        </Button>
+        <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onMouseDown={(e) => e.preventDefault()} onClick={removeLink} title="Remove link">
+          <Unlink className="h-4 w-4" />
         </Button>
       </div>
 
