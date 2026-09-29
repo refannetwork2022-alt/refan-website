@@ -1475,7 +1475,7 @@ const Admin = () => {
                           <span className="text-xs text-muted-foreground">{new Date(d.date).toLocaleDateString()}</span>
                         </div>
                         <p className="text-sm text-muted-foreground">{d.email}</p>
-                        <p className="text-sm mt-1"><span className="font-medium">{d.currency || 'USD'}</span> <span className="font-bold text-primary">{d.amount}</span></p>
+                        <p className="text-sm mt-1"><span className="font-medium">{d.currency || 'USD'}</span> <span className="font-bold text-primary">{d.amount}</span>{d.mwkAmount && d.currency !== 'MWK' && <span className="text-muted-foreground"> (paid as ≈ MWK {Number(d.mwkAmount).toLocaleString()} on DzalekaPay)</span>}</p>
                         {d.message && <p className="text-sm mt-2 text-muted-foreground whitespace-pre-line">{d.message}</p>}
                         <div className="flex flex-wrap items-center gap-2 mt-3">
                           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${d.status === 'approved' ? 'bg-green-100 text-green-700' : d.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>

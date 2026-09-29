@@ -5,6 +5,7 @@ import { Heart, Shield, Send, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { store, DonateSettings, DEFAULT_DONATE_PAY_LINK } from "@/lib/store";
 import { toHref } from "@/lib/contactLinks";
+import { getMwkRates, toMwk } from "@/lib/exchangeRates";
 
 const DONATE_DEFAULTS: DonateSettings = {
   pageTitle: 'Make a <span class="text-primary">Donation</span>',
@@ -43,6 +44,14 @@ const Donate = () => {
   }, []);
   const [currency, setCurrency] = useState("MWK");
   const [amount, setAmount] = useState("");
+  const [rates, setRates] = useState<Record<string, number> | null>(null);
+  const [ratesFailed, setRatesFailed] = useState(false);
+  // Load exchange rates only once someone picks a currency other than MWK.
+  useEffect(() => {
+    if (currency === "MWK" || rates) return;
+    getMwkRates().then((r) => { setRates(r); setRatesFailed(!r); });
+  }, [currency, rates]);
+  const mwkAmount = toMwk(Number(amount), currency, rates);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -69,13 +78,15 @@ const Donate = () => {
       currency,
       message: message.trim(),
       date: new Date().toISOString(),
+      ...(currency !== "MWK" && mwkAmount ? { mwkAmount } : {}),
     });
     if (payHref) {
       // DzalekaPay only takes MWK, so the amount is prefilled only for MWK donations.
       let target = payHref;
       try {
         const url = new URL(payHref);
-        if (currency === "MWK") url.searchParams.set("amount", String(Number(amount)));
+        // DzalekaPay charges in MWK only, so foreign amounts are converted first.
+        if (mwkAmount) url.searchParams.set("amount", String(mwkAmount));
         target = url.toString();
       } catch { /* keep the link exactly as the admin entered it */ }
       // Short thank-you before leaving the site, so the move to DzalekaPay isn't abrupt.
@@ -135,6 +146,15 @@ const Donate = () => {
                   required
                 />
               </div>
+              {payHref && currency !== "MWK" && Number(amount) > 0 && (
+                <p className="text-sm text-muted-foreground mt-3">
+                  {mwkAmount
+                    ? <>{currency} {Number(amount).toLocaleString()} ≈ <strong className="text-foreground">MWK {mwkAmount.toLocaleString()}</strong>. You will pay in Malawi Kwacha by card or mobile money; your bank converts it to your currency.</>
+                    : ratesFailed
+                      ? "We could not load today's exchange rate. Please enter the amount in MWK on the payment page."
+                      : "Converting to Malawi Kwacha…"}
+                </p>
+              )}
             </div>
 
             <div className="space-y-4">
@@ -156,7 +176,7 @@ const Donate = () => {
               {payHref ? <CreditCard className="h-5 w-5 shrink-0" /> : <Send className="h-5 w-5 shrink-0" />}
               <span className="truncate">
                 {payHref
-                  ? (submitting ? 'Opening payment...' : `Continue to Payment (${currency} ${amount || '0'})`)
+                  ? (submitting ? 'Opening payment...' : `Continue to Payment (${currency} ${amount || '0'}${currency !== 'MWK' && mwkAmount ? ` ≈ MWK ${mwkAmount.toLocaleString()}` : ''})`)
                   : (submitting ? 'Sending...' : `Send Donation Request (${currency} ${amount || '0'})`)}
               </span>
             </Button>

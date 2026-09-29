@@ -77,6 +77,8 @@ export interface DonationSubmission {
   // Set by the admin after checking DzalekaPay: did the money arrive?
   status?: PaymentStatus;
   thankYouSent?: boolean;
+  // Amount charged on DzalekaPay (MWK) when the donor chose another currency.
+  mwkAmount?: number;
 }
 
 export type PaymentStatus = 'pending' | 'approved' | 'rejected';
@@ -408,7 +410,7 @@ export const store = {
       const snap = await getDocs(q);
       return snap.docs.map(d => {
         const r = d.data();
-        return { id: d.id, name: r.name, email: r.email, amount: Number(r.amount), currency: r.currency || '', message: r.message, date: r.date || ts(r.created_at), status: (r.status as PaymentStatus) || 'pending', thankYouSent: !!r.thank_you_sent };
+        return { id: d.id, name: r.name, email: r.email, amount: Number(r.amount), currency: r.currency || '', message: r.message, date: r.date || ts(r.created_at), status: (r.status as PaymentStatus) || 'pending', thankYouSent: !!r.thank_you_sent, mwkAmount: r.mwk_amount ? Number(r.mwk_amount) : undefined };
       });
     } catch (e) { console.error("getDonations:", e); return []; }
   },
@@ -417,6 +419,7 @@ export const store = {
       const ref = await addDoc(collection(db, "donation_submissions"), {
         name: item.name, email: item.email, amount: item.amount, currency: item.currency,
         message: item.message, date: item.date, created_at: new Date().toISOString(), status: 'pending',
+        ...(item.mwkAmount ? { mwk_amount: item.mwkAmount } : {}),
       });
       return { id: ref.id, ...item, status: 'pending' };
     } catch (e) { console.error("addDonation:", e); return null; }
