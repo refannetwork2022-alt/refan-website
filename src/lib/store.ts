@@ -71,7 +71,11 @@ export interface DonationSubmission {
   currency: string;
   message: string;
   date: string;
+  // Set by the admin after checking DzalekaPay: did the money arrive?
+  status?: PaymentStatus;
 }
+
+export type PaymentStatus = 'pending' | 'approved' | 'rejected';
 
 export interface Member {
   id: string;
@@ -384,7 +388,7 @@ export const store = {
       const snap = await getDocs(q);
       return snap.docs.map(d => {
         const r = d.data();
-        return { id: d.id, name: r.name, email: r.email, amount: Number(r.amount), currency: r.currency || '', message: r.message, date: r.date || ts(r.created_at) };
+        return { id: d.id, name: r.name, email: r.email, amount: Number(r.amount), currency: r.currency || '', message: r.message, date: r.date || ts(r.created_at), status: (r.status as PaymentStatus) || 'pending' };
       });
     } catch (e) { console.error("getDonations:", e); return []; }
   },
@@ -392,10 +396,16 @@ export const store = {
     try {
       const ref = await addDoc(collection(db, "donation_submissions"), {
         name: item.name, email: item.email, amount: item.amount, currency: item.currency,
-        message: item.message, date: item.date, created_at: new Date().toISOString(),
+        message: item.message, date: item.date, created_at: new Date().toISOString(), status: 'pending',
       });
-      return { id: ref.id, ...item };
+      return { id: ref.id, ...item, status: 'pending' };
     } catch (e) { console.error("addDonation:", e); return null; }
+  },
+  updateDonationStatus: async (id: string, status: PaymentStatus): Promise<boolean> => {
+    try {
+      await updateDoc(doc(db, "donation_submissions", id), { status, status_updated_at: new Date().toISOString() });
+      return true;
+    } catch (e) { console.error("updateDonationStatus:", e); return false; }
   },
   deleteDonation: async (id: string): Promise<boolean> => {
     try { await deleteDoc(doc(db, "donation_submissions", id)); return true; }

@@ -1409,6 +1409,25 @@ const Admin = () => {
                         <p className="text-sm text-muted-foreground">{d.email}</p>
                         <p className="text-sm mt-1"><span className="font-medium">{d.currency || 'USD'}</span> <span className="font-bold text-primary">{d.amount}</span></p>
                         {d.message && <p className="text-sm mt-2 text-muted-foreground whitespace-pre-line">{d.message}</p>}
+                        <div className="flex flex-wrap items-center gap-2 mt-3">
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${d.status === 'approved' ? 'bg-green-100 text-green-700' : d.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                            {d.status === 'approved' ? 'Payment received' : d.status === 'rejected' ? 'Payment not received' : 'Pending check'}
+                          </span>
+                          {!isViewOnly && d.status !== 'approved' && (
+                            <Button variant="outline" size="sm" className="h-7 text-xs text-green-700 border-green-300 hover:bg-green-50" onClick={async () => {
+                              const ok = await store.updateDonationStatus(d.id, 'approved');
+                              if (ok) setDonations(donations.map(x => x.id === d.id ? { ...x, status: 'approved' } : x));
+                              toast({ title: ok ? "Marked as payment received" : "Failed to update", variant: ok ? undefined : "destructive" });
+                            }}>Approve</Button>
+                          )}
+                          {!isViewOnly && d.status !== 'rejected' && (
+                            <Button variant="outline" size="sm" className="h-7 text-xs text-red-700 border-red-300 hover:bg-red-50" onClick={async () => {
+                              const ok = await store.updateDonationStatus(d.id, 'rejected');
+                              if (ok) setDonations(donations.map(x => x.id === d.id ? { ...x, status: 'rejected' } : x));
+                              toast({ title: ok ? "Marked as payment not received" : "Failed to update", variant: ok ? undefined : "destructive" });
+                            }}>Reject</Button>
+                          )}
+                        </div>
                       </div>
                       {canDeleteTab && <Button variant="destructive" size="sm" className="shrink-0" onClick={async () => {
                         if (!confirm(`Are you sure you want to delete donation from ${d.name}?`)) return;
