@@ -1,7 +1,13 @@
-
+// Photo uploads for the admin panels: Cloudinary first, ImgBB as the backup.
+// Existing ImgBB photos keep their links; only new uploads go to Cloudinary.
 const IMGBB_API_KEY = import.meta.env.VITE_IMGBB_API_KEY || "";
 
-const MAX_SIZE = 10 * 1024 * 1024; // 10MB ImgBB limit
+// Not secrets: the cloud name appears in every Cloudinary photo link, and the "unsigned" preset only allows
+// uploading into the refan folder (set up in Cloudinary > Settings > Upload > Upload presets).
+const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "ykbnggde";
+const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "refan_website";
+
+const MAX_SIZE = 10 * 1024 * 1024; // 10MB (ImgBB and Cloudinary free plan limit)
 const MAX_WIDTH = 1600;
 const UPLOAD_TIMEOUT_MS = 90_000; // slow mobile connections
 
@@ -95,10 +101,28 @@ async function postToImgbb(image: Blob | string, fileName: string): Promise<stri
   return data.data.display_url;
 }
 
-export async function uploadImage(file: File): Promise<string> {
-  if (!IMGBB_API_KEY) {
-    throw new Error("Image upload not configured. Missing API key.");
+async function postToCloudinary(image: Blob, fileName: string): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", image, fileName);
+  formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS);
+  try {
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: "POST", body: formData, signal: controller.signal });
+    const data = await res.json().catch(() => null);
+    const url: string | undefined = data?.secure_url;
+    if (!res.ok || !url) {
+      console.error("Cloudinary upload failed:", res.status, data);
+      throw new Error("Cloudinary upload failed");
+    }
+    // f_auto,q_auto: Cloudinary sends each browser the lightest good-looking version (faster on phones).
+    return url.replace("/image/upload/", "/image/upload/f_auto,q_auto/");
+  } finally {
+    clearTimeout(timer);
   }
+}
+
+export async function uploadImage(file: File): Promise<string> {
 
   let uploadFile: Blob = file;
   let fileName = file.name || "photo.jpg";
@@ -119,7 +143,21 @@ export async function uploadImage(file: File): Promise<string> {
     throw new Error("Image is too large. Please use a smaller image (max 10MB).");
   }
 
-  // Retries for unstable mobile connections and temporary ImgBB errors; the last try sends the photo as base64.
+  // 1) Cloudinary (retried once for flaky connections).
+  if (CLOUDINARY_CLOUD_NAME && CLOUDINARY_UPLOAD_PRESET) {
+    for (let i = 0; i < 2; i++) {
+      try {
+        return await postToCloudinary(uploadFile, fileName);
+      } catch {
+        if (i === 0) await new Promise((r) => setTimeout(r, 1500));
+      }
+    }
+  }
+
+  // 2) Backup: ImgBB, with retries for temporary errors; the last try sends the photo as base64.
+  if (!IMGBB_API_KEY) {
+    throw new Error("Image upload failed. Please check your internet connection and try again.");
+  }
   const attempts: Array<() => Promise<string>> = [
     () => postToImgbb(uploadFile, fileName),
     () => postToImgbb(uploadFile, fileName),
