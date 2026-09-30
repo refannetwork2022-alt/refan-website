@@ -14,6 +14,7 @@ import RichTextEditor from "@/components/RichTextEditor";
 import { postEmail } from "@/lib/sendEmail";
 import { setMemberPaymentStatus } from "@/lib/memberApproval";
 import MemberPaymentCell from "@/components/MemberPaymentCell";
+import RegistrationLinkShare from "@/components/RegistrationLinkShare";
 
 type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'sponsors' | 'donations' | 'subscribers' | 'messages' | 'members' | 'footer' | 'hero' | 'site' | 'pages' | 'chat';
 
@@ -514,6 +515,7 @@ const SubAdminAccess = () => {
                 <Button variant="default" size="sm" onClick={() => setShowMemberForm(!showMemberForm)}><Plus className="h-4 w-4" /> Add Member</Button>
               )}
             </div>
+            <RegistrationLinkShare />
 
             {/* Add Member Form */}
             {showMemberForm && canEditTab('members') && (

@@ -17,6 +17,7 @@ import { postEmail } from "@/lib/sendEmail";
 import { WORLD_CURRENCIES, currencyName } from "@/lib/currencies";
 import { setMemberPaymentStatus } from "@/lib/memberApproval";
 import MemberPaymentCell from "@/components/MemberPaymentCell";
+import RegistrationLinkShare from "@/components/RegistrationLinkShare";
 import { DEFAULT_DONATE_PAY_LINK, DEFAULT_MEMBERSHIP_FEES, type MembershipSettings, type PaymentStatus, type VolunteerSubmission } from "@/lib/store";
 import RichTextEditor from "@/components/RichTextEditor";
 
@@ -653,13 +654,6 @@ const Admin = () => {
     window.open(`https://mail.google.com/mail/?authuser=${encodeURIComponent(COMPANY_EMAIL)}&${params.toString()}`, '_blank');
   };
 
-  const copyRegLink = () => {
-    const link = `${window.location.origin}${window.location.pathname}#/register`;
-    navigator.clipboard.writeText(link).then(() => {
-      toast({ title: "Registration link copied!" });
-    });
-  };
-
   const [testimonialsShortcut, setTestimonialsShortcut] = useState(false);
 
   // Sidebar shortcut: Testimonials live inside Page Content > Home Page, so it reuses the 'pages' tab and its permissions.
@@ -848,7 +842,6 @@ const Admin = () => {
                 </p>
               </div>
               <div className="flex gap-2 flex-wrap">
-                {!isViewOnly && <Button variant="outline" size="sm" onClick={copyRegLink}><Copy className="h-4 w-4" /> Copy Registration Link</Button>}
                 {!isViewOnly && <Button variant="default" size="sm" onClick={() => setShowMemberForm(!showMemberForm)}><Plus className="h-4 w-4" /> Add Member</Button>}
                 {members.length > 0 && (
                   <>
@@ -978,6 +971,8 @@ const Admin = () => {
             )}
 
             {/* Members Table */}
+            <RegistrationLinkShare />
+
             <div className="bg-card rounded-xl p-5 shadow-soft mb-6 space-y-3">
               <h3 className="font-bold">Membership Fees</h3>
               <p className="text-xs text-muted-foreground">Amounts new members pay (in MWK) when they register online. Set a fee to 0 to leave it out — e.g. Term fee 0 = registration fee only.</p>

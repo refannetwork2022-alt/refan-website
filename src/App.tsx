@@ -35,6 +35,15 @@ const SharedLinkRedirect = () => {
   const navigate = useNavigate();
   // Only when the site is first opened from a shared link, so normal browsing afterwards isn't redirected.
   useEffect(() => {
+    // Member registration link: /?page=register
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("page") === "register") {
+      params.delete("page");
+      const query = params.toString();
+      window.history.replaceState(window.history.state, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
+      if (pathname !== "/register") navigate("/register", { replace: true });
+      return;
+    }
     const kind = SHARED_KINDS.find((k) => getSharedId(k));
     if (kind && pathname !== SHARED_ROUTES[kind]) navigate(SHARED_ROUTES[kind], { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
