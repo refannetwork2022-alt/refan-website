@@ -16,8 +16,18 @@ export const SHARED_KINDS = Object.keys(SHARED_ROUTES) as SharedKind[];
 
 // On the live site these URLs are served by api/share.ts (see vercel.json), which adds the item's own title and
 // photo to the page so WhatsApp/Facebook/LinkedIn previews show it; visitors get the normal site.
-export const buildShareUrl = (kind: SharedKind, id: string): string =>
-  `${window.location.origin}/?${kind}=${encodeURIComponent(id)}#${SHARED_ROUTES[kind]}`;
+// `version` (e.g. the item's photo + title) adds a short "p" code that changes when the item changes, so WhatsApp &
+// co. don't keep showing an old cached preview (like the ReFAN logo) for a link they saw before.
+export const buildShareUrl = (kind: SharedKind, id: string, version?: string): string => {
+  const p = version ? `&p=${shortHash(version)}` : "";
+  return `${window.location.origin}/?${kind}=${encodeURIComponent(id)}${p}#${SHARED_ROUTES[kind]}`;
+};
+
+const shortHash = (text: string): string => {
+  let h = 5381;
+  for (let i = 0; i < text.length; i++) h = ((h << 5) + h + text.charCodeAt(i)) >>> 0;
+  return h.toString(36).slice(0, 6);
+};
 
 export const getSharedId = (kind: SharedKind): string | null =>
   new URLSearchParams(window.location.search).get(kind);
@@ -28,6 +38,7 @@ export const clearSharedId = () => {
   let changed = false;
   SHARED_KINDS.forEach((k) => { if (params.has(k)) { params.delete(k); changed = true; } });
   if (!changed) return;
+  params.delete("p"); // preview code from buildShareUrl
   const query = params.toString();
   window.history.replaceState(window.history.state, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
 };

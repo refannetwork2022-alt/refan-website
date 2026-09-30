@@ -236,7 +236,7 @@ const Stories = () => {
                   <Link to="/donate"><Heart className="h-4 w-4" /> Donate</Link>
                 </Button>
               </div>
-              <ShareButtons title={selectedStory.title} url={buildShareUrl("story", selectedStory.id)} />
+              <ShareButtons title={selectedStory.title} url={buildShareUrl("story", selectedStory.id, `${selectedStory.title}|${selectedStory.image || ""}`)} />
             </div>
           </div>
         </div>
@@ -286,7 +286,7 @@ const Stories = () => {
                   <Link to="/donate"><Heart className="h-4 w-4" /> Donate</Link>
                 </Button>
               </div>
-              <ShareButtons title={selectedAnnouncement.title} url={buildShareUrl("announcement", selectedAnnouncement.id)} />
+              <ShareButtons title={selectedAnnouncement.title} url={buildShareUrl("announcement", selectedAnnouncement.id, `${selectedAnnouncement.title}|${selectedAnnouncement.image || ""}`)} />
             </div>
           </div>
         </div>

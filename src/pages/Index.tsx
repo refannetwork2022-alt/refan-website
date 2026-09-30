@@ -223,8 +223,8 @@ const Index = () => {
     return () => timers.forEach(clearTimeout);
   }, [homeLoaded]);
 
-  const shareVoice = async (idx: number, name: string) => {
-    const result = await shareLink(`${name} — Voices from ReFAN`, buildShareUrl("voice", String(idx)));
+  const shareVoice = async (idx: number, name: string, image?: string) => {
+    const result = await shareLink(`${name} — Voices from ReFAN`, buildShareUrl("voice", String(idx), `${name}|${image || ""}`));
     if (result === "copied") toast({ title: "Link copied!" });
     else if (result === "failed") toast({ title: "Could not share. Please copy the link from your browser.", variant: "destructive" });
   };
@@ -383,7 +383,7 @@ const Index = () => {
                     <p className="font-bold text-sm">{t.name}</p>
                     <p className="text-xs text-muted-foreground">{t.role}</p>
                   </div>
-                  <button type="button" onClick={() => shareVoice(i, t.name)} className="ml-auto p-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-primary transition-colors" title="Share this voice" aria-label={`Share ${t.name}'s voice`}>
+                  <button type="button" onClick={() => shareVoice(i, t.name, t.image)} className="ml-auto p-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-primary transition-colors" title="Share this voice" aria-label={`Share ${t.name}'s voice`}>
                     <Share2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -495,7 +495,7 @@ const Index = () => {
                   <Link to="/donate"><Heart className="h-4 w-4" /> Donate</Link>
                 </Button>
               </div>
-              <ShareButtons title={selectedAnnouncement.title} url={buildShareUrl("announcement", selectedAnnouncement.id)} />
+              <ShareButtons title={selectedAnnouncement.title} url={buildShareUrl("announcement", selectedAnnouncement.id, `${selectedAnnouncement.title}|${selectedAnnouncement.image || ""}`)} />
             </div>
           </div>
         </div>

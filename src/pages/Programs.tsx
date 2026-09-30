@@ -155,7 +155,7 @@ const Programs = () => {
                     <Link to="/donate"><Heart className="h-4 w-4" /> Donate</Link>
                   </Button>
                 </div>
-                <ShareButtons title={selected.title} url={buildShareUrl("program", String(selected.index))} />
+                <ShareButtons title={selected.title} url={buildShareUrl("program", String(selected.index), `${selected.title}|${selected.image || ""}`)} />
               </div>
             </div>
           </div>
