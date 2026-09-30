@@ -4,6 +4,10 @@
   "framework": "vite",
   "installCommand": "npm install",
   "rewrites": [
+    { "source": "/", "has": [{ "type": "query", "key": "voice" }], "destination": "/api/share" },
+    { "source": "/", "has": [{ "type": "query", "key": "story" }], "destination": "/api/share" },
+    { "source": "/", "has": [{ "type": "query", "key": "announcement" }], "destination": "/api/share" },
+    { "source": "/", "has": [{ "type": "query", "key": "program" }], "destination": "/api/share" },
     { "source": "/share", "destination": "/api/share" },
     { "source": "/api/(.*)", "destination": "/api/$1" }
   ]

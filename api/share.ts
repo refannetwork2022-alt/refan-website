@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Share links: /share?voice=3, /share?story=ID, /share?announcement=ID, /share?program=1
+// Link previews for shared items: /?voice=3, /?story=ID, /?announcement=ID, /?program=1 (and /share?...).
 // WhatsApp, Facebook, LinkedIn... don't run the site's JavaScript, so they only see index.html's generic
-// title and no picture. This page gives them the item's own title, text and photo (Open Graph tags),
-// and sends people on to the item on the site.
+// title and no picture. vercel.json sends those URLs here; we serve the normal site page (index.html) with the
+// item's own title, text and photo in its Open Graph tags, so previews are right and visitors see the site as usual.
 
 type Fields = Record<string, any>;
 
@@ -115,31 +115,46 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!/^https?:\/\//i.test(image)) image = `${site}/logo.png`;
   const url = `${site}${target}`;
 
+  const meta = `<title>${esc(title)}</title>
+    <meta name="description" content="${esc(description)}" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="ReFAN" />
+    <meta property="og:title" content="${esc(title)}" />
+    <meta property="og:description" content="${esc(description)}" />
+    <meta property="og:image" content="${esc(image)}" />
+    <meta property="og:url" content="${esc(url)}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${esc(title)}" />
+    <meta name="twitter:description" content="${esc(description)}" />
+    <meta name="twitter:image" content="${esc(image)}" />`;
+
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+  // index.html points at this deployment's script files, so it must not be cached across deployments.
+  res.setHeader('Cache-Control', 'no-cache');
+
+  try {
+    const page = await fetch(`${site}/index.html`);
+    if (!page.ok) throw new Error(`index.html ${page.status}`);
+    const html = (await page.text())
+      .replace(/<title>[\s\S]*?<\/title>\s*/i, '')
+      .replace(/<meta\s+(name|property)="(description|og:[^"]+|twitter:[^"]+)"[^>]*>\s*/gi, '')
+      .replace(/<\/head>/i, `    ${meta}
+  </head>`);
+    res.status(200).send(html);
+    return;
+  } catch (error) {
+    console.error('share page: could not load index.html', error);
+  }
+
+  // Fallback: a small page with the preview tags that forwards to the site home.
   res.status(200).send(`<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>${esc(title)}</title>
-<meta name="description" content="${esc(description)}" />
-<meta property="og:type" content="article" />
-<meta property="og:site_name" content="ReFAN" />
-<meta property="og:title" content="${esc(title)}" />
-<meta property="og:description" content="${esc(description)}" />
-<meta property="og:image" content="${esc(image)}" />
-<meta property="og:url" content="${esc(url)}" />
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="${esc(title)}" />
-<meta name="twitter:description" content="${esc(description)}" />
-<meta name="twitter:image" content="${esc(image)}" />
-<meta http-equiv="refresh" content="0; url=${esc(url)}" />
-<link rel="canonical" href="${esc(url)}" />
+${meta}
+<meta http-equiv="refresh" content="0; url=${esc(site)}/#/" />
 </head>
-<body>
-<script>location.replace(${JSON.stringify(url)});</script>
-<p><a href="${esc(url)}">Continue to ReFAN</a></p>
-</body>
+<body><p><a href="${esc(site)}/#/">Continue to ReFAN</a></p></body>
 </html>`);
 }
