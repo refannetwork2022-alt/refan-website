@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { store, DonateSettings, DEFAULT_DONATE_PAY_LINK } from "@/lib/store";
 import { toHref } from "@/lib/contactLinks";
 import { getMwkRates, toMwk } from "@/lib/exchangeRates";
+import { sendConfirmationEmail } from "@/lib/sendEmail";
 
 const DONATE_DEFAULTS: DonateSettings = {
   pageTitle: 'Make a <span class="text-primary">Donation</span>',
@@ -71,7 +72,7 @@ const Donate = () => {
       return;
     }
     setSubmitting(true);
-    await store.addDonation({
+    const saved = await store.addDonation({
       name: name.trim(),
       email: email.trim(),
       amount: Number(amount),
@@ -80,6 +81,7 @@ const Donate = () => {
       date: new Date().toISOString(),
       ...(currency !== "MWK" && mwkAmount ? { mwkAmount } : {}),
     });
+    sendConfirmationEmail("donation", saved?.id);
     if (payHref) {
       // DzalekaPay only takes MWK, so the amount is prefilled only for MWK donations.
       let target = payHref;

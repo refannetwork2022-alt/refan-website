@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { store, DEFAULT_MEMBERSHIP_FEES, type MembershipSettings } from "@/lib/store";
 import { WORLD_CURRENCIES, currencyName } from "@/lib/currencies";
 import { getMwkRates, fromMwk } from "@/lib/exchangeRates";
+import { sendConfirmationEmail } from "@/lib/sendEmail";
 import CountrySearch from "@/components/CountrySearch";
 
 const WEB3FORMS_KEY = "2b77a360-efe4-4f8c-926e-a6a7a8e05895";
@@ -167,6 +168,7 @@ const Register = () => {
         paymentStatus: 'pending',
       });
       if (member) {
+        sendConfirmationEmail("member", member.id);
         // Send email notification to admin about new registration
         try {
           const fullName = `${form.surname} ${form.firstName} ${form.otherName}`.trim();
@@ -219,7 +221,7 @@ const Register = () => {
           <div className="bg-card rounded-2xl p-8 shadow-elevated text-center space-y-4">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
             <h1 className="font-heading text-3xl font-extrabold">Thank you, {memberData.name}!</h1>
-            <p className="text-muted-foreground">Your registration has been received.</p>
+            <p className="text-muted-foreground">Your registration has been received. We have also sent a confirmation to your email.</p>
             <p className="text-muted-foreground">
               Once our team confirms your membership, you will receive an email at <strong className="text-foreground">{memberData.email}</strong> with your membership number.
             </p>

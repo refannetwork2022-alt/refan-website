@@ -27,3 +27,19 @@ export const postEmail = async (
     return { success: false, error: `HTTP ${res.status}` };
   }
 };
+
+// "We received your form" email to a donor / new member (api/confirm-email.ts). Fire-and-forget: the form never
+// waits for it or fails because of it; keepalive lets it finish even if the page moves on to the payment site.
+export const sendConfirmationEmail = (type: "donation" | "member", id: string | undefined) => {
+  if (!id) return;
+  try {
+    fetch("/api/confirm-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type, id }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    // ignore
+  }
+};
