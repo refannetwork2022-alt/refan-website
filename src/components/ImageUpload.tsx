@@ -28,6 +28,7 @@ const ImageUpload = ({ onUploaded, label = "Upload Image" }: ImageUploadProps) =
       setPreview(null);
     } finally {
       setUploading(false);
+      e.target.value = ""; // allow picking the same photo again after an error
     }
   };
 

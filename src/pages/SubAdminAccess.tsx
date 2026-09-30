@@ -257,11 +257,12 @@ const SubAdminAccess = () => {
       return '';
     }).join('');
     if (editingBlog) {
-      await store.updateBlog(editingBlog, { ...blogForm, content, tags: blogForm.tags });
+      await store.updateBlog(editingBlog, { ...blogForm, content, tags: blogForm.tags.split(',').map(t => t.trim()).filter(Boolean) });
       setEditingBlog(null);
       toast({ title: "Blog updated!" });
     } else {
-      await store.addBlog({ ...blogForm, content, tags: blogForm.tags });
+      // Same fields the admin panel saves (a missing date made the database reject new posts).
+      await store.addBlog({ ...blogForm, content, tags: blogForm.tags.split(',').map(t => t.trim()).filter(Boolean), date: new Date().toISOString() });
       toast({ title: "Blog added!" });
     }
     setBlogs(await store.getBlogs());
@@ -272,7 +273,7 @@ const SubAdminAccess = () => {
   };
 
   const editBlogItem = (b: BlogPost) => {
-    setBlogForm({ title: b.title, excerpt: b.excerpt, image: b.image || '', author: b.author || 'ReFAN Team', tags: b.tags || '' });
+    setBlogForm({ title: b.title, excerpt: b.excerpt, image: b.image || '', author: b.author || 'ReFAN Team', tags: (b.tags || []).join(', ') });
     setContentBlocks([{ type: 'text', value: b.content || '' }]);
     setEditingBlog(b.id);
     setShowBlogForm(true);
@@ -282,7 +283,7 @@ const SubAdminAccess = () => {
   const saveGalleryItem = async () => {
     if (!galleryForm.title.trim() || !galleryForm.url.trim()) return;
     setSaving(true);
-    await store.addGalleryItem({ ...galleryForm });
+    await store.addGalleryItem({ ...galleryForm, date: new Date().toISOString() });
     setGallery(await store.getGallery());
     setGalleryForm({ title: '', url: '', type: 'photo' });
     setShowGalleryForm(false);
@@ -795,7 +796,7 @@ const SubAdminAccess = () => {
                 <input placeholder="Title *" value={announcementForm.title} onChange={e => setAnnouncementForm({ ...announcementForm, title: e.target.value })} className={inputClass} maxLength={200} />
                 <input placeholder="Subtitle / Name" value={announcementForm.subtitle} onChange={e => setAnnouncementForm({ ...announcementForm, subtitle: e.target.value })} className={inputClass} maxLength={200} />
                 <RichTextEditor value={announcementForm.content} onChange={(v: string) => setAnnouncementForm({ ...announcementForm, content: v })} />
-                <ImageUpload value={announcementForm.image} onChange={(v: string) => setAnnouncementForm({ ...announcementForm, image: v })} />
+                <ImageUpload label="Upload Image" onUploaded={(url) => setAnnouncementForm(prev => ({ ...prev, image: url }))} />
                 <input placeholder="Video URL (YouTube, Vimeo)" value={announcementForm.video} onChange={e => setAnnouncementForm({ ...announcementForm, video: e.target.value })} className={inputClass} maxLength={500} />
                 <div className="flex gap-3 items-center">
                   <input type="date" value={announcementForm.date} onChange={e => setAnnouncementForm({ ...announcementForm, date: e.target.value })} className={inputClass + " w-auto"} />
@@ -855,7 +856,7 @@ const SubAdminAccess = () => {
                 <input placeholder="Subtitle / Name" value={storyForm.subtitle} onChange={e => setStoryForm({ ...storyForm, subtitle: e.target.value })} className={inputClass} maxLength={200} />
                 <input placeholder="Excerpt (short summary)" value={storyForm.excerpt} onChange={e => setStoryForm({ ...storyForm, excerpt: e.target.value })} className={inputClass} maxLength={300} />
                 <RichTextEditor value={storyForm.content} onChange={(v: string) => setStoryForm({ ...storyForm, content: v })} />
-                <ImageUpload value={storyForm.image} onChange={(v: string) => setStoryForm({ ...storyForm, image: v })} />
+                <ImageUpload label="Upload Image" onUploaded={(url) => setStoryForm(prev => ({ ...prev, image: url }))} />
                 <input placeholder="Video URL (YouTube, Vimeo)" value={storyForm.video} onChange={e => setStoryForm({ ...storyForm, video: e.target.value })} className={inputClass} maxLength={500} />
                 <div className="flex gap-3 items-center flex-wrap">
                   <select value={storyForm.category} onChange={e => setStoryForm({ ...storyForm, category: e.target.value as 'story' | 'announcement' })} className={inputClass + " w-auto"}>
@@ -919,7 +920,7 @@ const SubAdminAccess = () => {
                 <h3 className="font-heading font-bold">{editingBlog ? 'Edit' : 'New'} Blog Post</h3>
                 <input placeholder="Title *" value={blogForm.title} onChange={e => setBlogForm({ ...blogForm, title: e.target.value })} className={inputClass} maxLength={200} />
                 <input placeholder="Excerpt (short summary)" value={blogForm.excerpt} onChange={e => setBlogForm({ ...blogForm, excerpt: e.target.value })} className={inputClass} maxLength={300} />
-                <ImageUpload value={blogForm.image} onChange={(v: string) => setBlogForm({ ...blogForm, image: v })} />
+                <ImageUpload label="Upload Thumbnail" onUploaded={(url) => setBlogForm(prev => ({ ...prev, image: url }))} />
                 <input placeholder="Tags (comma separated)" value={blogForm.tags} onChange={e => setBlogForm({ ...blogForm, tags: e.target.value })} className={inputClass} maxLength={200} />
                 <div className="space-y-3">
                   <p className="text-sm font-medium">Content</p>
@@ -928,7 +929,7 @@ const SubAdminAccess = () => {
                       {block.type === 'text' && <RichTextEditor value={block.value || ''} onChange={(v: string) => { const nb = [...contentBlocks]; nb[i] = { ...nb[i], value: v }; setContentBlocks(nb); }} />}
                       {block.type === 'image' && (
                         <>
-                          <ImageUpload value={block.url || ''} onChange={(v: string) => { const nb = [...contentBlocks]; nb[i] = { ...nb[i], url: v }; setContentBlocks(nb); }} />
+                          <ImageUpload label="Upload Image" onUploaded={(url) => setContentBlocks(prev => prev.map((b, j) => j === i ? { ...b, url } : b))} />
                           <input placeholder="Caption" value={block.caption || ''} onChange={e => { const nb = [...contentBlocks]; nb[i] = { ...nb[i], caption: e.target.value }; setContentBlocks(nb); }} className={inputClass} />
                         </>
                       )}
@@ -998,7 +999,7 @@ const SubAdminAccess = () => {
               <div className="bg-card rounded-xl p-6 shadow-soft mb-8 space-y-4">
                 <h3 className="font-heading font-bold">Add Gallery Item</h3>
                 <input placeholder="Title *" value={galleryForm.title} onChange={e => setGalleryForm({ ...galleryForm, title: e.target.value })} className={inputClass} maxLength={200} />
-                <ImageUpload value={galleryForm.url} onChange={(v: string) => setGalleryForm({ ...galleryForm, url: v })} />
+                <ImageUpload label="Upload Photo" onUploaded={(url) => setGalleryForm(prev => ({ ...prev, url }))} />
                 <select value={galleryForm.type} onChange={e => setGalleryForm({ ...galleryForm, type: e.target.value as 'photo' | 'video' })} className={inputClass + " w-auto"}>
                   <option value="photo">Photo</option>
                   <option value="video">Video</option>
