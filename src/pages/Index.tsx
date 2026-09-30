@@ -2,9 +2,9 @@ import { Link } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { Heart, Users, BookOpen, ArrowRight, Target, Globe, Shield, Baby, User, Home, Grid3X3, Quote, Megaphone, X } from "lucide-react";
+import { Heart, Users, BookOpen, ArrowRight, Target, Globe, Shield, Baby, User, Home, Grid3X3, Quote, Megaphone, X, Share2 } from "lucide-react";
 import ShareButtons from "@/components/ShareButtons";
-import { buildShareUrl } from "@/lib/share";
+import { buildShareUrl, getSharedId, clearSharedId, shareLink } from "@/lib/share";
 import { store, Announcement, HeroSettings, HomeSettings, GalleryItem } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 const heroBg = "/holi.jpg";
@@ -161,6 +161,8 @@ const stripHtml = (html: string) => {
 
 const Index = () => {
   const { toast } = useToast();
+  const [homeLoaded, setHomeLoaded] = useState(false);
+  const [highlightVoice, setHighlightVoice] = useState<number | null>(null);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [hero, setHero] = useState<HeroSettings>(HERO_DEFAULTS);
@@ -191,6 +193,7 @@ const Index = () => {
           };
         }));
       }
+      setHomeLoaded(true);
     });
     store.getGallery().then((data) => {
       setGalleryPreview(data.filter(g => g.type === 'photo').slice(0, 3));
@@ -198,6 +201,33 @@ const Index = () => {
   }, []);
 
 
+
+  // A shared "Voices" link (?voice=N) scrolls to that testimonial and highlights it for a moment.
+  useEffect(() => {
+    if (!homeLoaded) return;
+    const id = getSharedId("voice");
+    clearSharedId();
+    if (id === null) return;
+    const idx = Number(id);
+    const el = document.getElementById(`voice-${idx}`);
+    if (!el) return;
+    // Scroll again after announcements/images above it have loaded and pushed it down.
+    // Top of the card just below the sticky menu (cards can be taller than the screen).
+    const scroll = () => {
+      const card = document.getElementById(`voice-${idx}`);
+      if (card) window.scrollTo({ top: card.getBoundingClientRect().top + window.scrollY - 90 });
+    };
+    const timers = [400, 1500, 3000].map((ms) => setTimeout(scroll, ms));
+    setHighlightVoice(idx);
+    timers.push(setTimeout(() => setHighlightVoice(null), 6000));
+    return () => timers.forEach(clearTimeout);
+  }, [homeLoaded]);
+
+  const shareVoice = async (idx: number, name: string) => {
+    const result = await shareLink(`${name} — Voices from ReFAN`, buildShareUrl("voice", String(idx)));
+    if (result === "copied") toast({ title: "Link copied!" });
+    else if (result === "failed") toast({ title: "Could not share. Please copy the link from your browser.", variant: "destructive" });
+  };
   return (
     <Layout>
       {/* Hero */}
@@ -330,7 +360,7 @@ const Index = () => {
         <div className="grid md:grid-cols-3 gap-8">
           {home.testimonials.map((t, i) => (
             // With a photo the card shows it on top (like the announcement cards); without one it stays as before.
-            <div key={i} className={`bg-card rounded-2xl border border-border hover:border-primary/30 hover:shadow-card transition-all relative flex flex-col ${t.image ? "overflow-hidden" : "p-6 sm:p-8"}`}>
+            <div key={i} id={`voice-${i}`} className={`bg-card rounded-2xl border border-border hover:border-primary/30 hover:shadow-card transition-all relative flex flex-col ${t.image ? "overflow-hidden" : "p-6 sm:p-8"} ${highlightVoice === i ? "ring-2 ring-primary" : ""}`}>
               {!t.image && <Quote className="h-8 w-8 text-primary/20 absolute top-6 right-6" />}
               {t.image && (
                 <div className="aspect-[4/3] bg-muted overflow-hidden">
@@ -353,6 +383,9 @@ const Index = () => {
                     <p className="font-bold text-sm">{t.name}</p>
                     <p className="text-xs text-muted-foreground">{t.role}</p>
                   </div>
+                  <button type="button" onClick={() => shareVoice(i, t.name)} className="ml-auto p-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-primary transition-colors" title="Share this voice" aria-label={`Share ${t.name}'s voice`}>
+                    <Share2 className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
             </div>

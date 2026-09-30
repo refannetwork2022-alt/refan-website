@@ -1,4 +1,5 @@
 import { useRef, useEffect } from "react";
+import { cleanHtml, hasPasteJunk } from "@/lib/cleanHtml";
 import { Button } from "@/components/ui/button";
 import { Bold, Italic, Underline, Heading2, Type, Palette, Highlighter, AlignLeft, AlignCenter, AlignRight, List, ListOrdered, Link2, Unlink } from "lucide-react";
 
@@ -31,10 +32,35 @@ const RichTextEditor = ({ value, onChange, placeholder = "Write here...", rows =
 
   useEffect(() => {
     if (editorRef.current && !isUserInput.current) {
+      // Older texts pasted from web pages carry hidden styles that make editing slow (especially on phones);
+      // clean them once here. The cleaned text is saved the next time the admin saves the page.
+      if (hasPasteJunk(value)) {
+        const cleaned = cleanHtml(value);
+        editorRef.current.innerHTML = cleaned;
+        if (cleaned !== value) onChange(cleaned);
+        return;
+      }
       editorRef.current.innerHTML = value || "";
     }
     isUserInput.current = false;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
+
+  // Pasted text keeps simple formatting only (see cleanHtml).
+  const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    const html = e.clipboardData.getData("text/html");
+    const text = e.clipboardData.getData("text/plain");
+    if (!html && !text) return;
+    e.preventDefault();
+    const safe = html
+      ? cleanHtml(html)
+      : escapeHtml(text).replace(/\r?\n/g, "<br>");
+    document.execCommand("insertHTML", false, safe);
+    if (editorRef.current) {
+      isUserInput.current = true;
+      onChange(editorRef.current.innerHTML);
+    }
+  };
 
   const escapeHtml = (text: string) =>
     text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -221,6 +247,7 @@ const RichTextEditor = ({ value, onChange, placeholder = "Write here...", rows =
         className="px-4 py-2.5 text-sm outline-none focus:ring-0 overflow-auto"
         style={{ minHeight: `${rows * 1.5}rem` }}
         onInput={handleInput}
+        onPaste={handlePaste}
         onBlur={handleInput}
         data-placeholder={placeholder}
       />
