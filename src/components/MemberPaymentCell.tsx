@@ -15,6 +15,9 @@ const MemberPaymentCell = ({ member, canChange, onChange }: MemberPaymentCellPro
   return (
     <td className="py-3 px-3">
       <span className={`inline-block whitespace-nowrap text-[11px] font-semibold px-2 py-0.5 rounded-full ${badge.className}`}>{badge.label}</span>
+      {Number(member.paymentAmount) > 0 && (
+        <p className="text-[11px] text-muted-foreground mt-1 whitespace-nowrap">{member.paymentCurrency} {Number(member.paymentAmount).toLocaleString()}</p>
+      )}
       {canChange && (
         <div className="flex gap-1 mt-1">
           {member.paymentStatus !== "approved" && (

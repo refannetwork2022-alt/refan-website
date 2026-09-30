@@ -115,6 +115,8 @@ export interface Member {
 export interface MembershipSettings {
   registrationFee: number;
   termFee: number;
+  // Optional fixed total per currency (e.g. { TZS: 5000 }); other currencies use the online rate from the MWK fees.
+  customAmounts?: Record<string, number>;
 }
 
 export const DEFAULT_MEMBERSHIP_FEES: MembershipSettings = { registrationFee: 1000, termFee: 2000 };

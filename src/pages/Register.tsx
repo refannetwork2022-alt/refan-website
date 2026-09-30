@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { UserPlus, Upload, Camera, CheckCircle, CreditCard, Heart } from "lucide-react";
+import { UserPlus, Upload, Camera, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { store, DEFAULT_MEMBERSHIP_FEES, DEFAULT_DONATE_PAY_LINK, type MembershipSettings, type DonateSettings } from "@/lib/store";
-import { toHref } from "@/lib/contactLinks";
+import { store, DEFAULT_MEMBERSHIP_FEES, type MembershipSettings } from "@/lib/store";
+import { WORLD_CURRENCIES, currencyName } from "@/lib/currencies";
+import { getMwkRates, fromMwk } from "@/lib/exchangeRates";
 import CountrySearch from "@/components/CountrySearch";
 
 const WEB3FORMS_KEY = "2b77a360-efe4-4f8c-926e-a6a7a8e05895";
@@ -61,24 +62,26 @@ const Register = () => {
 
   const [memberData, setMemberData] = useState<any>(null);
   const [fees, setFees] = useState<MembershipSettings>(DEFAULT_MEMBERSHIP_FEES);
-  const [payLink, setPayLink] = useState(DEFAULT_DONATE_PAY_LINK);
-  const [redirectingName, setRedirectingName] = useState<string | null>(null);
+  const [rates, setRates] = useState<Record<string, number> | null>(null);
 
   useEffect(() => {
     store.getPageSettings<MembershipSettings>("membership").then((data) => {
       if (data) setFees({ ...DEFAULT_MEMBERSHIP_FEES, ...data });
     });
-    // Same DzalekaPay checkout the Donate page uses (admin sets it under Page Content > Donate).
-    store.getPageSettings<DonateSettings>("donate").then((data) => {
-      if (data && typeof data.payLink === "string") setPayLink(data.payLink);
-    });
+    getMwkRates().then(setRates);
   }, []);
 
   const registrationFee = Math.max(0, Number(fees.registrationFee) || 0);
   const termFee = Math.max(0, Number(fees.termFee) || 0);
   const totalFee = registrationFee + termFee;
-  const payHref = toHref(payLink);
   const formatMwk = (n: number) => `MWK ${n.toLocaleString()}`;
+
+  // Fee in the member's currency: the admin's own amount for that currency if set, otherwise today's online rate.
+  const customFee = Number(fees.customAmounts?.[form.paymentCurrency]) || 0;
+  const suggestedFee = customFee > 0 ? customFee : fromMwk(totalFee, form.paymentCurrency, rates);
+  useEffect(() => {
+    setForm((prev) => ({ ...prev, paymentAmount: suggestedFee ? String(suggestedFee) : '' }));
+  }, [form.paymentCurrency, suggestedFee]);
 
   const compressImage = (base64: string, maxWidth = 400): Promise<string> => {
     return new Promise((resolve) => {
@@ -114,6 +117,7 @@ const Register = () => {
     if (!form.dobYear) missing.push('Date of Birth');
     if (!form.username.trim()) missing.push('Username');
     if (!form.branchName.trim()) missing.push('Branch Name');
+    if (!form.paymentCurrency || !(Number(form.paymentAmount) > 0)) missing.push('Payment amount');
     if (missing.length > 0) {
       toast({ title: `Please fill in: ${missing.join(', ')}`, variant: "destructive" });
       return;
@@ -154,8 +158,8 @@ const Register = () => {
         familySize: Number(form.familySize) || 0,
         photo: compressedPhoto,
         document: compressedDoc,
-        paymentCurrency: 'MWK',
-        paymentAmount: totalFee,
+        paymentCurrency: form.paymentCurrency,
+        paymentAmount: Number(form.paymentAmount) || 0,
         registrationDate: now.toISOString(),
         expiryDate: expiryStr,
         branchName: form.branchName.trim(),
@@ -174,24 +178,11 @@ const Register = () => {
               subject: `New Member Registration - ${fullName}`,
               from_name: fullName,
               email: form.email.trim() || "no-email@refan.org",
-              message: `A new member has registered on the ReFAN website.\n\nName: ${fullName}\nReg Number: ${member.regNumber}\nEmail: ${form.email.trim() || 'Not provided'}\nPhone: ${form.phoneCode} ${form.phone.trim()}\nGender: ${form.gender}\nCountry of Origin: ${form.countryOfOrigin}\nCountry of Residence: ${form.countryOfResidence}\nBranch: ${form.branchName.trim()}\nMembership fee: ${formatMwk(totalFee)}\nPayment status: PENDING - confirm the payment in DzalekaPay, then approve the member in Admin > Members.`,
+              message: `A new member has registered on the ReFAN website.\n\nName: ${fullName}\nReg Number: ${member.regNumber}\nEmail: ${form.email.trim() || 'Not provided'}\nPhone: ${form.phoneCode} ${form.phone.trim()}\nGender: ${form.gender}\nCountry of Origin: ${form.countryOfOrigin}\nCountry of Residence: ${form.countryOfResidence}\nBranch: ${form.branchName.trim()}\nPayment: ${form.paymentCurrency} ${Number(form.paymentAmount).toLocaleString()}\nStatus: PENDING - check the payment, then approve the member in Admin > Members.`,
             }),
           });
         } catch {
           // Email notification failure should not block registration success
-        }
-        const fullName = `${form.surname} ${form.firstName} ${form.otherName}`.trim();
-        if (totalFee > 0 && payHref) {
-          // Thank them, then send them to DzalekaPay with the membership fee prefilled.
-          let target = payHref;
-          try {
-            const url = new URL(payHref);
-            url.searchParams.set("amount", String(totalFee));
-            target = url.toString();
-          } catch { /* keep the link exactly as the admin entered it */ }
-          setRedirectingName(form.firstName.trim() || fullName);
-          setTimeout(() => { window.location.href = target; }, 4000);
-          return;
         }
         setSubmitting(false);
         setRegNumber(member.regNumber);
@@ -240,18 +231,6 @@ const Register = () => {
 
   return (
     <Layout>
-      {redirectingName && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-sm p-4">
-          <div className="bg-card rounded-2xl shadow-elevated p-8 max-w-md w-full text-center space-y-3">
-            <Heart className="h-10 w-10 text-primary mx-auto" />
-            <h2 className="font-heading text-2xl font-bold">Thank you, {redirectingName}!</h2>
-            <p className="text-muted-foreground">Your registration has been received. Taking you to our secure payment page to pay {formatMwk(totalFee)}…</p>
-            <p className="text-sm text-muted-foreground">There, choose how you want to pay: <strong className="text-foreground">Mobile money</strong> or <strong className="text-foreground">Card</strong> (Visa / Mastercard).</p>
-            <p className="text-xs text-muted-foreground">After your payment is confirmed, you will receive your membership number by email.</p>
-            <div className="h-6 w-6 mx-auto rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-          </div>
-        </div>
-      )}
       <section className="container pt-12 pb-8 text-center">
         <UserPlus className="h-12 w-12 text-primary mx-auto mb-4" />
         <h1 className="font-heading text-3xl lg:text-5xl font-extrabold mb-3">Register as <span className="text-primary">New Member</span></h1>
@@ -394,12 +373,19 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Membership fee (set by the admin; paid in MWK on DzalekaPay) */}
-            <div className="rounded-lg border border-border p-4 space-y-1 text-sm">
-              <p className="font-medium mb-1">Membership Fee</p>
-              {registrationFee > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Registration fee</span><span>{formatMwk(registrationFee)}</span></div>}
-              {termFee > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Term fee (3 months)</span><span>{formatMwk(termFee)}</span></div>}
-              <div className="flex justify-between font-bold border-t border-border pt-2 mt-2"><span>Total</span><span className="text-primary">{totalFee > 0 ? formatMwk(totalFee) : 'Free'}</span></div>
+            {/* Payment: any world currency; amount filled from the admin's fees (required) */}
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Make Your Payment In *</label>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <select value={form.paymentCurrency} onChange={e => setForm({ ...form, paymentCurrency: e.target.value })} className={selectClass}>
+                  {WORLD_CURRENCIES.map(c => <option key={c} value={c}>{c} ({currencyName(c)})</option>)}
+                </select>
+                <input type="number" value={form.paymentAmount} onChange={e => setForm({ ...form, paymentAmount: e.target.value })} className={inputClass} placeholder="Amount" min={0} step="any" required />
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Membership fee: <strong className="text-foreground">{formatMwk(totalFee)}</strong> (registration {formatMwk(registrationFee)} + term {formatMwk(termFee)})
+                {form.paymentCurrency !== 'MWK' && suggestedFee ? <> ≈ <strong className="text-foreground">{form.paymentCurrency} {suggestedFee.toLocaleString()}</strong>{customFee > 0 ? '' : " at today's rate"}</> : null}
+              </p>
             </div>
 
             {/* Username + Branch */}
@@ -419,12 +405,12 @@ const Register = () => {
               <p className="text-sm font-bold text-blue-800">Membership Information</p>
               <p className="text-xs text-blue-700">Registration fee: <strong>{formatMwk(registrationFee)}</strong> | Term fee: <strong>{formatMwk(termFee)}</strong></p>
               <p className="text-xs text-blue-700">Membership term: <strong>3 months</strong> from the date your membership is confirmed</p>
-              <p className="text-xs text-blue-700">You become a member once our team confirms your payment. You will then receive your membership number by email.</p>
+              <p className="text-xs text-blue-700">You become a member once our team confirms your registration and payment. You will then receive your membership number by email.</p>
             </div>
 
             <Button type="button" onClick={handleSubmit} size="lg" className="w-full bg-primary hover:bg-primary/90 text-white font-bold rounded-lg" disabled={submitting}>
-              {totalFee > 0 && payHref ? <CreditCard className="h-5 w-5" /> : <UserPlus className="h-5 w-5" />}
-              {submitting ? 'Registering...' : totalFee > 0 && payHref ? `Register & Pay ${formatMwk(totalFee)}` : 'Register'}
+              <UserPlus className="h-5 w-5" />
+              {submitting ? 'Registering...' : 'Register'}
             </Button>
           </div>
         </div>

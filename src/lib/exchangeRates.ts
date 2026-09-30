@@ -18,6 +18,16 @@ export const getMwkRates = (): Promise<Record<string, number> | null> => {
   return cached;
 };
 
+// MWK -> another currency (e.g. the membership fee in TZS). Small amounts keep 2 decimals, others are whole units; rounded up.
+export const fromMwk = (mwk: number, currency: string, rates: Record<string, number> | null): number | null => {
+  if (!(mwk > 0)) return null;
+  if (currency === "MWK") return Math.round(mwk);
+  const rate = rates?.[currency];
+  if (!rate || rate <= 0) return null;
+  const value = mwk * rate;
+  return value < 100 ? Math.ceil(value * 100) / 100 : Math.ceil(value);
+};
+
 // Whole kwacha, rounded up so the donor never pays less than they chose.
 export const toMwk = (amount: number, currency: string, rates: Record<string, number> | null): number | null => {
   if (!(amount > 0)) return null;

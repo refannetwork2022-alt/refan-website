@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import ImageUpload from "@/components/ImageUpload";
 import { CONTACT_ICONS, getContactIcon } from "@/lib/contactLinks";
 import { postEmail } from "@/lib/sendEmail";
+import { WORLD_CURRENCIES, currencyName } from "@/lib/currencies";
 import { setMemberPaymentStatus } from "@/lib/memberApproval";
 import MemberPaymentCell from "@/components/MemberPaymentCell";
 import { DEFAULT_DONATE_PAY_LINK, DEFAULT_MEMBERSHIP_FEES, type MembershipSettings, type PaymentStatus, type VolunteerSubmission } from "@/lib/store";
@@ -986,6 +987,23 @@ const Admin = () => {
                 <div><label className="text-xs font-semibold text-muted-foreground">Term fee, 3 months (MWK)</label>
                   <input type="number" min={0} disabled={isViewOnly} value={membershipFees.termFee} onChange={(e) => setMembershipFees({ ...membershipFees, termFee: Math.max(0, Number(e.target.value) || 0) })} className={inputClass} /></div>
                 <div className="text-sm">Total to pay: <strong className="text-primary">MWK {(membershipFees.registrationFee + membershipFees.termFee).toLocaleString()}</strong></div>
+              </div>
+              <div className="space-y-2 border-t border-border pt-3">
+                <p className="text-xs font-semibold text-muted-foreground">Amounts in other currencies</p>
+                <p className="text-xs text-muted-foreground">By default the form converts the MWK total into the member's currency using today's online rate. Add a currency here to set your own total for it instead (e.g. TZS 5,000).</p>
+                {Object.entries(membershipFees.customAmounts || {}).map(([code, amount]) => (
+                  <div key={code} className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-medium w-44 truncate">{code} ({currencyName(code)})</span>
+                    <input type="number" min={0} step="any" disabled={isViewOnly} value={amount} onChange={(e) => { const v = Math.max(0, Number(e.target.value) || 0); setMembershipFees(prev => ({ ...prev, customAmounts: { ...(prev.customAmounts || {}), [code]: v } })); }} className={inputClass + " w-40"} />
+                    {!isViewOnly && <Button variant="ghost" size="sm" onClick={() => setMembershipFees(prev => { const next = { ...(prev.customAmounts || {}) }; delete next[code]; return { ...prev, customAmounts: next }; })}><Trash2 className="h-3 w-3" /> Remove</Button>}
+                  </div>
+                ))}
+                {!isViewOnly && (
+                  <select value="" onChange={(e) => { const code = e.target.value; if (!code) return; setMembershipFees(prev => ({ ...prev, customAmounts: { ...(prev.customAmounts || {}), [code]: prev.customAmounts?.[code] ?? 0 } })); }} className={inputClass + " sm:w-80"}>
+                    <option value="">+ Add a currency with your own amount…</option>
+                    {WORLD_CURRENCIES.filter(c => c !== 'MWK' && !(membershipFees.customAmounts || {})[c]).map(c => <option key={c} value={c}>{c} ({currencyName(c)})</option>)}
+                  </select>
+                )}
               </div>
               {!isViewOnly && (
                 <Button variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("membership", membershipFees); setSaving(false); toast({ title: ok ? "Membership fees saved!" : "Failed" }); }}>
