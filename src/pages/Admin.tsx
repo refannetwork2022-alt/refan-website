@@ -79,7 +79,7 @@ const Admin = () => {
   const [members, setMembers] = useState<Member[]>([]);
   const [membershipFees, setMembershipFees] = useState<MembershipSettings>(DEFAULT_MEMBERSHIP_FEES);
   const [subAdmins, setSubAdmins] = useState<SubAdmin[]>([]);
-  const [subAdminForm, setSubAdminForm] = useState({ name: '', username: '', email: '', permissions: {} as Record<string, TabPermission>, allowDelete: {} as Record<string, boolean>, hideExistingData: {} as Record<string, boolean> });
+  const [subAdminForm, setSubAdminForm] = useState({ name: '', username: '', email: '', permissions: {} as Record<string, TabPermission>, allowDelete: {} as Record<string, boolean>, hideExistingData: {} as Record<string, boolean>, canShareRegistrationLink: false });
   const [editingSubAdmin, setEditingSubAdmin] = useState<string | null>(null);
   const [viewPhoto, setViewPhoto] = useState<{ url: string; name: string } | null>(null);
   const [chatMessages, setChatMessages] = useState<AdminChatMessage[]>([]);
@@ -2182,7 +2182,7 @@ const Admin = () => {
           };
 
           const resetForm = () => {
-            setSubAdminForm({ name: '', username: '', email: '', permissions: {}, allowDelete: {}, hideExistingData: {} });
+            setSubAdminForm({ name: '', username: '', email: '', permissions: {}, allowDelete: {}, hideExistingData: {}, canShareRegistrationLink: false });
             setEditingSubAdmin(null);
           };
 
@@ -2200,6 +2200,7 @@ const Admin = () => {
                 permissions: subAdminForm.permissions,
                 allowDelete: subAdminForm.allowDelete,
                 hideExistingData: subAdminForm.hideExistingData,
+                canShareRegistrationLink: subAdminForm.canShareRegistrationLink,
               });
               toast({ title: "Sub-admin updated!" });
             } else {
@@ -2215,6 +2216,7 @@ const Admin = () => {
                 permissions: subAdminForm.permissions,
                 allowDelete: subAdminForm.allowDelete,
                 hideExistingData: subAdminForm.hideExistingData,
+                canShareRegistrationLink: subAdminForm.canShareRegistrationLink,
                 createdAt: new Date().toISOString(),
               });
               if (result) {
@@ -2253,7 +2255,7 @@ const Admin = () => {
           };
 
           const startEdit = (sa: SubAdmin) => {
-            setSubAdminForm({ name: sa.name, username: sa.username || '', email: sa.email || '', permissions: { ...sa.permissions }, allowDelete: { ...(sa.allowDelete || {}) }, hideExistingData: { ...sa.hideExistingData } });
+            setSubAdminForm({ name: sa.name, username: sa.username || '', email: sa.email || '', permissions: { ...sa.permissions }, allowDelete: { ...(sa.allowDelete || {}) }, hideExistingData: { ...sa.hideExistingData } , canShareRegistrationLink: !!sa.canShareRegistrationLink });
             setEditingSubAdmin(sa.id);
           };
 
@@ -2324,6 +2326,10 @@ const Admin = () => {
                     <p className="text-xs text-muted-foreground mt-2">
                       <strong>Hidden</strong> = tab not visible. <strong>View</strong> = can see data only. <strong>Edit</strong> = can add & edit. <strong>Full</strong> = can add, edit & delete. <strong>Delete</strong> = allow delete (separate from Full). <strong>Hide Data</strong> = cannot see existing records.
                     </p>
+                    <label className="flex items-start gap-2 mt-3 text-sm cursor-pointer">
+                      <input type="checkbox" checked={subAdminForm.canShareRegistrationLink} onChange={() => setSubAdminForm(prev => ({ ...prev, canShareRegistrationLink: !prev.canShareRegistrationLink }))} className="accent-primary mt-0.5" />
+                      <span><strong>Can send the member registration link</strong> <span className="text-muted-foreground">(shows the Copy / WhatsApp / Share box on this sub-admin's Members page)</span></span>
+                    </label>
                   </div>
                   <div className="flex gap-2">
                     <Button onClick={saveSubAdmin} variant="default" size="sm" disabled={saving}>

@@ -227,6 +227,8 @@ export interface SubAdmin {
   permissions: Record<string, TabPermission>;
   allowDelete: Record<string, boolean>;
   hideExistingData: Record<string, boolean>;
+  // Set by the admin: may this sub-admin send the member registration link? (off unless granted)
+  canShareRegistrationLink?: boolean;
   createdAt: string;
 }
 

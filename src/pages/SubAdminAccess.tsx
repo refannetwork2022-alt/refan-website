@@ -515,7 +515,7 @@ const SubAdminAccess = () => {
                 <Button variant="default" size="sm" onClick={() => setShowMemberForm(!showMemberForm)}><Plus className="h-4 w-4" /> Add Member</Button>
               )}
             </div>
-            <RegistrationLinkShare />
+            {profile?.canShareRegistrationLink && <RegistrationLinkShare />}
 
             {/* Add Member Form */}
             {showMemberForm && canEditTab('members') && (
