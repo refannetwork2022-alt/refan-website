@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import nodemailer from 'nodemailer';
+import { getDocument } from './_lib/firebase';
 
 // "We received your form" email, sent right after someone donates or registers as a member.
 // Visitors aren't signed in, so instead of accepting any text/recipient (which could be abused to send spam from
@@ -15,20 +16,11 @@ type Kind = keyof typeof COLLECTIONS;
 const MAX_AGE_MS = 15 * 60 * 1000; // only records created in the last 15 minutes
 const sent = new Set<string>(); // best effort: don't send twice from the same server instance
 
-const projectId = () => process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || '';
-const apiKey = () => process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || '';
-
+// Read with the server's service account (the database rules don't let visitors read these records).
 async function getRecord(collection: string, id: string, fields: string[]): Promise<Record<string, string> | null> {
-  const mask = fields.map((f) => `mask.fieldPaths=${encodeURIComponent(f)}`).join('&');
-  const key = apiKey();
-  const res = await fetch(`https://firestore.googleapis.com/v1/projects/${projectId()}/databases/(default)/documents/${collection}/${encodeURIComponent(id)}?${mask}${key ? `&key=${encodeURIComponent(key)}` : ''}`);
-  if (!res.ok) return null;
-  const json = await res.json();
-  const out: Record<string, string> = {};
-  for (const [k, v] of Object.entries<any>(json?.fields || {})) {
-    out[k] = String(v.stringValue ?? v.integerValue ?? v.doubleValue ?? '');
-  }
-  return out;
+  const doc = await getDocument(`${collection}/${encodeURIComponent(id)}`, fields);
+  if (!doc) return null;
+  return Object.fromEntries(Object.entries(doc).map(([k, v]) => [k, v == null ? '' : String(v)]));
 }
 
 const money = (currency: string, amount: string) => `${currency || 'MWK'} ${Number(amount || 0).toLocaleString('en-US')}`;

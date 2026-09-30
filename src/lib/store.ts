@@ -1,6 +1,6 @@
 import { db } from "@/integrations/firebase/client";
 import {
-  collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, setDoc,
+  collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, setDoc, deleteField,
   query, orderBy, getCountFromServer, increment,
   where, limit,
 } from "firebase/firestore";
@@ -222,7 +222,9 @@ export interface SubAdmin {
   username: string;
   email: string;
   token: string;
-  password: string;
+  // Older sub-admins only: readable password, replaced by passwordHash at their first sign-in.
+  password?: string;
+  passwordHash?: string;
   active: boolean;
   permissions: Record<string, TabPermission>;
   allowDelete: Record<string, boolean>;
@@ -450,15 +452,22 @@ export const store = {
       });
     } catch (e) { console.error("getSubscribers:", e); return []; }
   },
+  // One document per email (the email is the document id), so a repeat sign-up can be detected without reading the
+  // subscriber list, which visitors aren't allowed to read. Older subscribers were saved under random ids.
   addSubscriber: async (email: string): Promise<NewsletterSubscriber | null> => {
+    const id = email.trim().toLowerCase().replace(/\//g, "_");
     try {
-      // Check for duplicate
-      const q = query(collection(db, "newsletter_subscribers"), where("email", "==", email), limit(1));
-      const snap = await getDocs(q);
-      if (!snap.empty) return null;
+      try {
+        const q = query(collection(db, "newsletter_subscribers"), where("email", "==", email), limit(1));
+        if (!(await getDocs(q)).empty) return null;
+      } catch { /* not allowed to read the list: rely on the fixed document id */ }
+      const ref = doc(db, "newsletter_subscribers", id);
+      try {
+        if ((await getDoc(ref)).exists()) return null;
+      } catch { /* not allowed to read: an existing email makes the write below fail instead */ }
       const now = new Date().toISOString();
-      const ref = await addDoc(collection(db, "newsletter_subscribers"), { email, opt_in: true, created_at: now });
-      return { id: ref.id, email, date: now };
+      await setDoc(ref, { email, opt_in: true, created_at: now });
+      return { id, email, date: now };
     } catch (e) { console.error("addSubscriber:", e); return null; }
   },
   deleteSubscriber: async (id: string): Promise<boolean> => {
@@ -556,17 +565,23 @@ export const store = {
       });
     } catch (e) { console.error("getMembers:", e); return []; }
   },
+  // Staff only (the database rules don't let visitors read members). Next number after the highest one used,
+  // e.g. R00302026 after R00292026 (4-digit sequence + year).
   getNextRegNumber: async (): Promise<string> => {
+    const year = new Date().getFullYear();
     try {
-      const snap = await getCountFromServer(collection(db, "members"));
-      const total = snap.data().count;
-      const year = new Date().getFullYear();
-      return `R${String(total + 1).padStart(4, '0')}${year}`;
-    } catch (e) { console.error("getNextRegNumber:", e); return `R0001${new Date().getFullYear()}`; }
+      const snap = await getDocs(query(collection(db, "members"), orderBy("regNumber", "desc"), limit(1)));
+      const last = snap.empty ? "" : String(snap.docs[0].data().regNumber || "");
+      const seq = /^R\d{5,}$/.test(last) ? parseInt(last.slice(1, -4), 10) : NaN;
+      if (Number.isFinite(seq)) return `R${String(seq + 1).padStart(4, '0')}${year}`;
+      const count = await getCountFromServer(collection(db, "members"));
+      return `R${String(count.data().count + 1).padStart(4, '0')}${year}`;
+    } catch (e) { console.error("getNextRegNumber:", e); return `R0001${year}`; }
   },
-  addMember: async (item: Omit<Member, 'id' | 'regNumber'>): Promise<Member | null> => {
+  // Public registrations get their number when the admin approves them (visitors can't read other members).
+  addMember: async (item: Omit<Member, 'id' | 'regNumber'>, options: { assignRegNumber?: boolean } = {}): Promise<Member | null> => {
     try {
-      const regNumber = await store.getNextRegNumber();
+      const regNumber = options.assignRegNumber === false ? '' : await store.getNextRegNumber();
       const ref = await addDoc(collection(db, "members"), {
         regNumber, surname: item.surname, firstName: item.firstName,
         otherName: item.otherName, email: item.email || '', countryOfOrigin: item.countryOfOrigin,
@@ -686,6 +701,13 @@ export const store = {
       await updateDoc(doc(db, "sub_admins", id), item as any);
       return true;
     } catch (e) { console.error("updateSubAdmin:", e); return false; }
+  },
+  // New access link and/or password; the readable password field is removed.
+  setSubAdminCredentials: async (id: string, creds: { token?: string; passwordHash: string }): Promise<boolean> => {
+    try {
+      await updateDoc(doc(db, "sub_admins", id), { ...creds, password: deleteField() });
+      return true;
+    } catch (e) { console.error("setSubAdminCredentials:", e); return false; }
   },
   deleteSubAdmin: async (id: string): Promise<boolean> => {
     try { await deleteDoc(doc(db, "sub_admins", id)); return true; }

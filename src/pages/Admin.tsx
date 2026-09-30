@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import ImageUpload from "@/components/ImageUpload";
 import { CONTACT_ICONS, getContactIcon } from "@/lib/contactLinks";
 import { postEmail } from "@/lib/sendEmail";
+import { hashPassword } from "@/lib/passwordHash";
 import { WORLD_CURRENCIES, currencyName } from "@/lib/currencies";
 import { setMemberPaymentStatus } from "@/lib/memberApproval";
 import MemberPaymentCell from "@/components/MemberPaymentCell";
@@ -79,6 +80,8 @@ const Admin = () => {
   const [members, setMembers] = useState<Member[]>([]);
   const [membershipFees, setMembershipFees] = useState<MembershipSettings>(DEFAULT_MEMBERSHIP_FEES);
   const [subAdmins, setSubAdmins] = useState<SubAdmin[]>([]);
+  // Passwords generated in this session, shown once so the admin can send them (only hashes are stored).
+  const [freshPasswords, setFreshPasswords] = useState<Record<string, string>>({});
   const [subAdminForm, setSubAdminForm] = useState({ name: '', username: '', email: '', permissions: {} as Record<string, TabPermission>, allowDelete: {} as Record<string, boolean>, hideExistingData: {} as Record<string, boolean>, canShareRegistrationLink: false });
   const [editingSubAdmin, setEditingSubAdmin] = useState<string | null>(null);
   const [viewPhoto, setViewPhoto] = useState<{ url: string; name: string } | null>(null);
@@ -597,7 +600,7 @@ const Admin = () => {
   const changeMemberPaymentStatus = async (m: Member, status: PaymentStatus) => {
     const result = await setMemberPaymentStatus(m, status);
     if (!result.ok) { toast({ title: "Failed to update", variant: "destructive" }); return; }
-    setMembers(prev => prev.map(x => x.id === m.id ? { ...x, paymentStatus: status, ...(result.expiryDate ? { expiryDate: result.expiryDate } : {}), ...(result.emailed ? { welcomeSent: true } : {}) } : x));
+    setMembers(prev => prev.map(x => x.id === m.id ? { ...x, paymentStatus: status, ...(result.expiryDate ? { expiryDate: result.expiryDate } : {}), ...(result.regNumber ? { regNumber: result.regNumber } : {}), ...(result.emailed ? { welcomeSent: true } : {}) } : x));
     if (status !== 'approved') toast({ title: "Marked as payment not received" });
     else toast({ title: result.emailed ? "Member approved — welcome email sent" : m.welcomeSent || !m.email ? "Member approved" : "Member approved (welcome email could not be sent)" });
   };
@@ -2211,7 +2214,7 @@ const Admin = () => {
                 username: subAdminForm.username,
                 email: subAdminForm.email.toLowerCase(),
                 token,
-                password,
+                passwordHash: await hashPassword(password),
                 active: true,
                 permissions: subAdminForm.permissions,
                 allowDelete: subAdminForm.allowDelete,
@@ -2220,7 +2223,8 @@ const Admin = () => {
                 createdAt: new Date().toISOString(),
               });
               if (result) {
-                toast({ title: `Sub-admin created! Password: ${password}` });
+                setFreshPasswords(prev => ({ ...prev, [result.id]: password }));
+                toast({ title: "Sub-admin created! Send them the link and password shown below — the password is shown only now." });
               }
             }
             setSubAdmins(await store.getSubAdmins());
@@ -2239,12 +2243,14 @@ const Admin = () => {
             toast({ title: "Password copied!" });
           };
 
-          const generateCredentials = async (sa: SubAdmin) => {
-            const token = generateToken();
+          // New password (and a new link when newLink): only the hash is saved; the password is shown once here.
+          const generateCredentials = async (sa: SubAdmin, newLink = true) => {
             const password = generatePassword();
-            await store.updateSubAdmin(sa.id, { token, password });
+            const ok = await store.setSubAdminCredentials(sa.id, { ...(newLink || !sa.token ? { token: generateToken() } : {}), passwordHash: await hashPassword(password) });
+            if (!ok) { toast({ title: "Failed to update", variant: "destructive" }); return; }
+            setFreshPasswords(prev => ({ ...prev, [sa.id]: password }));
             setSubAdmins(await store.getSubAdmins());
-            toast({ title: `Generated! Password: ${password}` });
+            toast({ title: "New password created — send it now, it is shown only this time." });
           };
 
           const toggleActive = async (sa: SubAdmin) => {
@@ -2367,7 +2373,7 @@ const Admin = () => {
                             </p>
                           </div>
                           <div className="flex gap-1 shrink-0">
-                            <Button size="sm" variant="ghost" onClick={() => copyLink(sa)} title="Copy link & password"><Link2 className="h-3.5 w-3.5" /></Button>
+                            <Button size="sm" variant="ghost" onClick={() => copyLink(sa)} title="Copy link"><Link2 className="h-3.5 w-3.5" /></Button>
                             <Button size="sm" variant="ghost" onClick={() => toggleActive(sa)} title={isActive ? 'Disable access' : 'Enable access'}>
                               <Power className={`h-3.5 w-3.5 ${isActive ? 'text-green-600' : 'text-red-500'}`} />
                             </Button>
@@ -2376,15 +2382,16 @@ const Admin = () => {
                           </div>
                         </div>
                         <div className="mt-3 pt-3 border-t border-border">
-                          {sa.token && sa.password ? (() => {
+                          {sa.token && (freshPasswords[sa.id] || sa.password) ? (() => {
+                            const shownPassword = freshPasswords[sa.id] || sa.password || '';
                             const link = `${window.location.origin}${window.location.pathname}#/admin-access/${sa.token}`;
-                            const msg = `Hi ${sa.name},\n\nYou have been given access to the ReFAN admin dashboard.\n\nLink: ${link}\nPassword: ${sa.password}\n\nClick the link and enter your password to sign in.`;
+                            const msg = `Hi ${sa.name},\n\nYou have been given access to the ReFAN admin dashboard.\n\nLink: ${link}\nPassword: ${shownPassword}\n\nClick the link and enter your password to sign in.`;
                             return (
                               <div className="space-y-3">
                                 <div className="flex items-center gap-2">
                                   <span className="text-xs font-semibold text-muted-foreground">Password:</span>
-                                  <code className="bg-muted px-2 py-0.5 rounded text-foreground text-xs">{sa.password}</code>
-                                  <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => copyPassword(sa.password)}><Copy className="h-3 w-3" /> Copy</Button>
+                                  <code className="bg-muted px-2 py-0.5 rounded text-foreground text-xs">{shownPassword}</code>
+                                  <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => copyPassword(shownPassword)}><Copy className="h-3 w-3" /> Copy</Button>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <span className="text-xs font-semibold text-muted-foreground">Link:</span>
@@ -2402,7 +2409,18 @@ const Admin = () => {
                                 </div>
                               </div>
                             );
-                          })() : (
+                          })() : sa.token ? (
+                            // Password is stored only as a hash: it can't be shown again, only replaced.
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-semibold text-muted-foreground">Link:</span>
+                                <span className="text-xs text-muted-foreground break-all flex-1">{`${window.location.origin}${window.location.pathname}#/admin-access/${sa.token}`}</span>
+                                <Button size="sm" variant="ghost" className="h-6 px-2 text-xs shrink-0" onClick={() => copyLink(sa)}><Copy className="h-3 w-3" /> Copy</Button>
+                              </div>
+                              <p className="text-xs text-muted-foreground">The password is kept secret and can't be shown again. If {sa.name} forgot it, create a new one.</p>
+                              <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => generateCredentials(sa, false)}><KeyRound className="h-3 w-3" /> New Password</Button>
+                            </div>
+                          ) : (
                             <Button size="sm" variant="outline" onClick={() => generateCredentials(sa)}>Generate Link & Password</Button>
                           )}
                         </div>

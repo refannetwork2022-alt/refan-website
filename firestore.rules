@@ -1,0 +1,88 @@
+rules_version = '2';
+
+// ReFAN database rules. Not deployed automatically: paste into Firebase Console > Firestore Database > Rules.
+// - Visitors can read the website's content and send forms, but can't read other people's data.
+// - The admin signs in with Firebase (Google or email/password).
+// - Sub-admins sign in through api/subadmin-login.ts, which gives them a token with subAdmin/subAdminId claims.
+// - The Vercel functions use the service account, which isn't limited by these rules.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'refannetwork2022@gmail.com';
+    }
+
+    // Sub-admin whose record still exists and hasn't been disabled by the admin.
+    function isSubAdmin() {
+      return request.auth != null
+        && request.auth.token.subAdmin == true
+        && exists(/databases/$(database)/documents/sub_admins/$(request.auth.token.subAdminId))
+        && get(/databases/$(database)/documents/sub_admins/$(request.auth.token.subAdminId)).data.get('active', true) != false;
+    }
+
+    function isStaff() {
+      return isAdmin() || isSubAdmin();
+    }
+
+    // ── Website content: everyone reads, staff edit ──
+    match /settings/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /stories/{id} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+    match /announcements/{id} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+    match /blog_posts/{id} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+    match /gallery_items/{id} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    // ── Forms visitors send: anyone can create, only staff can read or change ──
+    match /donation_submissions/{id} {
+      // visitors can't mark their own donation as paid
+      allow create: if isStaff() || request.resource.data.get('status', 'pending') == 'pending';
+      allow read, update, delete: if isStaff();
+    }
+    match /members/{id} {
+      // visitors can't approve themselves or pick a membership number
+      allow create: if isStaff()
+        || (request.resource.data.get('paymentStatus', 'pending') == 'pending'
+            && request.resource.data.get('regNumber', '') == '');
+      allow read, update, delete: if isStaff();
+    }
+    match /volunteer_submissions/{id} {
+      allow create: if isStaff() || request.resource.data.get('paymentStatus', 'pending') == 'pending';
+      allow read, update, delete: if isStaff();
+    }
+    match /contact_messages/{id} {
+      allow create: if true;
+      allow read, update, delete: if isStaff();
+    }
+    match /newsletter_subscribers/{id} {
+      // new sign-ups only (an existing email can't be overwritten)
+      allow create: if true;
+      allow read, update, delete: if isStaff();
+    }
+
+    // ── Admin area ──
+    match /sub_admins/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /user_roles/{id} {
+      allow read: if request.auth != null && resource.data.user_id == request.auth.uid;
+      allow write: if false;
+    }
+    match /admin_chat/{id} {
+      allow read, write: if isStaff();
+    }
+  }
+}

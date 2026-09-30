@@ -12,6 +12,8 @@ import {
 import ImageUpload from "@/components/ImageUpload";
 import RichTextEditor from "@/components/RichTextEditor";
 import { postEmail } from "@/lib/sendEmail";
+import { auth } from "@/integrations/firebase/client";
+import { onAuthStateChanged, signInWithCustomToken, signOut } from "firebase/auth";
 import { setMemberPaymentStatus } from "@/lib/memberApproval";
 import MemberPaymentCell from "@/components/MemberPaymentCell";
 import RegistrationLinkShare from "@/components/RegistrationLinkShare";
@@ -291,17 +293,27 @@ const SubAdminAccess = () => {
     setSaving(false);
   };
 
-  // Load sub-admin profile
+  // Sign-in is checked on the server (api/subadmin-login.ts), which returns a Firebase sign-in token so the
+  // database rules recognise sub-admins. On load, pick up an existing sub-admin session for this access link.
   useEffect(() => {
     if (!token) { setLoading(false); return; }
-    store.getSubAdminByToken(token).then((sa) => {
-      if (!sa || sa.active === false) {
-        setProfile(null);
-      } else {
-        setProfile(sa);
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      try {
+        const claims = user ? (await user.getIdTokenResult()).claims : null;
+        if (user && claims?.subAdmin) {
+          const res = await fetch('/api/subadmin-login', { method: 'POST', headers: { Authorization: `Bearer ${await user.getIdToken()}` } });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data.profile?.token === token) {
+            setProfile(data.profile as SubAdmin);
+            setAuthenticated(true);
+          }
+        }
+      } catch {
+        // stay on the sign-in form
       }
       setLoading(false);
     });
+    return unsub;
   }, [token]);
 
   // Load data after auth
@@ -334,9 +346,9 @@ const SubAdminAccess = () => {
 
   // Only sub-admins the admin allowed to edit Members may approve or reject payments.
   const changeMemberPaymentStatus = async (m: Member, status: PaymentStatus) => {
-    const result = await setMemberPaymentStatus(m, status, { token: token || '', password: profile?.password || '' });
+    const result = await setMemberPaymentStatus(m, status);
     if (!result.ok) { toast({ title: "Failed to update", variant: "destructive" }); return; }
-    setMembers(prev => prev.map(x => x.id === m.id ? { ...x, paymentStatus: status, ...(result.expiryDate ? { expiryDate: result.expiryDate } : {}), ...(result.emailed ? { welcomeSent: true } : {}) } : x));
+    setMembers(prev => prev.map(x => x.id === m.id ? { ...x, paymentStatus: status, ...(result.expiryDate ? { expiryDate: result.expiryDate } : {}), ...(result.regNumber ? { regNumber: result.regNumber } : {}), ...(result.emailed ? { welcomeSent: true } : {}) } : x));
     if (status !== 'approved') toast({ title: "Marked as payment not received" });
     else toast({ title: result.emailed ? "Member approved — welcome email sent" : m.welcomeSent || !m.email ? "Member approved" : "Member approved (welcome email could not be sent)" });
   };
@@ -346,7 +358,7 @@ const SubAdminAccess = () => {
     if (sendingEmail) return;
     setSendingEmail(true);
     try {
-      const data = await postEmail({ to: emails, subject, body }, { token: token || '', password: profile?.password || '' });
+      const data = await postEmail({ to: emails, subject, body });
       if (data.success) {
         toast({ title: "Email sent successfully!" });
       } else {
@@ -369,25 +381,46 @@ const SubAdminAccess = () => {
 
   const visibleTabs = TAB_META.filter(t => t.id === 'chat' || canViewTab(t.id));
 
-  // Restore session on load
-  useEffect(() => {
-    if (profile && token) {
-      const saved = sessionStorage.getItem(`sa_auth_${token}`);
-      if (saved === 'true') setAuthenticated(true);
-    }
-  }, [profile, token]);
-
-  const handleLogin = () => {
+  const [signingIn, setSigningIn] = useState(false);
+  const handleLogin = async () => {
+    if (!token || !passwordInput || signingIn) return;
     setError('');
-    if (passwordInput !== profile?.password) { setError("Incorrect password"); return; }
-    setAuthenticated(true);
-    if (token) sessionStorage.setItem(`sa_auth_${token}`, 'true');
+    setSigningIn(true);
+    try {
+      const res = await fetch('/api/subadmin-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, password: passwordInput }),
+      });
+      const data = await res.json().catch(() => ({}));
+      // Safety net while the server sign-in isn't available (e.g. before its key is set up): the old in-browser
+      // check still works as long as the database rules allow reading sub-admin records.
+      if (res.status === 500 || res.status === 404 && !data.error) {
+        const sa = await store.getSubAdminByToken(token);
+        if (sa && sa.active !== false && sa.password && sa.password === passwordInput) {
+          setProfile(sa);
+          setAuthenticated(true);
+          setPasswordInput('');
+          return;
+        }
+      }
+      if (!res.ok || !data.customToken) { setError(data.error || "Sign-in failed. Please try again."); return; }
+      await signInWithCustomToken(auth, data.customToken);
+      setProfile(data.profile as SubAdmin);
+      setAuthenticated(true);
+      setPasswordInput('');
+    } catch {
+      setError("Sign-in failed. Please check your internet connection and try again.");
+    } finally {
+      setSigningIn(false);
+    }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await signOut(auth).catch(() => {});
     setAuthenticated(false);
+    setProfile(null);
     setPasswordInput('');
-    if (token) sessionStorage.removeItem(`sa_auth_${token}`);
   };
 
   const inputClass = "w-full px-4 py-2.5 rounded-lg border border-input bg-background focus:ring-2 focus:ring-ring outline-none text-sm";
@@ -399,7 +432,7 @@ const SubAdminAccess = () => {
     </div>
   );
 
-  if (!profile) return (
+  if (!token) return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="bg-card rounded-2xl p-8 shadow-elevated max-w-md w-full text-center">
         <Shield className="h-12 w-12 text-red-500 mx-auto mb-4" />
@@ -411,16 +444,16 @@ const SubAdminAccess = () => {
   );
 
   // ── Password Login ──
-  if (!authenticated) return (
+  if (!authenticated || !profile) return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="bg-card rounded-2xl p-8 shadow-elevated max-w-md w-full">
         <Lock className="h-10 w-10 text-primary mx-auto mb-4" />
-        <h1 className="font-heading text-xl font-bold text-center mb-1">Welcome, {profile.name}</h1>
+        <h1 className="font-heading text-xl font-bold text-center mb-1">ReFAN Sub-Admin</h1>
         <p className="text-muted-foreground text-sm text-center mb-6">Enter your password to sign in</p>
         <div className="space-y-3">
           <input type="password" placeholder="Password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} className={inputClass + " text-center text-lg tracking-wider"} autoFocus />
           {error && <p className="text-red-500 text-xs text-center">{error}</p>}
-          <Button onClick={handleLogin} className="w-full" size="lg">Sign In</Button>
+          <Button onClick={handleLogin} className="w-full" size="lg" disabled={signingIn}>{signingIn ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Sign In</Button>
         </div>
       </div>
     </div>

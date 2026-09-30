@@ -51,8 +51,8 @@ const ADMIN_EMAILS = new Set([
 const checkAdminRole = async (firebaseUser: User): Promise<{ isAdmin: boolean; isSuperAdmin: boolean; subAdminProfile: SubAdmin | null }> => {
   const email = (firebaseUser.email || '').trim().toLowerCase();
 
-  // Check super admin first - direct comparison
-  if (email === "refannetwork2022@gmail.com" || email.startsWith("refannetwork2022")) {
+  // Check super admin first - exact email only (a "starts with" check let any refannetwork2022…@ address in).
+  if (email === "refannetwork2022@gmail.com") {
     return { isAdmin: true, isSuperAdmin: true, subAdminProfile: null };
   }
   if (ADMIN_EMAILS.has(email)) {

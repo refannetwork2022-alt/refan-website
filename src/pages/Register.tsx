@@ -166,7 +166,7 @@ const Register = () => {
         branchName: form.branchName.trim(),
         username: form.username.trim(),
         paymentStatus: 'pending',
-      });
+      }, { assignRegNumber: false });
       if (member) {
         sendConfirmationEmail("member", member.id);
         // Send email notification to admin about new registration
@@ -180,7 +180,7 @@ const Register = () => {
               subject: `New Member Registration - ${fullName}`,
               from_name: fullName,
               email: form.email.trim() || "no-email@refan.org",
-              message: `A new member has registered on the ReFAN website.\n\nName: ${fullName}\nReg Number: ${member.regNumber}\nEmail: ${form.email.trim() || 'Not provided'}\nPhone: ${form.phoneCode} ${form.phone.trim()}\nGender: ${form.gender}\nCountry of Origin: ${form.countryOfOrigin}\nCountry of Residence: ${form.countryOfResidence}\nBranch: ${form.branchName.trim()}\nPayment: ${form.paymentCurrency} ${Number(form.paymentAmount).toLocaleString()}\nStatus: PENDING - check the payment, then approve the member in Admin > Members.`,
+              message: `A new member has registered on the ReFAN website.\n\nName: ${fullName}\nReg Number: ${member.regNumber || 'given when approved'}\nEmail: ${form.email.trim() || 'Not provided'}\nPhone: ${form.phoneCode} ${form.phone.trim()}\nGender: ${form.gender}\nCountry of Origin: ${form.countryOfOrigin}\nCountry of Residence: ${form.countryOfResidence}\nBranch: ${form.branchName.trim()}\nPayment: ${form.paymentCurrency} ${Number(form.paymentAmount).toLocaleString()}\nStatus: PENDING - check the payment, then approve the member in Admin > Members.`,
             }),
           });
         } catch {
