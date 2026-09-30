@@ -12,19 +12,37 @@ let cachedAccount: ServiceAccount | null | undefined;
 export let serviceAccountProblem = '';
 export function serviceAccount(): ServiceAccount | null {
   if (cachedAccount !== undefined) return cachedAccount;
-  const raw = (process.env.FIREBASE_SERVICE_ACCOUNT || '').trim().replace(/^["']|["']$/g, '');
+  // Accept the value however it was pasted: the JSON file, its base64, with "NAME=" in front, or with the
+  // private key's \n escapes turned into real line breaks.
+  const raw = (process.env.FIREBASE_SERVICE_ACCOUNT || '')
+    .trim()
+    .replace(/^FIREBASE_SERVICE_ACCOUNT\s*=\s*/, '')
+    .replace(/^["']|["']$/g, '')
+    .trim();
   cachedAccount = null;
   serviceAccountProblem = raw ? '' : 'missing';
   if (raw) {
-    try {
-      const json = raw.startsWith('{') ? raw : Buffer.from(raw, 'base64').toString('utf8');
-      const sa = JSON.parse(json);
-      if (sa.client_email && sa.private_key && sa.project_id) cachedAccount = sa;
-      else serviceAccountProblem = 'incomplete';
-    } catch {
-      serviceAccountProblem = 'unreadable';
-      console.error('FIREBASE_SERVICE_ACCOUNT is not valid JSON/base64 JSON');
+    const text = raw.startsWith('{') ? raw : Buffer.from(raw.replace(/\s+/g, ''), 'base64').toString('utf8');
+    const attempts = [
+      text,
+      // real line breaks inside the private key -> \n escapes
+      text.replace(/("private_key"\s*:\s*")([\s\S]*?)(")/, (_m, a, key, b) => a + key.replace(/\r?\n/g, '\\n') + b),
+    ];
+    for (const candidate of attempts) {
+      try {
+        const sa = JSON.parse(candidate);
+        if (sa.client_email && sa.private_key && sa.project_id) {
+          sa.private_key = String(sa.private_key).replace(/\\n/g, '\n');
+          cachedAccount = sa;
+        } else {
+          serviceAccountProblem = 'incomplete';
+        }
+        break;
+      } catch {
+        serviceAccountProblem = raw.startsWith('{') ? 'unreadable (json)' : 'unreadable (base64)';
+      }
     }
+    if (cachedAccount) serviceAccountProblem = '';
   }
   return cachedAccount;
 }
