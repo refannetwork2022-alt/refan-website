@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import nodemailer from 'nodemailer';
-import { getDocument } from './_lib/firebase';
+import { getDocument } from './_lib/firebase.js';
 
 // "We received your form" email, sent right after someone donates or registers as a member.
 // Visitors aren't signed in, so instead of accepting any text/recipient (which could be abused to send spam from

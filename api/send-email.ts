@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import nodemailer from 'nodemailer';
 
-import { findByField, getCaller, verifyPasswordHash } from './_lib/firebase';
+import { findByField, getCaller, verifyPasswordHash } from './_lib/firebase.js';
 
 // Only signed-in admins or sub-admins (Firebase ID token, checked in _lib/firebase.ts) may send email,
 // so this endpoint can't be used by outsiders to send mail from the ReFAN Gmail account.

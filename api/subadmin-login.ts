@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createCustomToken, findByField, getCaller, getDocument, hashPassword, serviceAccount, updateDocument, verifyPasswordHash } from './_lib/firebase';
+import { createCustomToken, findByField, getCaller, getDocument, hashPassword, serviceAccount, updateDocument, verifyPasswordHash } from './_lib/firebase.js';
 
 // Sub-admin sign-in. Sub-admins open their access link (#/admin-access/<token>) and enter their password.
 // The check happens here on the server (the database no longer lets browsers read sub-admin records), and a
