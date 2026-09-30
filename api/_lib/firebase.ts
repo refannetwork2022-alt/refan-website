@@ -8,16 +8,21 @@ export const ADMIN_EMAILS = ['refannetwork2022@gmail.com'];
 interface ServiceAccount { project_id: string; client_email: string; private_key: string }
 
 let cachedAccount: ServiceAccount | null | undefined;
+// Why there is no service account ('missing' | 'unreadable' | 'incomplete'), for setup messages. Never the value.
+export let serviceAccountProblem = '';
 export function serviceAccount(): ServiceAccount | null {
   if (cachedAccount !== undefined) return cachedAccount;
-  const raw = (process.env.FIREBASE_SERVICE_ACCOUNT || '').trim();
+  const raw = (process.env.FIREBASE_SERVICE_ACCOUNT || '').trim().replace(/^["']|["']$/g, '');
   cachedAccount = null;
+  serviceAccountProblem = raw ? '' : 'missing';
   if (raw) {
     try {
       const json = raw.startsWith('{') ? raw : Buffer.from(raw, 'base64').toString('utf8');
       const sa = JSON.parse(json);
       if (sa.client_email && sa.private_key && sa.project_id) cachedAccount = sa;
+      else serviceAccountProblem = 'incomplete';
     } catch {
+      serviceAccountProblem = 'unreadable';
       console.error('FIREBASE_SERVICE_ACCOUNT is not valid JSON/base64 JSON');
     }
   }

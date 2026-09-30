@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createCustomToken, findByField, getCaller, getDocument, hashPassword, serviceAccount, updateDocument, verifyPasswordHash } from './_lib/firebase.js';
+import { createCustomToken, findByField, getCaller, getDocument, hashPassword, serviceAccount, serviceAccountProblem, updateDocument, verifyPasswordHash } from './_lib/firebase.js';
 
 // Sub-admin sign-in. Sub-admins open their access link (#/admin-access/<token>) and enter their password.
 // The check happens here on the server (the database no longer lets browsers read sub-admin records), and a
@@ -17,7 +17,7 @@ const failures = new Map<string, { count: number; until: number }>();
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  if (!serviceAccount()) return res.status(500).json({ error: 'Sign-in is not configured on the server.' });
+  if (!serviceAccount()) return res.status(500).json({ error: 'Sign-in is not configured on the server.', setup: `FIREBASE_SERVICE_ACCOUNT ${serviceAccountProblem}` });
 
   // Resume: already signed in with a sub-admin token.
   if (String(req.headers.authorization || '').startsWith('Bearer ')) {
