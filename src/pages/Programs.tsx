@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
-import { BookOpen, Users, Heart, X, ChevronRight, Share2, Facebook, Twitter, Link2 } from "lucide-react";
+import { BookOpen, Users, Heart, X, ChevronRight } from "lucide-react";
+import ShareButtons from "@/components/ShareButtons";
+import { buildShareUrl, getSharedId, clearSharedId } from "@/lib/share";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import educationImg from "@/assets/programs-education.jpg";
@@ -30,15 +32,26 @@ const Programs = () => {
   const { toast } = useToast();
   const [d, setD] = useState<ProgramsSettings>(DEFAULTS);
   const [selected, setSelected] = useState<(Program & { index: number }) | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     store.getPageSettings<ProgramsSettings>("programs").then((data) => {
       if (data) setD({ ...DEFAULTS, ...data });
+      setLoaded(true);
     });
   }, []);
 
-  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
-  const copyLink = () => { navigator.clipboard.writeText(shareUrl); toast({ title: "Link copied!" }); };
+  // Programs have no id, so shared links use the program's position (?program=0, 1, ...).
+  useEffect(() => {
+    if (!loaded) return;
+    const idx = Number(getSharedId("program"));
+    const prog = getSharedId("program") !== null && Number.isInteger(idx) ? d.programs[idx] : undefined;
+    if (prog) setSelected({ ...prog, index: idx });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded]);
+  useEffect(() => {
+    if (loaded && !selected) clearSharedId();
+  }, [loaded, selected]);
 
   return (
     <Layout>
@@ -142,12 +155,7 @@ const Programs = () => {
                     <Link to="/donate"><Heart className="h-4 w-4" /> Donate</Link>
                   </Button>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Share2 className="h-4 w-4 text-muted-foreground mr-1" />
-                  <button onClick={copyLink} className="p-2 rounded-lg hover:bg-muted transition-colors" title="Copy link"><Link2 className="h-4 w-4" /></button>
-                  <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg hover:bg-muted transition-colors text-[#1877F2]"><Facebook className="h-4 w-4" /></a>
-                  <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(selected.title)}&url=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg hover:bg-muted transition-colors text-[#1DA1F2]"><Twitter className="h-4 w-4" /></a>
-                </div>
+                <ShareButtons title={selected.title} url={buildShareUrl("program", String(selected.index))} />
               </div>
             </div>
           </div>

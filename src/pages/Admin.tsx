@@ -1122,7 +1122,7 @@ const Admin = () => {
                 <RichTextEditor value={announcementForm.content} onChange={(v) => setAnnouncementForm({ ...announcementForm, content: v })} placeholder="Content (description)" rows={4} />
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-muted-foreground">Image</label>
-                  <ImageUpload label="Upload Image" onUploaded={(url) => setAnnouncementForm({ ...announcementForm, image: url })} />
+                  <ImageUpload label="Upload Image" onUploaded={(url) => setAnnouncementForm(prev => ({ ...prev, image: url }))} />
                   <input placeholder="Or paste Image URL" value={announcementForm.image} onChange={(e) => setAnnouncementForm({ ...announcementForm, image: e.target.value })} className={inputClass} maxLength={500} />
                 </div>
                 <input placeholder="Video URL (YouTube, Vimeo, etc.)" value={announcementForm.video} onChange={(e) => setAnnouncementForm({ ...announcementForm, video: e.target.value })} className={inputClass} maxLength={500} />
@@ -1180,7 +1180,7 @@ const Admin = () => {
                 <RichTextEditor value={storyForm.content} onChange={(v) => setStoryForm({ ...storyForm, content: v })} placeholder="Write content here..." rows={4} />
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-muted-foreground">Image</label>
-                  <ImageUpload label="Upload Image" onUploaded={(url) => setStoryForm({ ...storyForm, image: url })} />
+                  <ImageUpload label="Upload Image" onUploaded={(url) => setStoryForm(prev => ({ ...prev, image: url }))} />
                   <input placeholder="Or paste Image URL" value={storyForm.image} onChange={(e) => setStoryForm({ ...storyForm, image: e.target.value })} className={inputClass} maxLength={500} />
                 </div>
                 <input placeholder="Video URL (YouTube, Vimeo, etc.)" value={storyForm.video} onChange={(e) => setStoryForm({ ...storyForm, video: e.target.value })} className={inputClass} maxLength={500} />
@@ -1236,7 +1236,7 @@ const Admin = () => {
                 <input placeholder="Excerpt" value={blogForm.excerpt} onChange={(e) => setBlogForm({ ...blogForm, excerpt: e.target.value })} className={inputClass} maxLength={300} />
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-muted-foreground">Featured Image (thumbnail)</label>
-                  <ImageUpload label="Upload Thumbnail" onUploaded={(url) => setBlogForm({ ...blogForm, image: url })} />
+                  <ImageUpload label="Upload Thumbnail" onUploaded={(url) => setBlogForm(prev => ({ ...prev, image: url }))} />
                   <input placeholder="Or paste thumbnail URL" value={blogForm.image} onChange={(e) => setBlogForm({ ...blogForm, image: e.target.value })} className={inputClass} maxLength={500} />
                 </div>
                 <input placeholder="Tags (comma separated)" value={blogForm.tags} onChange={(e) => setBlogForm({ ...blogForm, tags: e.target.value })} className={inputClass} maxLength={200} />
@@ -1313,7 +1313,7 @@ const Admin = () => {
               <h3 className="font-heading font-bold mb-4">Add Item</h3>
               <div className="space-y-3">
                 <input placeholder="Title" value={galleryForm.title} onChange={(e) => setGalleryForm({ ...galleryForm, title: e.target.value })} className={inputClass} maxLength={200} />
-                <ImageUpload label="Upload Photo" onUploaded={(url) => setGalleryForm({ ...galleryForm, url })} />
+                <ImageUpload label="Upload Photo" onUploaded={(url) => setGalleryForm(prev => ({ ...prev, url }))} />
                 <input placeholder="Or paste Image/Video URL" value={galleryForm.url} onChange={(e) => setGalleryForm({ ...galleryForm, url: e.target.value })} className={inputClass} maxLength={500} />
                 <select value={galleryForm.type} onChange={(e) => setGalleryForm({ ...galleryForm, type: e.target.value as 'photo' | 'video' })} className={inputClass}>
                   <option value="photo">Photo</option>
@@ -1813,7 +1813,7 @@ const Admin = () => {
                   {heroForm.heroImage && (
                     <img src={heroForm.heroImage} alt="Hero preview" className="w-full max-h-48 object-contain rounded-lg border border-border mb-2 bg-muted" />
                   )}
-                  <ImageUpload label="Upload Hero Image" onUploaded={(url) => setHeroForm({ ...heroForm, heroImage: url })} />
+                  <ImageUpload label="Upload Hero Image" onUploaded={(url) => setHeroForm(prev => ({ ...prev, heroImage: url }))} />
                   <p className="text-xs text-muted-foreground mt-1">Or enter a URL manually:</p>
                   <input value={heroForm.heroImage} onChange={(e) => setHeroForm({ ...heroForm, heroImage: e.target.value })} className={inputClass} placeholder="/refan_give.jpg or https://..." maxLength={500} />
                 </div>
@@ -1895,17 +1895,17 @@ const Admin = () => {
                 <div><label className="text-xs font-semibold text-muted-foreground">Hero Subtitle</label>
                   <RichTextEditor value={aboutForm.heroSubtitle} onChange={(v) => setAboutForm({ ...aboutForm, heroSubtitle: v })} rows={2} /></div>
                 <div><label className="text-xs font-semibold text-muted-foreground">Hero Background Image</label>
-                  <ImageUpload label="Upload" onUploaded={(url) => setAboutForm({ ...aboutForm, heroImage: url })} />
+                  <ImageUpload label="Upload" onUploaded={(url) => setAboutForm(prev => ({ ...prev, heroImage: url }))} />
                   <input value={aboutForm.heroImage} onChange={(e) => setAboutForm({ ...aboutForm, heroImage: e.target.value })} className={inputClass} placeholder="URL or leave empty for default" /></div>
                 <div><label className="text-xs font-semibold text-muted-foreground">Who We Are Title</label>
                   <RichTextEditor value={aboutForm.whoWeAreTitle} onChange={(v) => setAboutForm({ ...aboutForm, whoWeAreTitle: v })} rows={2} /></div>
                 <div><label className="text-xs font-semibold text-muted-foreground">Who We Are Body</label>
                   <RichTextEditor value={aboutForm.whoWeAreBody} onChange={(v) => setAboutForm({ ...aboutForm, whoWeAreBody: v })} rows={4} /></div>
                 <div><label className="text-xs font-semibold text-muted-foreground">Team Photo</label>
-                  <ImageUpload label="Upload" onUploaded={(url) => setAboutForm({ ...aboutForm, whoWeAreImage1: url })} />
+                  <ImageUpload label="Upload" onUploaded={(url) => setAboutForm(prev => ({ ...prev, whoWeAreImage1: url }))} />
                   <input value={aboutForm.whoWeAreImage1} onChange={(e) => setAboutForm({ ...aboutForm, whoWeAreImage1: e.target.value })} className={inputClass} placeholder="URL or leave empty for default" /></div>
                 <div><label className="text-xs font-semibold text-muted-foreground">Founder Photo</label>
-                  <ImageUpload label="Upload" onUploaded={(url) => setAboutForm({ ...aboutForm, whoWeAreImage2: url })} />
+                  <ImageUpload label="Upload" onUploaded={(url) => setAboutForm(prev => ({ ...prev, whoWeAreImage2: url }))} />
                   <input value={aboutForm.whoWeAreImage2} onChange={(e) => setAboutForm({ ...aboutForm, whoWeAreImage2: e.target.value })} className={inputClass} /></div>
                 <div><label className="text-xs font-semibold text-muted-foreground">Mission Quote</label>
                   <input value={aboutForm.missionQuote} onChange={(e) => setAboutForm({ ...aboutForm, missionQuote: e.target.value })} className={inputClass} /></div>
@@ -1928,7 +1928,7 @@ const Admin = () => {
                     </div>
                     <input placeholder="Quote" value={l.quote} onChange={(e) => { const arr = [...aboutForm.leaders]; arr[i] = { ...l, quote: e.target.value }; setAboutForm({ ...aboutForm, leaders: arr }); }} className={inputClass} />
                     <input placeholder="Email" value={l.email} onChange={(e) => { const arr = [...aboutForm.leaders]; arr[i] = { ...l, email: e.target.value }; setAboutForm({ ...aboutForm, leaders: arr }); }} className={inputClass} />
-                    <ImageUpload label="Photo" onUploaded={(url) => { const arr = [...aboutForm.leaders]; arr[i] = { ...l, image: url }; setAboutForm({ ...aboutForm, leaders: arr }); }} />
+                    <ImageUpload label="Photo" onUploaded={(url) => setAboutForm(prev => { const arr = [...prev.leaders]; arr[i] = { ...arr[i], image: url }; return { ...prev, leaders: arr }; })} />
                     <input placeholder="Photo URL" value={l.image} onChange={(e) => { const arr = [...aboutForm.leaders]; arr[i] = { ...l, image: e.target.value }; setAboutForm({ ...aboutForm, leaders: arr }); }} className={inputClass} />
                     {aboutForm.leaders.length > 1 && <Button variant="destructive" size="sm" onClick={() => setAboutForm({ ...aboutForm, leaders: aboutForm.leaders.filter((_, j) => j !== i) })}><Trash2 className="h-3 w-3" /> Remove</Button>}
                   </div>
@@ -1966,7 +1966,7 @@ const Admin = () => {
                     <input placeholder="Title" value={p.title} onChange={(e) => { const arr = [...programsForm.programs]; arr[i] = { ...p, title: e.target.value }; setProgramsForm({ ...programsForm, programs: arr }); }} className={inputClass} />
                     <RichTextEditor value={p.description} onChange={(v) => { const arr = [...programsForm.programs]; arr[i] = { ...p, description: v }; setProgramsForm({ ...programsForm, programs: arr }); }} placeholder="Description" rows={3} />
                     <input placeholder="Stats (e.g. 100+ orphans supported)" value={p.stats} onChange={(e) => { const arr = [...programsForm.programs]; arr[i] = { ...p, stats: e.target.value }; setProgramsForm({ ...programsForm, programs: arr }); }} className={inputClass} />
-                    <ImageUpload label="Image" onUploaded={(url) => { const arr = [...programsForm.programs]; arr[i] = { ...p, image: url }; setProgramsForm({ ...programsForm, programs: arr }); }} />
+                    <ImageUpload label="Image" onUploaded={(url) => setProgramsForm(prev => { const arr = [...prev.programs]; arr[i] = { ...arr[i], image: url }; return { ...prev, programs: arr }; })} />
                     {p.image && <img src={p.image} alt="" className="w-full max-h-32 object-contain rounded bg-muted" />}
                     {programsForm.programs.length > 1 && <Button variant="destructive" size="sm" onClick={() => setProgramsForm({ ...programsForm, programs: programsForm.programs.filter((_, j) => j !== i) })}><Trash2 className="h-3 w-3" /> Remove</Button>}
                   </div>
@@ -1994,7 +1994,7 @@ const Admin = () => {
                   <div key={i} className="border border-border rounded-lg p-3 space-y-2">
                     <input placeholder="Title" value={p.title} onChange={(e) => { const arr = [...homeForm.programs]; arr[i] = { ...p, title: e.target.value }; setHomeForm({ ...homeForm, programs: arr }); }} className={inputClass} />
                     <RichTextEditor value={p.desc} onChange={(v) => { const arr = [...homeForm.programs]; arr[i] = { ...p, desc: v }; setHomeForm({ ...homeForm, programs: arr }); }} placeholder="Short description" rows={2} />
-                    <ImageUpload label="Image" onUploaded={(url) => { const arr = [...homeForm.programs]; arr[i] = { ...p, image: url }; setHomeForm({ ...homeForm, programs: arr }); }} />
+                    <ImageUpload label="Image" onUploaded={(url) => setHomeForm(prev => { const arr = [...prev.programs]; arr[i] = { ...arr[i], image: url }; return { ...prev, programs: arr }; })} />
                   </div>
                 ))}
                 <h4 id="admin-testimonials" className="font-bold text-sm scroll-mt-4">Testimonials</h4>
@@ -2004,10 +2004,10 @@ const Admin = () => {
                   <RichTextEditor value={homeForm.testimonialsSubtitle ?? 'Real stories from those whose lives have been transformed.'} onChange={(v) => setHomeForm({ ...homeForm, testimonialsSubtitle: v })} rows={2} /></div>
                 {homeForm.testimonials.map((t, i) => (
                   <div key={i} className="border border-border rounded-lg p-3 space-y-2">
-                    <RichTextEditor value={t.quote} onChange={(v) => { const arr = [...homeForm.testimonials]; arr[i] = { ...arr[i], quote: v }; setHomeForm({ ...homeForm, testimonials: arr }); }} placeholder="Write the testimonial here..." rows={6} />
+                    <RichTextEditor value={t.quote} onChange={(v) => setHomeForm(prev => { const arr = [...prev.testimonials]; arr[i] = { ...arr[i], quote: v }; return { ...prev, testimonials: arr }; })} placeholder="Write the testimonial here..." rows={6} />
                     <div className="flex gap-2">
-                      <input placeholder="Name" value={t.name} onChange={(e) => { const arr = [...homeForm.testimonials]; arr[i] = { ...t, name: e.target.value }; setHomeForm({ ...homeForm, testimonials: arr }); }} className={inputClass} />
-                      <input placeholder="Role" value={t.role} onChange={(e) => { const arr = [...homeForm.testimonials]; arr[i] = { ...t, role: e.target.value }; setHomeForm({ ...homeForm, testimonials: arr }); }} className={inputClass} />
+                      <input placeholder="Name" value={t.name} onChange={(e) => { const name = e.target.value; setHomeForm(prev => { const arr = [...prev.testimonials]; arr[i] = { ...arr[i], name }; return { ...prev, testimonials: arr }; }); }} className={inputClass} />
+                      <input placeholder="Role" value={t.role} onChange={(e) => { const role = e.target.value; setHomeForm(prev => { const arr = [...prev.testimonials]; arr[i] = { ...arr[i], role }; return { ...prev, testimonials: arr }; }); }} className={inputClass} />
                     </div>
                     <div className="flex items-center gap-3">
                       {t.image ? (
@@ -2016,14 +2016,14 @@ const Admin = () => {
                         <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center"><User className="h-6 w-6 text-primary" /></div>
                       )}
                       <div className="space-y-1">
-                        <ImageUpload label={t.image ? "Change Photo" : "Add Photo (optional)"} onUploaded={(url) => { const arr = [...homeForm.testimonials]; arr[i] = { ...arr[i], image: url }; setHomeForm({ ...homeForm, testimonials: arr }); }} />
-                        {t.image && <Button type="button" variant="ghost" size="sm" onClick={() => { const arr = [...homeForm.testimonials]; arr[i] = { ...arr[i], image: "" }; setHomeForm({ ...homeForm, testimonials: arr }); }}>Remove photo</Button>}
+                        <ImageUpload label={t.image ? "Change Photo" : "Add Photo (optional)"} onUploaded={(url) => setHomeForm(prev => { const arr = [...prev.testimonials]; arr[i] = { ...arr[i], image: url }; return { ...prev, testimonials: arr }; })} />
+                        {t.image && <Button type="button" variant="ghost" size="sm" onClick={() => setHomeForm(prev => { const arr = [...prev.testimonials]; arr[i] = { ...arr[i], image: "" }; return { ...prev, testimonials: arr }; })}>Remove photo</Button>}
                       </div>
                     </div>
-                    {homeForm.testimonials.length > 1 && <Button variant="destructive" size="sm" onClick={() => setHomeForm({ ...homeForm, testimonials: homeForm.testimonials.filter((_, j) => j !== i) })}><Trash2 className="h-3 w-3" /> Remove</Button>}
+                    {homeForm.testimonials.length > 1 && <Button variant="destructive" size="sm" onClick={() => setHomeForm(prev => ({ ...prev, testimonials: prev.testimonials.filter((_, j) => j !== i) }))}><Trash2 className="h-3 w-3" /> Remove</Button>}
                   </div>
                 ))}
-                <Button variant="outline" size="sm" onClick={() => setHomeForm({ ...homeForm, testimonials: [...homeForm.testimonials, { quote: "", name: "", role: "", image: "" }] })}><Plus className="h-3 w-3" /> Add Testimonial</Button>
+                <Button variant="outline" size="sm" onClick={() => setHomeForm(prev => ({ ...prev, testimonials: [...prev.testimonials, { quote: "", name: "", role: "", image: "" }] }))}><Plus className="h-3 w-3" /> Add Testimonial</Button>
                 <h4 className="font-bold text-sm">Why ReFAN Values</h4>
                 {homeForm.values.map((v, i) => (
                   <div key={i} className="flex gap-2">
@@ -2037,7 +2037,7 @@ const Admin = () => {
                 <div><label className="text-xs font-semibold text-muted-foreground">CTA Body</label>
                   <RichTextEditor value={homeForm.ctaBody} onChange={(v) => setHomeForm({ ...homeForm, ctaBody: v })} rows={2} /></div>
                 <div><label className="text-xs font-semibold text-muted-foreground">CTA Background Image</label>
-                  <ImageUpload label="Upload" onUploaded={(url) => setHomeForm({ ...homeForm, ctaImage: url })} />
+                  <ImageUpload label="Upload" onUploaded={(url) => setHomeForm(prev => ({ ...prev, ctaImage: url }))} />
                   <input value={homeForm.ctaImage} onChange={(e) => setHomeForm({ ...homeForm, ctaImage: e.target.value })} className={inputClass} /></div>
                 <Button className="sticky bottom-20 md:bottom-4 z-20 shadow-lg" variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("home", homeForm); setSaving(false); toast({ title: ok ? "Home page saved!" : "Failed" }); }}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Home Page

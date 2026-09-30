@@ -6,7 +6,7 @@ import { HashRouter, Routes, Route, useLocation, useNavigate } from "react-route
 import { useEffect } from "react";
 import { AuthProvider } from "@/hooks/useAuth";
 import AdminRoute from "@/components/AdminRoute";
-import { SHARED_KINDS, getSharedId } from "@/lib/share";
+import { SHARED_KINDS, SHARED_ROUTES, getSharedId } from "@/lib/share";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Programs from "./pages/Programs";
@@ -28,14 +28,15 @@ const ScrollToTop = () => {
   return null;
 };
 
-// Shared story/announcement links arrive as /?story=ID (apps like Facebook drop the "#/stories" part),
-// so send them to the Stories page, which opens the item.
+// Shared links arrive as /?story=ID, /?program=N ... (apps like Facebook drop the "#/..." part),
+// so send them to the page that shows that item, which then opens it.
 const SharedLinkRedirect = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   // Only when the site is first opened from a shared link, so normal browsing afterwards isn't redirected.
   useEffect(() => {
-    if (pathname !== "/stories" && SHARED_KINDS.some((k) => getSharedId(k))) navigate("/stories", { replace: true });
+    const kind = SHARED_KINDS.find((k) => getSharedId(k));
+    if (kind && pathname !== SHARED_ROUTES[kind]) navigate(SHARED_ROUTES[kind], { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return null;
