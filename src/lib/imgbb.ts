@@ -53,9 +53,25 @@ async function compressFile(file: File, quality = 0.8): Promise<Blob> {
   }
 }
 
-async function postToImgbb(image: Blob, fileName: string): Promise<string> {
+class ImgbbError extends Error {
+  constructor(message: string, readonly retryable: boolean) {
+    super(message);
+  }
+}
+
+const toBase64 = (blob: Blob): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",")[1] || "");
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+
+// image: the file itself, or a base64 string (ImgBB accepts both; base64 is the fallback when file uploads keep failing).
+async function postToImgbb(image: Blob | string, fileName: string): Promise<string> {
   const formData = new FormData();
-  formData.append("image", image, fileName);
+  if (typeof image === "string") formData.append("image", image);
+  else formData.append("image", image, fileName);
   formData.append("key", IMGBB_API_KEY);
 
   const controller = new AbortController();
@@ -63,14 +79,18 @@ async function postToImgbb(image: Blob, fileName: string): Promise<string> {
   let res: Response;
   try {
     res = await fetch("https://api.imgbb.com/1/upload", { method: "POST", body: formData, signal: controller.signal });
+  } catch {
+    throw new ImgbbError("Image upload failed. Please check your internet connection and try again.", true);
   } finally {
     clearTimeout(timer);
   }
   const data = await res.json().catch(() => null);
   if (!res.ok || !data?.data?.display_url) {
     console.error("ImgBB upload failed:", res.status, data);
-    const reason = data?.error?.message ? ` (${data.error.message})` : "";
-    throw new Error(`Image upload failed${reason}. Please try again.`);
+    const msg = String(data?.error?.message || "");
+    // ImgBB's own temporary problems ("Internal upload error", 5xx, rate limits) are worth retrying.
+    const retryable = res.status >= 500 || res.status === 429 || /internal|timeout|try again/i.test(msg);
+    throw new ImgbbError(`Image upload failed${msg ? ` (${msg})` : ""}. Please try again.`, retryable);
   }
   return data.data.display_url;
 }
@@ -99,15 +119,21 @@ export async function uploadImage(file: File): Promise<string> {
     throw new Error("Image is too large. Please use a smaller image (max 10MB).");
   }
 
-  // One automatic retry for unstable mobile connections.
-  try {
-    return await postToImgbb(uploadFile, fileName);
-  } catch (first) {
-    if (first instanceof Error && first.message.startsWith("Image upload failed (")) throw first; // ImgBB rejected it: retrying won't help
+  // Retries for unstable mobile connections and temporary ImgBB errors; the last try sends the photo as base64.
+  const attempts: Array<() => Promise<string>> = [
+    () => postToImgbb(uploadFile, fileName),
+    () => postToImgbb(uploadFile, fileName),
+    async () => postToImgbb(await toBase64(uploadFile), fileName),
+  ];
+  let lastError: unknown;
+  for (let i = 0; i < attempts.length; i++) {
     try {
-      return await postToImgbb(uploadFile, fileName);
-    } catch {
-      throw new Error("Image upload failed. Please check your internet connection and try again.");
+      return await attempts[i]();
+    } catch (e) {
+      lastError = e;
+      if (e instanceof ImgbbError && !e.retryable) throw e;
+      if (i < attempts.length - 1) await new Promise((r) => setTimeout(r, 1500 * (i + 1)));
     }
   }
+  throw lastError instanceof Error ? lastError : new Error("Image upload failed. Please try again.");
 }

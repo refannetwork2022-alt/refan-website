@@ -14,8 +14,12 @@ export const SHARED_ROUTES: Record<SharedKind, string> = {
 
 export const SHARED_KINDS = Object.keys(SHARED_ROUTES) as SharedKind[];
 
+// Links point at /share (api/share.ts) so WhatsApp/Facebook/LinkedIn previews show the item's own title and photo;
+// that page then forwards people to the item (/?kind=id#/page). On the local dev server /share doesn't exist.
 export const buildShareUrl = (kind: SharedKind, id: string): string =>
-  `${window.location.origin}/?${kind}=${encodeURIComponent(id)}#${SHARED_ROUTES[kind]}`;
+  /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)
+    ? `${window.location.origin}/?${kind}=${encodeURIComponent(id)}#${SHARED_ROUTES[kind]}`
+    : `${window.location.origin}/share?${kind}=${encodeURIComponent(id)}`;
 
 export const getSharedId = (kind: SharedKind): string | null =>
   new URLSearchParams(window.location.search).get(kind);
