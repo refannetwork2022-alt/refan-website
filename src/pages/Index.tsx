@@ -1,12 +1,12 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { Heart, Users, BookOpen, ArrowRight, Target, Globe, Shield, Baby, User, Home, Grid3X3, Quote, Megaphone, X, Share2 } from "lucide-react";
+import { Heart, Users, BookOpen, ArrowRight, Target, Globe, Shield, Baby, User, Home, Grid3X3, Megaphone, X } from "lucide-react";
 import ShareButtons from "@/components/ShareButtons";
-import { buildShareUrl, getSharedId, clearSharedId, shareLink } from "@/lib/share";
+import { buildShareUrl, getSharedId, clearSharedId } from "@/lib/share";
+import VoiceCard, { HOME_VOICES_LIMIT } from "@/components/VoiceCard";
 import { store, Announcement, HeroSettings, HomeSettings, GalleryItem } from "@/lib/store";
-import { useToast } from "@/hooks/use-toast";
 const heroBg = "/holi.jpg";
 import educationImg from "@/assets/programs-education.jpg";
 import healthImg from "@/assets/programs-health.jpg";
@@ -160,7 +160,7 @@ const stripHtml = (html: string) => {
 };
 
 const Index = () => {
-  const { toast } = useToast();
+  const navigate = useNavigate();
   const [homeLoaded, setHomeLoaded] = useState(false);
   const [highlightVoice, setHighlightVoice] = useState<number | null>(null);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
@@ -206,9 +206,11 @@ const Index = () => {
   useEffect(() => {
     if (!homeLoaded) return;
     const id = getSharedId("voice");
-    clearSharedId();
     if (id === null) return;
     const idx = Number(id);
+    // Not on the home page (only the first ones are): Stories > Voices shows it.
+    if (idx >= HOME_VOICES_LIMIT) { navigate("/stories?tab=voices", { replace: true }); return; }
+    clearSharedId();
     const el = document.getElementById(`voice-${idx}`);
     if (!el) return;
     // Scroll again after announcements/images above it have loaded and pushed it down.
@@ -223,11 +225,6 @@ const Index = () => {
     return () => timers.forEach(clearTimeout);
   }, [homeLoaded]);
 
-  const shareVoice = async (idx: number, name: string, image?: string) => {
-    const result = await shareLink(`${name} — Voices from ReFAN`, buildShareUrl("voice", String(idx), `${name}|${image || ""}`));
-    if (result === "copied") toast({ title: "Link copied!" });
-    else if (result === "failed") toast({ title: "Could not share. Please copy the link from your browser.", variant: "destructive" });
-  };
   return (
     <Layout>
       {/* Hero */}
@@ -358,39 +355,17 @@ const Index = () => {
           dangerouslySetInnerHTML={{ __html: home.testimonialsSubtitle || "Real stories from those whose lives have been transformed." }}
         />
         <div className="grid md:grid-cols-3 gap-8">
-          {home.testimonials.map((t, i) => (
-            // With a photo the card shows it on top (like the announcement cards); without one it stays as before.
-            <div key={i} id={`voice-${i}`} className={`bg-card rounded-2xl border border-border hover:border-primary/30 hover:shadow-card transition-all relative flex flex-col ${t.image ? "overflow-hidden" : "p-6 sm:p-8"} ${highlightVoice === i ? "ring-2 ring-primary" : ""}`}>
-              {!t.image && <Quote className="h-8 w-8 text-primary/20 absolute top-6 right-6" />}
-              {t.image && (
-                <div className="aspect-[4/3] bg-muted overflow-hidden">
-                  <img src={t.image} alt={t.name} className="w-full h-full object-cover object-top" />
-                </div>
-              )}
-              <div className={`relative flex flex-col flex-1 ${t.image ? "p-6 sm:p-8" : ""}`}>
-                {t.image && <Quote className="h-8 w-8 text-primary/20 absolute top-6 right-6" />}
-                <div
-                  className={`testimonial-content text-muted-foreground leading-relaxed mb-6 pr-8 break-words ${/<[a-z][\s\S]*>/i.test(t.quote) ? "" : "whitespace-pre-line"}`}
-                  dangerouslySetInnerHTML={{ __html: t.quote }}
-                />
-                <div className="flex items-center gap-3 border-t border-border pt-4 mt-auto">
-                  {!t.image && (
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <User className="h-5 w-5 text-primary" />
-                    </div>
-                  )}
-                  <div>
-                    <p className="font-bold text-sm">{t.name}</p>
-                    <p className="text-xs text-muted-foreground">{t.role}</p>
-                  </div>
-                  <button type="button" onClick={() => shareVoice(i, t.name, t.image)} className="ml-auto p-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-primary transition-colors" title="Share this voice" aria-label={`Share ${t.name}'s voice`}>
-                    <Share2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
+          {home.testimonials.slice(0, HOME_VOICES_LIMIT).map((t, i) => (
+            <VoiceCard key={i} voice={t} index={i} highlight={highlightVoice === i} />
           ))}
         </div>
+        {home.testimonials.length > HOME_VOICES_LIMIT && (
+          <div className="flex justify-center mt-8">
+            <Button asChild size="lg" variant="outline" className="btn-hover font-bold px-8">
+              <Link to="/stories?tab=voices">Read more testimonials <ArrowRight className="h-5 w-5" /></Link>
+            </Button>
+          </div>
+        )}
       </section>
 
       {/* Values - blue section */}

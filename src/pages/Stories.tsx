@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
-import { store, Story, Announcement } from "@/lib/store";
+import { store, Story, Announcement, HomeSettings } from "@/lib/store";
+import VoiceCard, { Voice, DEFAULT_VOICES } from "@/components/VoiceCard";
 import { Calendar, X, ChevronRight, Heart } from "lucide-react";
 import ShareButtons from "@/components/ShareButtons";
 import { buildShareUrl, getSharedId, clearSharedId } from "@/lib/share";
@@ -33,7 +34,16 @@ const stripHtml = (html: string) => {
 
 const Stories = () => {
   const { toast } = useToast();
-  const [filter, setFilter] = useState<'all' | 'story' | 'announcement'>('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  // A shared testimonial that isn't on the home page (?voice=N) is shown here, under Voices.
+  const [sharedVoice] = useState(() => getSharedId("voice"));
+  const [filter, setFilter] = useState<'all' | 'story' | 'announcement' | 'voices'>(
+    () => sharedVoice !== null || searchParams.get("tab") === "voices" ? 'voices' : 'all'
+  );
+  // "Voices" testimonials are edited with the home page (Admin > Page Content > Home).
+  const [voices, setVoices] = useState<Voice[]>([]);
+  const [voicesLoaded, setVoicesLoaded] = useState(false);
+  const [highlightVoice, setHighlightVoice] = useState<number | null>(null);
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
   const [stories, setStories] = useState<Story[]>([]);
@@ -55,7 +65,31 @@ const Stories = () => {
       setLoaded(true);
     });
     store.getPageSettings<typeof STORIES_DEFAULTS>("storiespage").then((d) => { if (d) setPg({ ...STORIES_DEFAULTS, ...d }); });
+    store.getPageSettings<HomeSettings>("home")
+      .then((d) => setVoices(d ? d.testimonials ?? DEFAULT_VOICES : DEFAULT_VOICES))
+      .catch(() => setVoices(DEFAULT_VOICES))
+      .finally(() => setVoicesLoaded(true));
   }, []);
+
+  // Scroll to the shared testimonial and highlight it for a moment.
+  useEffect(() => {
+    if (!voicesLoaded || sharedVoice === null) return;
+    clearSharedId();
+    const idx = Number(sharedVoice);
+    const scroll = () => {
+      const card = document.getElementById(`voice-${idx}`);
+      if (card) window.scrollTo({ top: card.getBoundingClientRect().top + window.scrollY - 90 });
+    };
+    const timers = [300, 1500].map((ms) => setTimeout(scroll, ms));
+    setHighlightVoice(idx);
+    timers.push(setTimeout(() => setHighlightVoice(null), 6000));
+    return () => timers.forEach(clearTimeout);
+  }, [voicesLoaded, sharedVoice]);
+
+  const chooseFilter = (f: typeof filter) => {
+    setFilter(f);
+    setSearchParams(f === 'voices' ? { tab: 'voices' } : {}, { replace: true });
+  };
 
   const filteredStories = filter === 'all' || filter === 'story' ? stories : [];
   const filteredAnnouncements = filter === 'all' || filter === 'announcement' ? announcements : [];
@@ -65,7 +99,7 @@ const Stories = () => {
     if (loaded && !selectedStory && !selectedAnnouncement) clearSharedId();
   }, [loaded, selectedStory, selectedAnnouncement]);
 
-  const hasContent = filteredStories.length > 0 || filteredAnnouncements.length > 0;
+  const hasContent = filter === 'voices' ? voices.length > 0 : filteredStories.length > 0 || filteredAnnouncements.length > 0;
 
   return (
     <Layout>
@@ -75,24 +109,30 @@ const Stories = () => {
       </section>
 
       <section className="container py-8 pb-20">
-        <div className="flex gap-2 mb-10">
-          {(['all', 'story', 'announcement'] as const).map((f) => (
+        <div className="flex flex-wrap gap-2 mb-10">
+          {(['all', 'story', 'announcement', 'voices'] as const).map((f) => (
             <button
               key={f}
-              onClick={() => setFilter(f)}
+              onClick={() => chooseFilter(f)}
               className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all ${
                 filter === f
-                  ? f === 'story' ? 'bg-secondary text-white shadow-md' : f === 'announcement' ? 'bg-primary text-white shadow-md' : 'bg-secondary text-white shadow-md'
+                  ? f === 'story' ? 'bg-secondary text-white shadow-md' : f === 'announcement' || f === 'voices' ? 'bg-primary text-white shadow-md' : 'bg-secondary text-white shadow-md'
                   : 'bg-muted text-muted-foreground hover:bg-accent hover:shadow-sm'
               }`}
             >
-              {f === 'all' ? 'All' : f === 'story' ? 'Stories' : 'Announcements'}
+              {f === 'all' ? 'All' : f === 'story' ? 'Stories' : f === 'announcement' ? 'Announcements' : 'Voices'}
             </button>
           ))}
         </div>
 
-        {!hasContent ? (
-          <p className="text-center text-muted-foreground py-20">No stories yet. Check back soon!</p>
+        {filter === 'voices' && !voicesLoaded ? null : !hasContent ? (
+          <p className="text-center text-muted-foreground py-20">{filter === 'voices' ? 'No testimonials yet. Check back soon!' : 'No stories yet. Check back soon!'}</p>
+        ) : filter === 'voices' ? (
+          <div className="grid md:grid-cols-3 gap-8">
+            {voices.map((t, i) => (
+              <VoiceCard key={i} voice={t} index={i} highlight={highlightVoice === i} />
+            ))}
+          </div>
         ) : (
           <div className="space-y-12">
             {/* Announcements section - same style as homepage */}
