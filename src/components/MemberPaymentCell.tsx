@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import type { Member, PaymentStatus } from "@/lib/store";
 import { memberStatusBadge } from "@/lib/memberApproval";
+import { PaymentInfo } from "@/components/PaymentMethods";
 
 interface MemberPaymentCellProps {
   member: Member;
@@ -18,6 +19,7 @@ const MemberPaymentCell = ({ member, canChange, onChange }: MemberPaymentCellPro
       {Number(member.paymentAmount) > 0 && (
         <p className="text-[11px] text-muted-foreground mt-1 whitespace-nowrap">{member.paymentCurrency} {Number(member.paymentAmount).toLocaleString()}</p>
       )}
+      <PaymentInfo method={member.paymentMethod} reference={member.paymentReference} className="text-[11px] text-muted-foreground mt-1 max-w-[180px] break-words" />
       {canChange && (
         <div className="flex gap-1 mt-1">
           {member.paymentStatus !== "approved" && (

@@ -7,6 +7,7 @@ import { store, DonateSettings, DEFAULT_DONATE_PAY_LINK } from "@/lib/store";
 import { toHref } from "@/lib/contactLinks";
 import { getMwkRates, toMwk } from "@/lib/exchangeRates";
 import { sendConfirmationEmail } from "@/lib/sendEmail";
+import { usePaymentOptions, PaymentMethodPicker, PaymentInstructions, MAIN_PAYMENT_ID, type PaymentOption } from "@/components/PaymentMethods";
 
 const DONATE_DEFAULTS: DonateSettings = {
   pageTitle: 'Make a <span class="text-primary">Donation</span>',
@@ -59,7 +60,21 @@ const Donate = () => {
   const [submitting, setSubmitting] = useState(false);
   const [redirectingName, setRedirectingName] = useState<string | null>(null);
 
-  const payHref = toHref(d.payLink || "");
+  // Ways to pay: DzalekaPay plus any methods the admin added (picker shown only when there is a choice).
+  const { options: payOptions, loaded: payLoaded } = usePaymentOptions();
+  const [payMethodId, setPayMethodId] = useState(MAIN_PAYMENT_ID);
+  const [payReference, setPayReference] = useState("");
+  const [manualThanks, setManualThanks] = useState<{ name: string; option: PaymentOption; amountText: string } | null>(null);
+  useEffect(() => {
+    if (payOptions.length && !payOptions.some((o) => o.id === payMethodId)) setPayMethodId(payOptions[0].id);
+  }, [payOptions, payMethodId]);
+  // Until the methods have loaded, behave as before (the main link from the Donate settings).
+  const selectedPay: PaymentOption | undefined = payLoaded
+    ? payOptions.find((o) => o.id === payMethodId)
+    : (toHref(d.payLink || "") ? { id: MAIN_PAYMENT_ID, name: "DzalekaPay", kind: "link", href: toHref(d.payLink || ""), main: true } : undefined);
+  const payHref = selectedPay?.kind === "link" ? selectedPay.href || "" : "";
+  const isMainPay = !!selectedPay?.main;
+  const isManualPay = selectedPay?.kind === "manual";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,24 +94,35 @@ const Donate = () => {
       currency,
       message: message.trim(),
       date: new Date().toISOString(),
-      ...(currency !== "MWK" && mwkAmount ? { mwkAmount } : {}),
+      ...(isMainPay && currency !== "MWK" && mwkAmount ? { mwkAmount } : {}),
+      ...(selectedPay ? { paymentMethod: selectedPay.name } : {}),
+      ...(isManualPay && payReference.trim() ? { paymentReference: payReference.trim() } : {}),
     });
     sendConfirmationEmail("donation", saved?.id);
     if (payHref) {
-      // DzalekaPay only takes MWK, so the amount is prefilled only for MWK donations.
       let target = payHref;
-      try {
-        const url = new URL(payHref);
-        // DzalekaPay charges in MWK only, so foreign amounts are converted first.
-        if (mwkAmount) url.searchParams.set("amount", String(mwkAmount));
-        target = url.toString();
-      } catch { /* keep the link exactly as the admin entered it */ }
+      // Only the main DzalekaPay checkout takes ?amount= (in MWK); other links open exactly as the admin entered them.
+      if (isMainPay) {
+        try {
+          const url = new URL(payHref);
+          // DzalekaPay charges in MWK only, so foreign amounts are converted first.
+          if (mwkAmount) url.searchParams.set("amount", String(mwkAmount));
+          target = url.toString();
+        } catch { /* keep the link exactly as the admin entered it */ }
+      }
       // Short thank-you before leaving the site, so the move to DzalekaPay isn't abrupt.
       setRedirectingName(name.trim());
       setTimeout(() => { window.location.href = target; }, 3000);
       return;
     }
     setSubmitting(false);
+    if (isManualPay && selectedPay) {
+      // Send-money methods: show how to pay; the admin confirms once the money arrives.
+      setManualThanks({ name: name.trim(), option: selectedPay, amountText: `${currency} ${Number(amount).toLocaleString()}` });
+      setName(""); setEmail(""); setMessage(""); setAmount(""); setPayReference("");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     toast({
       title: "Thank you for your donation request!",
       description: "Our admin will contact you with payment instructions.",
@@ -111,8 +137,8 @@ const Donate = () => {
           <div className="bg-card rounded-2xl shadow-elevated p-8 max-w-md w-full text-center space-y-3">
             <Heart className="h-10 w-10 text-primary mx-auto" />
             <h2 className="font-heading text-2xl font-bold">Thank you, {redirectingName}!</h2>
-            <p className="text-muted-foreground">Taking you to our secure payment page…</p>
-            <p className="text-sm text-muted-foreground">There, choose how you want to pay: <strong className="text-foreground">Mobile money</strong> or <strong className="text-foreground">Card</strong> (Visa / Mastercard).</p>
+            <p className="text-muted-foreground">{isMainPay ? "Taking you to our secure payment page…" : `Taking you to ${selectedPay?.name || "the payment page"}…`}</p>
+            {isMainPay && <p className="text-sm text-muted-foreground">There, choose how you want to pay: <strong className="text-foreground">Mobile money</strong> or <strong className="text-foreground">Card</strong> (Visa / Mastercard).</p>}
             <div className="h-6 w-6 mx-auto rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
           </div>
         </div>
@@ -125,6 +151,15 @@ const Donate = () => {
 
       <section className="container py-12">
         <div className="container max-w-2xl">
+          {manualThanks && (
+            <div className="bg-card rounded-2xl p-6 sm:p-8 shadow-elevated text-center space-y-4 mb-8">
+              <Heart className="h-10 w-10 text-primary mx-auto" />
+              <h2 className="font-heading text-2xl font-bold">Thank you, {manualThanks.name}!</h2>
+              <p className="text-muted-foreground">Your donation has been received. Please complete the payment as shown below; our team will confirm it once the money arrives.</p>
+              <PaymentInstructions option={manualThanks.option} amountText={manualThanks.amountText} />
+              <button type="button" onClick={() => setManualThanks(null)} className="text-sm text-muted-foreground hover:text-primary transition-colors">Close</button>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="bg-card rounded-2xl p-5 sm:p-8 lg:p-10 shadow-elevated space-y-6">
             {/* Currency + Amount */}
             <div>
@@ -149,7 +184,7 @@ const Donate = () => {
                   required
                 />
               </div>
-              {payHref && currency !== "MWK" && Number(amount) > 0 && (
+              {isMainPay && currency !== "MWK" && Number(amount) > 0 && (
                 <p className="text-sm text-muted-foreground mt-3">
                   {mwkAmount
                     ? <>{currency} {Number(amount).toLocaleString()} ≈ <strong className="text-foreground">MWK {mwkAmount.toLocaleString()}</strong>. You will pay in Malawi Kwacha by card or mobile money; your bank converts it to your currency.</>
@@ -159,6 +194,16 @@ const Donate = () => {
                 </p>
               )}
             </div>
+
+            <PaymentMethodPicker
+              options={payOptions}
+              selectedId={payMethodId}
+              onSelect={setPayMethodId}
+              reference={payReference}
+              onReference={setPayReference}
+              amountText={Number(amount) > 0 ? `${currency} ${Number(amount).toLocaleString()}` : undefined}
+              inputClass={inputClass}
+            />
 
             <div className="space-y-4">
               <div>
@@ -179,16 +224,20 @@ const Donate = () => {
               {payHref ? <CreditCard className="h-5 w-5 shrink-0" /> : <Send className="h-5 w-5 shrink-0" />}
               <span className="truncate">
                 {payHref
-                  ? (submitting ? 'Opening payment...' : `Continue to Payment (${currency} ${amount || '0'}${currency !== 'MWK' && mwkAmount ? ` ≈ MWK ${mwkAmount.toLocaleString()}` : ''})`)
-                  : (submitting ? 'Sending...' : `Send Donation Request (${currency} ${amount || '0'})`)}
+                  ? (submitting ? 'Opening payment...' : `Continue to Payment (${currency} ${amount || '0'}${isMainPay && currency !== 'MWK' && mwkAmount ? ` ≈ MWK ${mwkAmount.toLocaleString()}` : ''})`)
+                  : isManualPay
+                    ? (submitting ? 'Sending...' : `Send Donation (${currency} ${amount || '0'})`)
+                    : (submitting ? 'Sending...' : `Send Donation Request (${currency} ${amount || '0'})`)}
               </span>
             </Button>
 
             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <Shield className="h-4 w-4" />
               <span>{payHref
-                ? "You will be taken to our secure DzalekaPay checkout (Mobile money or Card, paid in MWK)."
-                : "Your donation request will be sent to our admin who will provide payment instructions."}</span>
+                ? (isMainPay ? "You will be taken to our secure DzalekaPay checkout (Mobile money or Card, paid in MWK)." : `You will be taken to ${selectedPay?.name} to pay.`)
+                : isManualPay
+                  ? "After you send the money, our team checks it and confirms your donation."
+                  : "Your donation request will be sent to our admin who will provide payment instructions."}</span>
             </div>
           </form>
         </div>

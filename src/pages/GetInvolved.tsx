@@ -4,8 +4,8 @@ import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Heart, Users, Handshake, ArrowRight, UserPlus, CreditCard, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { store, GetInvolvedSettings, DEFAULT_DONATE_PAY_LINK, type DonateSettings } from "@/lib/store";
-import { toHref } from "@/lib/contactLinks";
+import { store, GetInvolvedSettings } from "@/lib/store";
+import { usePaymentOptions, PaymentMethodPicker, PaymentInstructions, MAIN_PAYMENT_ID, type PaymentOption } from "@/components/PaymentMethods";
 import CountrySearch from "@/components/CountrySearch";
 
 const waysDefault = [
@@ -45,15 +45,15 @@ const GetInvolved = () => {
     type: 'volunteer' as 'volunteer' | 'sponsor', message: '',
   });
   const [submitting, setSubmitting] = useState(false);
-  const [sponsorThanks, setSponsorThanks] = useState<string | null>(null);
-  const [payLink, setPayLink] = useState(DEFAULT_DONATE_PAY_LINK);
+  const [sponsorThanks, setSponsorThanks] = useState<{ name: string; option: PaymentOption } | null>(null);
+  // Same ways to pay as the Donate page (admin sets them under Page Content > Donate).
+  const { options: payOptions } = usePaymentOptions();
+  const [payMethodId, setPayMethodId] = useState(MAIN_PAYMENT_ID);
+  const [payReference, setPayReference] = useState("");
   useEffect(() => {
-    // Same DzalekaPay checkout as the Donate page (admin sets it under Page Content > Donate).
-    store.getPageSettings<DonateSettings>("donate").then((data) => {
-      if (data && typeof data.payLink === "string") setPayLink(data.payLink);
-    });
-  }, []);
-  const payHref = toHref(payLink);
+    if (payOptions.length && !payOptions.some((o) => o.id === payMethodId)) setPayMethodId(payOptions[0].id);
+  }, [payOptions, payMethodId]);
+  const selectedPay = payOptions.find((o) => o.id === payMethodId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,11 +74,14 @@ const GetInvolved = () => {
       country: form.country,
       message: `${form.message.trim()}${form.countryOfOrigin ? `\n[Country of Origin: ${form.countryOfOrigin}]` : ''}${form.idNumber ? `\n[ID: ${form.idNumber}]` : ''}`,
       date: new Date().toISOString(),
+      ...(form.type === 'sponsor' && selectedPay ? { paymentMethod: selectedPay.name } : {}),
+      ...(form.type === 'sponsor' && selectedPay?.kind === 'manual' && payReference.trim() ? { paymentReference: payReference.trim() } : {}),
     });
     setSubmitting(false);
-    if (form.type === 'sponsor' && payHref) {
+    if (form.type === 'sponsor' && selectedPay) {
       // Sponsors get a thank-you panel with the option to pay their sponsorship right away.
-      setSponsorThanks(form.name.trim());
+      setSponsorThanks({ name: form.name.trim(), option: selectedPay });
+      setPayReference("");
       document.getElementById('registration-form')?.scrollIntoView({ behavior: 'smooth' });
     } else {
       toast({ title: "Registration submitted!", description: "Thank you for your interest. We'll be in touch soon." });
@@ -134,11 +137,22 @@ const GetInvolved = () => {
           {sponsorThanks && (
             <div className="bg-card rounded-2xl p-8 shadow-elevated text-center space-y-4 mb-8">
               <CheckCircle className="h-12 w-12 text-green-500 mx-auto" />
-              <h3 className="font-heading text-2xl font-bold">Thank you, {sponsorThanks}!</h3>
-              <p className="text-muted-foreground">Your sponsorship registration has been received. You can make your sponsorship payment now through our secure DzalekaPay checkout (Mobile money or Card).</p>
-              <Button asChild size="lg" className="w-full bg-primary hover:bg-primary/90 text-white font-bold rounded-lg">
-                <a href={payHref}><CreditCard className="h-5 w-5" /> Pay Sponsorship Now</a>
-              </Button>
+              <h3 className="font-heading text-2xl font-bold">Thank you, {sponsorThanks.name}!</h3>
+              {sponsorThanks.option.kind === 'link' ? (
+                <>
+                  <p className="text-muted-foreground">{sponsorThanks.option.main
+                    ? "Your sponsorship registration has been received. You can make your sponsorship payment now through our secure DzalekaPay checkout (Mobile money or Card)."
+                    : `Your sponsorship registration has been received. You can make your sponsorship payment now with ${sponsorThanks.option.name}.`}</p>
+                  <Button asChild size="lg" className="w-full bg-primary hover:bg-primary/90 text-white font-bold rounded-lg">
+                    <a href={sponsorThanks.option.href}><CreditCard className="h-5 w-5" /> Pay Sponsorship Now</a>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <p className="text-muted-foreground">Your sponsorship registration has been received. Please make your sponsorship payment as shown below; our team will confirm it once the money arrives.</p>
+                  <PaymentInstructions option={sponsorThanks.option} />
+                </>
+              )}
               <button type="button" onClick={() => setSponsorThanks(null)} className="text-sm text-muted-foreground hover:text-primary transition-colors">I will pay later — our team will contact you</button>
             </div>
           )}
@@ -206,6 +220,17 @@ const GetInvolved = () => {
                   <input value={form.idNumber} onChange={(e) => setForm({ ...form, idNumber: e.target.value })} className={inputClass} maxLength={50} placeholder="Your national or refugee ID" />
                 </div>
               </div>
+            )}
+
+            {form.type === 'sponsor' && (
+              <PaymentMethodPicker
+                options={payOptions}
+                selectedId={payMethodId}
+                onSelect={setPayMethodId}
+                reference={payReference}
+                onReference={setPayReference}
+                inputClass={inputClass}
+              />
             )}
 
             <div>

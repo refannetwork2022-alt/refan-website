@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import ImageUpload from "@/components/ImageUpload";
 import RichTextEditor from "@/components/RichTextEditor";
+import { PaymentInfo } from "@/components/PaymentMethods";
 import { postEmail } from "@/lib/sendEmail";
 import { auth } from "@/integrations/firebase/client";
 import { onAuthStateChanged, signInWithCustomToken, signOut } from "firebase/auth";
@@ -1167,6 +1168,7 @@ const SubAdminAccess = () => {
                             </div>
                             <p className="text-xs text-muted-foreground">{v.email}{v.phone ? ' · ' + v.phone : ''}</p>
                             {v.country && <p className="text-xs text-muted-foreground">{v.country}</p>}
+                            <PaymentInfo method={v.paymentMethod} reference={v.paymentReference} className="text-xs text-muted-foreground" />
                             {v.message && <p className="text-sm mt-2 whitespace-pre-line">{v.message}</p>}
                             {canDeleteTab('sponsors') && (
                               <Button size="sm" variant="destructive" className="text-xs h-7 mt-2" onClick={async () => {
@@ -1230,6 +1232,7 @@ const SubAdminAccess = () => {
                         </div>
                         <p className="text-xs text-muted-foreground">{d.email}</p>
                         <p className="text-sm font-bold text-primary mt-1">{d.currency || 'USD'} {d.amount}</p>
+                        <PaymentInfo method={d.paymentMethod} reference={d.paymentReference} className="text-xs text-muted-foreground mt-1" />
                         {d.message && <p className="text-sm mt-2 whitespace-pre-line">{d.message}</p>}
                         {canDeleteTab('donations') && (
                           <Button size="sm" variant="destructive" className="text-xs h-7 mt-2" onClick={async () => {

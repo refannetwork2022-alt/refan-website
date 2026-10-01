@@ -64,6 +64,9 @@ export interface VolunteerSubmission {
   // Sponsors only: set by the admin after checking DzalekaPay.
   paymentStatus?: PaymentStatus;
   thankYouSent?: boolean;
+  // Sponsors only: payment method chosen and the transaction ID they gave (see PaymentMethod).
+  paymentMethod?: string;
+  paymentReference?: string;
 }
 
 export interface DonationSubmission {
@@ -79,6 +82,8 @@ export interface DonationSubmission {
   thankYouSent?: boolean;
   // Amount charged on DzalekaPay (MWK) when the donor chose another currency.
   mwkAmount?: number;
+  paymentMethod?: string;
+  paymentReference?: string;
 }
 
 export type PaymentStatus = 'pending' | 'approved' | 'rejected';
@@ -110,6 +115,8 @@ export interface Member {
   // Self-registered members start 'pending' until the admin confirms their payment; older/admin-added members are 'approved'.
   paymentStatus?: PaymentStatus;
   welcomeSent?: boolean;
+  paymentMethod?: string;
+  paymentReference?: string;
 }
 
 export interface MembershipSettings {
@@ -203,6 +210,21 @@ export interface DonateSettings {
   pageSubtitle: string;
   // Online payment page the donation form sends people to; empty = old "request" behaviour.
   payLink?: string;
+  // Other ways to pay the admin adds (M-Pesa Tanzania, PayPal, bank...), shown next to DzalekaPay
+  // on the Donate, member registration and sponsor forms.
+  paymentMethods?: PaymentMethod[];
+}
+
+export interface PaymentMethod {
+  id: string;
+  name: string;
+  country?: string;
+  // 'link': an online payment page; 'manual': instructions such as a number to send money to.
+  kind: 'link' | 'manual';
+  link?: string;
+  details?: string;
+  image?: string;
+  active: boolean;
 }
 
 // DzalekaPay checkout for ReFAN; accepts ?amount= (MWK) to prefill the amount.

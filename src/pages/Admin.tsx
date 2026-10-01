@@ -19,8 +19,9 @@ import { WORLD_CURRENCIES, currencyName } from "@/lib/currencies";
 import { setMemberPaymentStatus } from "@/lib/memberApproval";
 import MemberPaymentCell from "@/components/MemberPaymentCell";
 import RegistrationLinkShare from "@/components/RegistrationLinkShare";
-import { DEFAULT_DONATE_PAY_LINK, DEFAULT_MEMBERSHIP_FEES, type MembershipSettings, type PaymentStatus, type VolunteerSubmission } from "@/lib/store";
+import { DEFAULT_DONATE_PAY_LINK, DEFAULT_MEMBERSHIP_FEES, type PaymentMethod, type MembershipSettings, type PaymentStatus, type VolunteerSubmission } from "@/lib/store";
 import RichTextEditor from "@/components/RichTextEditor";
+import { PaymentInfo } from "@/components/PaymentMethods";
 
 type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'sponsors' | 'donations' | 'subscribers' | 'messages' | 'members' | 'footer' | 'hero' | 'site' | 'pages' | 'admins' | 'chat';
 
@@ -1402,6 +1403,7 @@ const Admin = () => {
                           <p className="text-sm text-muted-foreground">{v.email} {v.phone && `• ${v.phone}`}</p>
                           {v.country && <p className="text-sm text-muted-foreground">Country: {v.country}</p>}
                           {v.message && <p className="text-sm mt-2 text-muted-foreground whitespace-pre-line">{v.message}</p>}
+                          {v.type === 'sponsor' && <PaymentInfo method={v.paymentMethod} reference={v.paymentReference} className="text-sm text-muted-foreground mt-2" />}
                           {v.type === 'sponsor' && (
                             <div className="flex flex-wrap items-center gap-2 mt-3">
                               <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${v.paymentStatus === 'approved' ? 'bg-green-100 text-green-700' : v.paymentStatus === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
@@ -1492,6 +1494,7 @@ const Admin = () => {
                         </div>
                         <p className="text-sm text-muted-foreground">{d.email}</p>
                         <p className="text-sm mt-1"><span className="font-medium">{d.currency || 'USD'}</span> <span className="font-bold text-primary">{d.amount}</span>{d.mwkAmount && d.currency !== 'MWK' && <span className="text-muted-foreground"> (paid as ≈ MWK {Number(d.mwkAmount).toLocaleString()} on DzalekaPay)</span>}</p>
+                        <PaymentInfo method={d.paymentMethod} reference={d.paymentReference} className="text-sm text-muted-foreground mt-1" />
                         {d.message && <p className="text-sm mt-2 text-muted-foreground whitespace-pre-line">{d.message}</p>}
                         <div className="flex flex-wrap items-center gap-2 mt-3">
                           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${d.status === 'approved' ? 'bg-green-100 text-green-700' : d.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
@@ -2091,6 +2094,64 @@ const Admin = () => {
                   <RichTextEditor value={donateForm2.pageSubtitle} onChange={(v) => setDonateForm2({ ...donateForm2, pageSubtitle: v })} rows={3} /></div>
                 <div><label className="text-xs font-semibold text-muted-foreground">Online Payment Link (the donation form sends people here; leave empty to go back to "donation request" only)</label>
                   <input value={donateForm2.payLink ?? DEFAULT_DONATE_PAY_LINK} onChange={(e) => setDonateForm2({ ...donateForm2, payLink: e.target.value })} className={inputClass} maxLength={500} placeholder="https://..." /></div>
+                {(() => {
+                  // Other ways to pay, shown next to DzalekaPay on the Donate, member registration and sponsor forms.
+                  const methods = donateForm2.paymentMethods || [];
+                  const setMethods = (fn: (list: PaymentMethod[]) => PaymentMethod[]) =>
+                    setDonateForm2(prev => ({ ...prev, paymentMethods: fn(prev.paymentMethods || []) }));
+                  const updateMethod = (id: string, change: Partial<PaymentMethod>) =>
+                    setMethods(list => list.map(m => m.id === id ? { ...m, ...change } : m));
+                  return (
+                    <div className="border-t border-border pt-4 space-y-3">
+                      <div>
+                        <h4 className="font-bold text-sm">Other Payment Methods</h4>
+                        <p className="text-xs text-muted-foreground">For people who can't use DzalekaPay (e.g. M-Pesa Tanzania, M-Pesa Mozambique, Airtel Money, PayPal, bank). They appear on the Donate, member registration and sponsor forms; people choose one and can type their transaction ID. Press "Save Donate Page" after changes.</p>
+                      </div>
+                      {methods.map((m) => (
+                        <div key={m.id} className={`border border-border rounded-lg p-3 space-y-2 ${m.active === false ? 'opacity-60' : ''}`}>
+                          <div className="grid sm:grid-cols-2 gap-2">
+                            <div><label className="text-xs font-semibold text-muted-foreground">Name *</label>
+                              <input value={m.name} onChange={(e) => updateMethod(m.id, { name: e.target.value })} className={inputClass} maxLength={60} placeholder="e.g. M-Pesa Tanzania" /></div>
+                            <div><label className="text-xs font-semibold text-muted-foreground">Country / note (optional)</label>
+                              <input value={m.country || ''} onChange={(e) => updateMethod(m.id, { country: e.target.value })} className={inputClass} maxLength={60} placeholder="e.g. Tanzania" /></div>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {(['manual', 'link'] as const).map(k => (
+                              <button key={k} type="button" onClick={() => updateMethod(m.id, { kind: k })}
+                                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${m.kind === k ? 'bg-primary text-white' : 'bg-muted text-muted-foreground hover:bg-accent'}`}>
+                                {k === 'manual' ? 'Send money (number / account)' : 'Payment link'}
+                              </button>
+                            ))}
+                          </div>
+                          {m.kind === 'link' ? (
+                            <div><label className="text-xs font-semibold text-muted-foreground">Payment link *</label>
+                              <input value={m.link || ''} onChange={(e) => updateMethod(m.id, { link: e.target.value })} className={inputClass} maxLength={500} placeholder="https://..." /></div>
+                          ) : (
+                            <div><label className="text-xs font-semibold text-muted-foreground">How to pay (number, account name...)</label>
+                              <RichTextEditor value={m.details || ''} onChange={(v) => updateMethod(m.id, { details: v })} rows={3} /></div>
+                          )}
+                          <div className="flex flex-wrap items-center gap-3">
+                            {m.image && <img src={m.image} alt="" className="h-10 w-10 rounded-md object-contain bg-white border border-border" />}
+                            <ImageUpload label={m.image ? "Change Logo" : "Logo (optional)"} onUploaded={(url) => updateMethod(m.id, { image: url })} />
+                            {m.image && <Button type="button" size="sm" variant="ghost" className="text-xs h-7" onClick={() => updateMethod(m.id, { image: '' })}>Remove logo</Button>}
+                          </div>
+                          <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                            <label className="flex items-center gap-2 text-xs font-medium">
+                              <input type="checkbox" checked={m.active !== false} onChange={(e) => updateMethod(m.id, { active: e.target.checked })} className="rounded" />
+                              Show on the website
+                            </label>
+                            <Button type="button" size="sm" variant="destructive" className="text-xs h-7" onClick={() => {
+                              if (confirm(`Remove "${m.name || 'this payment method'}"?`)) setMethods(list => list.filter(x => x.id !== m.id));
+                            }}><Trash2 className="h-3 w-3" /> Remove</Button>
+                          </div>
+                        </div>
+                      ))}
+                      <Button type="button" size="sm" variant="outline" onClick={() => setMethods(list => [...list, { id: `pm_${Date.now().toString(36)}`, name: '', kind: 'manual', details: '', active: true }])}>
+                        <Plus className="h-4 w-4" /> Add Payment Method
+                      </Button>
+                    </div>
+                  );
+                })()}
                 <Button className="sticky bottom-20 md:bottom-4 z-20 shadow-lg" variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("donate", donateForm2); setSaving(false); toast({ title: ok ? "Donate page saved!" : "Failed" }); }}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Donate Page
                 </Button>

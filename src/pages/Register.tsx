@@ -1,13 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { UserPlus, Upload, Camera, CheckCircle } from "lucide-react";
+import { UserPlus, Upload, Camera, CheckCircle, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { store, DEFAULT_MEMBERSHIP_FEES, type MembershipSettings } from "@/lib/store";
 import { WORLD_CURRENCIES, currencyName } from "@/lib/currencies";
 import { getMwkRates, fromMwk } from "@/lib/exchangeRates";
 import { sendConfirmationEmail } from "@/lib/sendEmail";
 import CountrySearch from "@/components/CountrySearch";
+import { usePaymentOptions, PaymentMethodPicker, PaymentInstructions, MAIN_PAYMENT_ID, type PaymentOption } from "@/components/PaymentMethods";
 
 const WEB3FORMS_KEY = "2b77a360-efe4-4f8c-926e-a6a7a8e05895";
 
@@ -62,6 +63,16 @@ const Register = () => {
   };
 
   const [memberData, setMemberData] = useState<any>(null);
+  // Ways to pay (Page Content > Donate): DzalekaPay plus the methods the admin added.
+  const { options: payOptions } = usePaymentOptions();
+  const [payMethodId, setPayMethodId] = useState(MAIN_PAYMENT_ID);
+  const [payReference, setPayReference] = useState("");
+  const [paidWith, setPaidWith] = useState<{ option: PaymentOption; href: string; amountText: string } | null>(null);
+  useEffect(() => {
+    if (payOptions.length && !payOptions.some((o) => o.id === payMethodId)) setPayMethodId(payOptions[0].id);
+  }, [payOptions, payMethodId]);
+  // Members pay as before (admin checks) until the admin adds other methods; then they pick one here.
+  const selectedPay = payOptions.length > 1 ? payOptions.find((o) => o.id === payMethodId) : undefined;
   const [fees, setFees] = useState<MembershipSettings>(DEFAULT_MEMBERSHIP_FEES);
   const [rates, setRates] = useState<Record<string, number> | null>(null);
 
@@ -166,6 +177,8 @@ const Register = () => {
         branchName: form.branchName.trim(),
         username: form.username.trim(),
         paymentStatus: 'pending',
+        ...(selectedPay ? { paymentMethod: selectedPay.name } : {}),
+        ...(selectedPay?.kind === 'manual' && payReference.trim() ? { paymentReference: payReference.trim() } : {}),
       }, { assignRegNumber: false });
       if (member) {
         sendConfirmationEmail("member", member.id);
@@ -180,13 +193,26 @@ const Register = () => {
               subject: `New Member Registration - ${fullName}`,
               from_name: fullName,
               email: form.email.trim() || "no-email@refan.org",
-              message: `A new member has registered on the ReFAN website.\n\nName: ${fullName}\nReg Number: ${member.regNumber || 'given when approved'}\nEmail: ${form.email.trim() || 'Not provided'}\nPhone: ${form.phoneCode} ${form.phone.trim()}\nGender: ${form.gender}\nCountry of Origin: ${form.countryOfOrigin}\nCountry of Residence: ${form.countryOfResidence}\nBranch: ${form.branchName.trim()}\nPayment: ${form.paymentCurrency} ${Number(form.paymentAmount).toLocaleString()}\nStatus: PENDING - check the payment, then approve the member in Admin > Members.`,
+              message: `A new member has registered on the ReFAN website.\n\nName: ${fullName}\nReg Number: ${member.regNumber || 'given when approved'}\nEmail: ${form.email.trim() || 'Not provided'}\nPhone: ${form.phoneCode} ${form.phone.trim()}\nGender: ${form.gender}\nCountry of Origin: ${form.countryOfOrigin}\nCountry of Residence: ${form.countryOfResidence}\nBranch: ${form.branchName.trim()}\nPayment: ${form.paymentCurrency} ${Number(form.paymentAmount).toLocaleString()}${selectedPay ? ` via ${selectedPay.name}` : ''}${selectedPay?.kind === 'manual' && payReference.trim() ? ` (ref: ${payReference.trim()})` : ''}\nStatus: PENDING - check the payment, then approve the member in Admin > Members.`,
             }),
           });
         } catch {
           // Email notification failure should not block registration success
         }
         setSubmitting(false);
+        if (selectedPay) {
+          let href = selectedPay.href || '';
+          // DzalekaPay takes the amount in MWK.
+          if (selectedPay.main && href) {
+            try {
+              const url = new URL(href);
+              const mwk = form.paymentCurrency === 'MWK' ? Number(form.paymentAmount) : totalFee;
+              if (mwk > 0) url.searchParams.set('amount', String(Math.round(mwk)));
+              href = url.toString();
+            } catch { /* keep the link as entered */ }
+          }
+          setPaidWith({ option: selectedPay, href, amountText: `${form.paymentCurrency} ${Number(form.paymentAmount).toLocaleString()}` });
+        }
         setRegNumber(member.regNumber);
         setMemberData({
           name: `${form.surname} ${form.firstName} ${form.otherName}`.trim(),
@@ -225,6 +251,16 @@ const Register = () => {
             <p className="text-muted-foreground">
               Once our team confirms your membership, you will receive an email at <strong className="text-foreground">{memberData.email}</strong> with your membership number.
             </p>
+            {paidWith && (paidWith.option.kind === 'link' ? (
+              <div className="space-y-2 pt-2">
+                <p className="text-sm text-muted-foreground">Pay your membership fee now{paidWith.option.main ? ' through our secure DzalekaPay checkout (Mobile money or Card).' : ` with ${paidWith.option.name}.`}</p>
+                <Button asChild size="lg" className="w-full bg-primary hover:bg-primary/90 text-white font-bold rounded-lg">
+                  <a href={paidWith.href}><CreditCard className="h-5 w-5" /> Pay Membership Fee</a>
+                </Button>
+              </div>
+            ) : (
+              <PaymentInstructions option={paidWith.option} amountText={paidWith.amountText} />
+            ))}
           </div>
         </section>
       </Layout>
@@ -389,6 +425,16 @@ const Register = () => {
                 {form.paymentCurrency !== 'MWK' && suggestedFee ? <> ≈ <strong className="text-foreground">{form.paymentCurrency} {suggestedFee.toLocaleString()}</strong>{customFee > 0 ? '' : " at today's rate"}</> : null}
               </p>
             </div>
+
+            <PaymentMethodPicker
+              options={payOptions}
+              selectedId={payMethodId}
+              onSelect={setPayMethodId}
+              reference={payReference}
+              onReference={setPayReference}
+              amountText={Number(form.paymentAmount) > 0 ? `${form.paymentCurrency} ${Number(form.paymentAmount).toLocaleString()}` : undefined}
+              inputClass={inputClass}
+            />
 
             {/* Username + Branch */}
             <div className="grid sm:grid-cols-2 gap-4">
