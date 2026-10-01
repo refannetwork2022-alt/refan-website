@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { store, Story, Announcement, HomeSettings } from "@/lib/store";
-import VoiceCard, { Voice, DEFAULT_VOICES } from "@/components/VoiceCard";
+import VoiceCard, { Voice, DEFAULT_VOICES, newestFirst } from "@/components/VoiceCard";
 import { Calendar, X, ChevronRight, Heart } from "lucide-react";
 import ShareButtons from "@/components/ShareButtons";
 import { buildShareUrl, getSharedId, clearSharedId } from "@/lib/share";
@@ -129,8 +129,8 @@ const Stories = () => {
           <p className="text-center text-muted-foreground py-20">{filter === 'voices' ? 'No testimonials yet. Check back soon!' : 'No stories yet. Check back soon!'}</p>
         ) : filter === 'voices' ? (
           <div className="grid md:grid-cols-3 gap-8">
-            {voices.map((t, i) => (
-              <VoiceCard key={i} voice={t} index={i} highlight={highlightVoice === i} />
+            {newestFirst(voices).map(({ voice, index }) => (
+              <VoiceCard key={index} voice={voice} index={index} highlight={highlightVoice === index} />
             ))}
           </div>
         ) : (

@@ -4,8 +4,15 @@ import { useToast } from "@/hooks/use-toast";
 
 export type Voice = { quote: string; name: string; role: string; image?: string };
 
-// The home page shows only this many; the rest are on Stories > Voices.
+// The home page shows only this many (the newest); the rest are on Stories > Voices.
 export const HOME_VOICES_LIMIT = 12;
+
+// Newest first: the admin adds testimonials at the end of the list. Each keeps its place in the saved list
+// (`index`), which share links (?voice=N) use, so links already sent keep pointing at the same testimonial.
+export const newestFirst = (list: Voice[]) => list.map((voice, index) => ({ voice, index })).reverse();
+
+// Saved-list positions of the testimonials shown on the home page.
+export const isOnHomePage = (index: number, total: number) => index >= total - HOME_VOICES_LIMIT && index < total;
 
 export const DEFAULT_VOICES: Voice[] = [
   { quote: "ReFAN gave my children hope when we had nothing. They provided school fees and emotional support that changed our lives forever.", name: "Marie K.", role: "Widow & Mother of 3" },

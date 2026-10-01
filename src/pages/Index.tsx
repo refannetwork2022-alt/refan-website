@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Heart, Users, BookOpen, ArrowRight, Target, Globe, Shield, Baby, User, Home, Grid3X3, Megaphone, X } from "lucide-react";
 import ShareButtons from "@/components/ShareButtons";
 import { buildShareUrl, getSharedId, clearSharedId } from "@/lib/share";
-import VoiceCard, { HOME_VOICES_LIMIT } from "@/components/VoiceCard";
+import VoiceCard, { HOME_VOICES_LIMIT, newestFirst, isOnHomePage } from "@/components/VoiceCard";
 import { store, Announcement, HeroSettings, HomeSettings, GalleryItem } from "@/lib/store";
 const heroBg = "/holi.jpg";
 import educationImg from "@/assets/programs-education.jpg";
@@ -208,8 +208,8 @@ const Index = () => {
     const id = getSharedId("voice");
     if (id === null) return;
     const idx = Number(id);
-    // Not on the home page (only the first ones are): Stories > Voices shows it.
-    if (idx >= HOME_VOICES_LIMIT) { navigate("/stories?tab=voices", { replace: true }); return; }
+    // Not on the home page (only the newest are): Stories > Voices shows it.
+    if (!isOnHomePage(idx, home.testimonials.length)) { navigate("/stories?tab=voices", { replace: true }); return; }
     clearSharedId();
     const el = document.getElementById(`voice-${idx}`);
     if (!el) return;
@@ -355,8 +355,8 @@ const Index = () => {
           dangerouslySetInnerHTML={{ __html: home.testimonialsSubtitle || "Real stories from those whose lives have been transformed." }}
         />
         <div className="grid md:grid-cols-3 gap-8">
-          {home.testimonials.slice(0, HOME_VOICES_LIMIT).map((t, i) => (
-            <VoiceCard key={i} voice={t} index={i} highlight={highlightVoice === i} />
+          {newestFirst(home.testimonials).slice(0, HOME_VOICES_LIMIT).map(({ voice, index }) => (
+            <VoiceCard key={index} voice={voice} index={index} highlight={highlightVoice === index} />
           ))}
         </div>
         {home.testimonials.length > HOME_VOICES_LIMIT && (
