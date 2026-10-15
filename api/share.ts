@@ -56,7 +56,22 @@ const blogText = (content: string) => {
   return content;
 };
 
-const shorten =(text: string, max = 200) => (text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text);
+// A post without a cover photo uses the first photo inside it for the preview (instead of the ReFAN logo).
+const blogFirstImage = (content: string): string => {
+  try {
+    const blocks = JSON.parse(content);
+    if (Array.isArray(blocks)) return String(blocks.find((b) => b?.type === 'image' && b?.url)?.url || '');
+  } catch { /* plain HTML/text */ }
+  return (String(content || '').match(/<img[^>]+src="([^"]+)"/i) || [])[1] || '';
+};
+
+// Cloudinary photos are sent as a 1200px JPEG: link previews (WhatsApp especially) skip big or WebP/AVIF images.
+const previewImage = (url: string): string =>
+  /res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(url)
+    ? url.replace(/\/image\/upload\/(?:(?:[a-z]{1,3}_[^/,]+,?)+\/)?/, '/image/upload/f_jpg,q_auto,w_1200,c_limit/')
+    : url;
+
+const shorten = (text: string, max = 200) => (text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text);
 
 const esc = (s: string) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -122,7 +137,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (b) {
         title = stripHtml(b.title) || title;
         description = shorten(stripHtml(b.excerpt || blogText(b.content))) || description;
-        image = b.image || '';
+        image = b.image || blogFirstImage(b.content);
       }
     }
   } catch (error) {
@@ -132,6 +147,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Link previews need a full URL; site-relative images ("/photo.jpg") get the site address in front.
   if (image && image.startsWith('/')) image = site + encodeURI(image);
   if (!/^https?:\/\//i.test(image)) image = `${site}/logo.png`;
+  image = previewImage(image);
   const url = `${site}${target}`;
 
   const meta = `<title>${esc(title)}</title>

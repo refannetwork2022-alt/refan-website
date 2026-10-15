@@ -87,6 +87,15 @@ const BLOG_DEFAULTS = {
 const Blog = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [selected, setSelected] = useState<BlogPost | null>(null);
+
+  // While a post is open the address bar shows its own link (?blog=ID), so copying it from the browser shares
+  // that post with its photo, not the Blog page with the ReFAN logo.
+  useEffect(() => {
+    if (!selected) { clearSharedId(); return; }
+    const params = new URLSearchParams(window.location.search);
+    params.set("blog", selected.id);
+    window.history.replaceState(window.history.state, "", `${window.location.pathname}?${params.toString()}${window.location.hash}`);
+  }, [selected]);
   const [pg, setPg] = useState(BLOG_DEFAULTS);
 
   useEffect(() => {
