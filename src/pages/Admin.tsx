@@ -2015,7 +2015,7 @@ const Admin = () => {
                   <p className="text-xs text-muted-foreground">Shown at the very top of the home page, e.g. "Eid Mubarak" or "In loving memory of ...". Remove it and nothing shows there until you add a new one.</p>
                   <RichTextEditor value={homeForm.wishBanner || ""} onChange={(v) => setHomeForm(prev => ({ ...prev, wishBanner: v }))} placeholder="Leave empty to show nothing" rows={2} />
                   {homeForm.wishBanner && (
-                    <Button variant="destructive" size="sm" disabled={saving} onClick={async () => { setSaving(true); const next = { ...homeForm, wishBanner: "" }; const ok = await store.savePageSettings("home", next); setSaving(false); if (ok) setHomeForm(next); toast({ title: ok ? "Top message removed from the website" : "Failed" }); }}>
+                    <Button variant="destructive" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.updatePageSettings("home", { wishBanner: "" }); setSaving(false); if (ok) setHomeForm(prev => ({ ...prev, wishBanner: "" })); toast({ title: ok ? "Top message removed from the website" : "Failed" }); }}>
                       <Trash2 className="h-3 w-3" /> Remove message now
                     </Button>
                   )}

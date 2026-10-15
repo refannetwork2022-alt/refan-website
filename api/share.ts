@@ -46,7 +46,17 @@ const stripHtml = (html: string) =>
     .replace(/\s+/g, ' ')
     .trim();
 
-const shorten = (text: string, max = 200) => (text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text);
+// Blog posts written in blocks keep their content as JSON ([{ type: 'text', value }, { type: 'image', url }...]);
+// the preview uses the text blocks only.
+const blogText = (content: string) => {
+  try {
+    const blocks = JSON.parse(content);
+    if (Array.isArray(blocks)) return blocks.filter((b) => b?.type !== 'image' && b?.type !== 'video').map((b) => String(b?.value || '')).join(' ');
+  } catch { /* plain HTML/text */ }
+  return content;
+};
+
+const shorten =(text: string, max = 200) => (text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text);
 
 const esc = (s: string) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -111,7 +121,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const b = await getDoc(`blog_posts/${blog}`);
       if (b) {
         title = stripHtml(b.title) || title;
-        description = shorten(stripHtml(b.excerpt || b.content)) || description;
+        description = shorten(stripHtml(b.excerpt || blogText(b.content))) || description;
         image = b.image || '';
       }
     }

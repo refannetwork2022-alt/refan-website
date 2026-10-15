@@ -49,7 +49,9 @@ const paragraphsHeight = (el: HTMLElement, count: number): number | null => {
     else lines.push({ ...box });
   }
   if (lines.length === 0) return null;
-  const lineHeight = lines[0].bottom - lines[0].top;
+  // Typical line height (median), so a big heading or a small caption doesn't throw off the gap size.
+  const heights = lines.map((l) => l.bottom - l.top).sort((a, b) => a - b);
+  const lineHeight = heights[Math.floor(heights.length / 2)];
   let paragraph = 1;
   for (let i = 1; i < lines.length; i++) {
     if (lines[i].top - lines[i - 1].bottom > lineHeight * 0.8 && ++paragraph > count) {

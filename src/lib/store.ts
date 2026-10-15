@@ -709,6 +709,11 @@ export const store = {
     try { await setDoc(doc(db, "settings", page), settings); return true; }
     catch (e) { console.error(`save ${page} settings:`, e); return false; }
   },
+  // Saves only the given fields, leaving the rest of the page's saved settings as they are.
+  updatePageSettings: async (page: string, fields: Record<string, any>): Promise<boolean> => {
+    try { await setDoc(doc(db, "settings", page), fields, { merge: true }); return true; }
+    catch (e) { console.error(`update ${page} settings:`, e); return false; }
+  },
 
   // ─── Sub-Admin Management ─────────────────────────────────
   getSubAdmins: async (): Promise<SubAdmin[]> => {
