@@ -228,14 +228,17 @@ const Index = () => {
 
   // Admin's message at the top (wishes, memorials). Cleared in the admin = nothing here at all.
   const wishText = home.wishBanner ? stripHtml(home.wishBanner).trim() : "";
+  const wishImage = wishText ? home.wishImage : ""; // the picture only shows with a message
   const partners = (home.partners || []).filter((p) => p.logo);
 
   return (
     <Layout>
       {wishText && (
         <section className="container pt-6">
-          <div className="rounded-2xl bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 border border-primary/20 px-5 py-4 sm:px-8 sm:py-5 text-center">
-            <div className="testimonial-content font-heading text-base sm:text-xl font-bold text-foreground break-words" dangerouslySetInnerHTML={{ __html: home.wishBanner! }} />
+          <div className={`rounded-2xl bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 border border-primary/20 px-5 py-4 sm:px-8 sm:py-5 ${wishImage ? "flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-center sm:text-left" : "text-center"}`}>
+            {/* Fixed size and cropped, so any photo (tall, wide, big) keeps the banner tidy. */}
+            {wishImage && <img src={wishImage} alt="" className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover shadow-sm border-2 border-white shrink-0" />}
+            <div className="testimonial-content flex-1 min-w-0 font-heading text-base sm:text-xl font-bold text-foreground break-words" dangerouslySetInnerHTML={{ __html: home.wishBanner! }} />
           </div>
         </section>
       )}

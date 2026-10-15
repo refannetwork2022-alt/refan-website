@@ -2014,8 +2014,16 @@ const Admin = () => {
                   <h4 className="font-bold text-sm">Top message (wishes, memorials...)</h4>
                   <p className="text-xs text-muted-foreground">Shown at the very top of the home page, e.g. "Eid Mubarak" or "In loving memory of ...". Remove it and nothing shows there until you add a new one.</p>
                   <RichTextEditor value={homeForm.wishBanner || ""} onChange={(v) => setHomeForm(prev => ({ ...prev, wishBanner: v }))} placeholder="Leave empty to show nothing" rows={2} />
+                  <div className="flex items-center gap-3">
+                    {homeForm.wishImage ? <img src={homeForm.wishImage} alt="" className="w-16 h-16 rounded-lg object-cover border border-border" /> : <div className="w-16 h-16 rounded-lg border border-dashed border-border flex items-center justify-center text-[10px] text-muted-foreground text-center">No picture</div>}
+                    <div className="space-y-1">
+                      <ImageUpload label={homeForm.wishImage ? "Change picture" : "Add picture (optional)"} onUploaded={(url) => setHomeForm(prev => ({ ...prev, wishImage: url }))} />
+                      {homeForm.wishImage && <Button type="button" variant="ghost" size="sm" onClick={() => setHomeForm(prev => ({ ...prev, wishImage: "" }))}>Remove picture</Button>}
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Then press "Save Home Page" below.</p>
                   {homeForm.wishBanner && (
-                    <Button variant="destructive" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.updatePageSettings("home", { wishBanner: "" }); setSaving(false); if (ok) setHomeForm(prev => ({ ...prev, wishBanner: "" })); toast({ title: ok ? "Top message removed from the website" : "Failed" }); }}>
+                    <Button variant="destructive" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.updatePageSettings("home", { wishBanner: "", wishImage: "" }); setSaving(false); if (ok) setHomeForm(prev => ({ ...prev, wishBanner: "", wishImage: "" })); toast({ title: ok ? "Top message removed from the website" : "Failed" }); }}>
                       <Trash2 className="h-3 w-3" /> Remove message now
                     </Button>
                   )}

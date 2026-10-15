@@ -196,6 +196,7 @@ export interface HomeSettings {
   ctaImage: string;
   // Message at the very top of the home page (wishes, memorials...). Empty = nothing is shown.
   wishBanner?: string;
+  wishImage?: string; // optional picture next to the top message (Eid, Christmas, a person...)
   partners?: Array<{ name: string; logo: string; link: string }>;
 }
 

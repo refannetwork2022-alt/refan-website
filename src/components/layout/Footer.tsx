@@ -28,6 +28,8 @@ const Footer = () => {
       <div className="container pt-4 pb-16">
         {/* Top: Description */}
         <div className="text-center mb-10">
+          {/* Phones/tablets: emblem on top (on lg+ it sits in the middle column below) */}
+          <img src="/ReFAN Hands Logo_ReFAN.png" alt="ReFAN emblem" className="lg:hidden w-32 sm:w-40 h-auto mx-auto mt-6 mb-4 object-contain" loading="lazy" />
           <div className="text-white/60 text-sm leading-relaxed max-w-lg mx-auto" dangerouslySetInnerHTML={{ __html: info.description }} />
         </div>
 
