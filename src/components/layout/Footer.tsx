@@ -28,14 +28,12 @@ const Footer = () => {
       <div className="container pt-4 pb-16">
         {/* Top: Description */}
         <div className="text-center mb-10">
-          {/* Phones/tablets: emblem on top (on lg+ it sits in the middle column below) */}
-          <img src="/ReFAN Hands Logo_ReFAN.png" alt="ReFAN emblem" className="lg:hidden w-32 sm:w-40 h-auto mx-auto mt-6 mb-4 object-contain" loading="lazy" />
           <div className="text-white/60 text-sm leading-relaxed max-w-lg mx-auto" dangerouslySetInnerHTML={{ __html: info.description }} />
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 items-start">
           {/* Quick Links */}
-          <div>
+          <div className="md:order-1 lg:order-none">
             <h4 className="font-heading font-bold text-sm uppercase tracking-wider mb-4 text-primary">Quick Links</h4>
             <ul className="space-y-2 text-sm">
               {[["About Us", "/about"], ["Programs", "/programs"], ["Stories", "/stories"], ["Gallery", "/gallery"], ["Blog", "/blog"]].map(([label, path]) => (
@@ -47,7 +45,7 @@ const Footer = () => {
           </div>
 
           {/* Get Involved */}
-          <div>
+          <div className="md:order-3 lg:order-none">
             <h4 className="font-heading font-bold text-sm uppercase tracking-wider mb-4 text-primary">Get Involved</h4>
             <ul className="space-y-2 text-sm">
               {[["Donate", "/donate"], ["Volunteer", "/get-involved"], ["Sponsor", "/get-involved"], ["Contact", "/contact"]].map(([label, path]) => (
@@ -58,13 +56,16 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Centered logo emblem - hidden on mobile, visible on lg+ */}
-          <div className="hidden lg:flex items-center justify-center overflow-hidden">
-            <img src="/ReFAN Hands Logo_ReFAN.png" alt="ReFAN emblem" className="w-64 h-auto object-contain opacity-80" />
+          {/* Centered logo emblem: in the middle of the footer on every screen (own row on phones, middle column on tablets) */}
+          <div className="col-span-2 md:col-span-1 md:order-2 lg:order-none flex items-center justify-center py-2">
+            {/* Emblem in white (one colour), as on most NGO sites with a dark footer; the dark original vanished on navy */}
+            <Link to="/" aria-label="ReFAN home" className="opacity-90 hover:opacity-100 transition-opacity">
+              <img src="/ReFAN Hands Logo_ReFAN.png" alt="ReFAN emblem" className="w-32 md:w-40 lg:w-52 h-auto object-contain brightness-0 invert" loading="lazy" />
+            </Link>
           </div>
 
           {/* Contact */}
-          <div className="col-span-2 md:col-span-1">
+          <div className="col-span-2 md:col-span-1 md:order-4 lg:order-none">
             <h4 className="font-heading font-bold text-sm uppercase tracking-wider mb-4 text-primary">Contact</h4>
             <ul className="space-y-3 text-sm text-white/60">
               <li className="flex items-start gap-2"><Mail className="h-4 w-4 mt-0.5 shrink-0 text-primary" /> <a href={`mailto:${info.email.trim()}`} className="break-all hover:text-primary transition-colors">{info.email}</a></li>
@@ -82,7 +83,7 @@ const Footer = () => {
           </div>
 
           {/* Newsletter */}
-          <div className="col-span-2 md:col-span-1">
+          <div className="col-span-2 md:col-span-1 md:order-5 lg:order-none">
             <h4 className="font-heading font-bold text-sm uppercase tracking-wider mb-4 text-primary">Newsletter</h4>
             <p className="text-white/60 text-sm mb-3">Stay updated on our programs and impact.</p>
             <NewsletterForm />
