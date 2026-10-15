@@ -209,7 +209,7 @@ input, textarea, [contenteditable] {
 /* Testimonial rich-text content: keep paragraph spacing, lists and alignment as written in the admin editor */
 .testimonial-content div,
 .testimonial-content p {
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
 }
 .testimonial-content div:last-child,
 .testimonial-content p:last-child {
@@ -227,3 +227,7 @@ input, textarea, [contenteditable] {
 .overview-content li { margin-bottom: 0.4rem; }
 .overview-content a { color: hsl(var(--primary)); text-decoration: underline; }
 .overview-content > :first-child { margin-top: 0; }
+
+/* Leader quotes on About: quote marks around the (formatted) quote */
+.quote-marks > p:first-child::before { content: "\201C"; }
+.quote-marks > p:last-child::after { content: "\201D"; }

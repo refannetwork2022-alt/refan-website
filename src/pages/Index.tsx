@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Heart, Users, BookOpen, ArrowRight, Target, Globe, Shield, Baby, User, Home, Grid3X3, Megaphone, X } from "lucide-react";
 import ShareButtons from "@/components/ShareButtons";
 import { buildShareUrl, getSharedId, clearSharedId } from "@/lib/share";
+import { RichText } from "@/components/ReadMore";
 import VoiceCard, { HOME_VOICES_LIMIT, newestFirst, isOnHomePage } from "@/components/VoiceCard";
 import { store, Announcement, HeroSettings, HomeSettings, GalleryItem } from "@/lib/store";
 const heroBg = "/holi.jpg";
@@ -393,7 +394,7 @@ const Index = () => {
                     <Icon className="h-6 w-6 text-primary" />
                   </div>
                   <h3 className="font-heading font-bold text-lg">{v.title}</h3>
-                  <p className="text-sm text-white/70">{v.desc}</p>
+                  <RichText html={v.desc} className="text-sm text-white/70" />
                 </div>
               );
             })}

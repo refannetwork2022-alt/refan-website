@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Heart, Users, Award, Globe, Mail, FileText, ArrowRight } from "lucide-react";
 import aboutTeam from "@/assets/about-team.jpg";
 import { store, AboutSettings } from "@/lib/store";
-import ReadMore from "@/components/ReadMore";
+import ReadMore, { RichText } from "@/components/ReadMore";
 import { DEFAULT_OVERVIEW_TITLE } from "@/lib/overview";
 
 const DEFAULTS: AboutSettings = {
@@ -147,7 +147,7 @@ const About = () => {
               </div>
               <h3 className="font-heading text-2xl font-bold">{leader.name}</h3>
               <p className="text-primary font-bold mb-4 uppercase tracking-widest text-xs">{leader.title}</p>
-              <p className="text-muted-foreground text-sm italic">"{leader.quote}"</p>
+              <RichText html={leader.quote} className="quote-marks text-muted-foreground text-sm italic" />
               <div className="flex gap-4 mt-6">
                 <a className="text-muted-foreground hover:text-primary" href={`mailto:${leader.email}`}><Mail className="h-5 w-5" /></a>
               </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
+import { RichText } from "@/components/ReadMore";
 import { Button } from "@/components/ui/button";
 import { Heart, Users, Handshake, ArrowRight, UserPlus, CreditCard, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -115,7 +116,7 @@ const GetInvolved = () => {
                 <Icon className="h-6 w-6 text-primary" />
               </div>
               <h3 className="font-heading font-bold text-lg mb-2">{w.title}</h3>
-              <p className="text-sm text-muted-foreground mb-4">{w.desc}</p>
+              <RichText html={w.desc} className="text-sm text-muted-foreground mb-4" />
               {link.startsWith('/') ? (
                 <Button asChild variant="outline" size="sm" className="btn-hover">
                   <Link to={link}>{w.cta} <ArrowRight className="h-4 w-4" /></Link>

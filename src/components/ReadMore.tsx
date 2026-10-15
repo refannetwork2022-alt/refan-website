@@ -1,15 +1,12 @@
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { tidyHtml } from "@/lib/tidyHtml";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
-const isHtml = (text: string) => /<[a-z][\s\S]*>/i.test(text);
-
-// Formatted (admin editor) or plain text. Plain text keeps its line breaks.
-export const RichText = ({ html, className = "" }: { html: string; className?: string }) => (
-  <div
-    className={`testimonial-content break-words ${isHtml(html) ? "" : "whitespace-pre-line"} ${className}`}
-    dangerouslySetInnerHTML={{ __html: html }}
-  />
-);
+// Formatted (admin editor) or plain text, with even paragraph spacing (see tidyHtml).
+export const RichText = ({ html, className = "" }: { html: string; className?: string }) => {
+  const tidy = useMemo(() => tidyHtml(html), [html]);
+  return <div className={`testimonial-content break-words ${className}`} dangerouslySetInnerHTML={{ __html: tidy }} />;
+};
 
 interface ReadMoreProps {
   html: string;

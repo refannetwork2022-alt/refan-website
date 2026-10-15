@@ -1946,7 +1946,7 @@ const Admin = () => {
                       <input placeholder="Name" value={l.name} onChange={(e) => { const arr = [...aboutForm.leaders]; arr[i] = { ...l, name: e.target.value }; setAboutForm({ ...aboutForm, leaders: arr }); }} className={inputClass} />
                       <input placeholder="Title" value={l.title} onChange={(e) => { const arr = [...aboutForm.leaders]; arr[i] = { ...l, title: e.target.value }; setAboutForm({ ...aboutForm, leaders: arr }); }} className={inputClass} />
                     </div>
-                    <input placeholder="Quote" value={l.quote} onChange={(e) => { const arr = [...aboutForm.leaders]; arr[i] = { ...l, quote: e.target.value }; setAboutForm({ ...aboutForm, leaders: arr }); }} className={inputClass} />
+                    <RichTextEditor value={l.quote} onChange={(v) => setAboutForm(prev => { const arr = [...prev.leaders]; arr[i] = { ...arr[i], quote: v }; return { ...prev, leaders: arr }; })} placeholder="Quote" rows={2} />
                     <input placeholder="Email" value={l.email} onChange={(e) => { const arr = [...aboutForm.leaders]; arr[i] = { ...l, email: e.target.value }; setAboutForm({ ...aboutForm, leaders: arr }); }} className={inputClass} />
                     <ImageUpload label="Photo" onUploaded={(url) => setAboutForm(prev => { const arr = [...prev.leaders]; arr[i] = { ...arr[i], image: url }; return { ...prev, leaders: arr }; })} />
                     <input placeholder="Photo URL" value={l.image} onChange={(e) => { const arr = [...aboutForm.leaders]; arr[i] = { ...l, image: e.target.value }; setAboutForm({ ...aboutForm, leaders: arr }); }} className={inputClass} />
@@ -2065,9 +2065,9 @@ const Admin = () => {
                 <Button variant="outline" size="sm" onClick={() => setHomeForm(prev => ({ ...prev, testimonials: [...prev.testimonials, { quote: "", name: "", role: "", image: "" }] }))}><Plus className="h-3 w-3" /> Add Testimonial</Button>
                 <h4 className="font-bold text-sm">Why ReFAN Values</h4>
                 {homeForm.values.map((v, i) => (
-                  <div key={i} className="flex gap-2">
-                    <input placeholder="Title" value={v.title} onChange={(e) => { const arr = [...homeForm.values]; arr[i] = { ...v, title: e.target.value }; setHomeForm({ ...homeForm, values: arr }); }} className={inputClass} />
-                    <input placeholder="Description" value={v.desc} onChange={(e) => { const arr = [...homeForm.values]; arr[i] = { ...v, desc: e.target.value }; setHomeForm({ ...homeForm, values: arr }); }} className={inputClass} />
+                  <div key={i} className="border border-border rounded-lg p-3 space-y-2">
+                    <input placeholder="Title" value={v.title} onChange={(e) => { const title = e.target.value; setHomeForm(prev => { const arr = [...prev.values]; arr[i] = { ...arr[i], title }; return { ...prev, values: arr }; }); }} className={inputClass} />
+                    <RichTextEditor value={v.desc} onChange={(val) => setHomeForm(prev => { const arr = [...prev.values]; arr[i] = { ...arr[i], desc: val }; return { ...prev, values: arr }; })} placeholder="Description" rows={2} />
                   </div>
                 ))}
                 <h4 className="font-bold text-sm">Partners</h4>
@@ -2206,7 +2206,7 @@ const Admin = () => {
                       <input placeholder="Title" value={w.title} onChange={(e) => { const arr = [...giForm.ways]; arr[i] = { ...w, title: e.target.value }; setGiForm({ ...giForm, ways: arr }); }} className={inputClass} />
                       <input placeholder="CTA button" value={w.cta} onChange={(e) => { const arr = [...giForm.ways]; arr[i] = { ...w, cta: e.target.value }; setGiForm({ ...giForm, ways: arr }); }} className={inputClass + " w-40"} />
                     </div>
-                    <textarea placeholder="Description" value={w.desc} onChange={(e) => { const arr = [...giForm.ways]; arr[i] = { ...w, desc: e.target.value }; setGiForm({ ...giForm, ways: arr }); }} className={inputClass + " resize-none"} rows={2} />
+                    <RichTextEditor value={w.desc} onChange={(v) => setGiForm(prev => { const arr = [...prev.ways]; arr[i] = { ...arr[i], desc: v }; return { ...prev, ways: arr }; })} placeholder="Description" rows={2} />
                   </div>
                 ))}
                 <Button className="sticky bottom-20 md:bottom-4 z-20 shadow-lg" variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("getinvolved", giForm); setSaving(false); toast({ title: ok ? "Get Involved page saved!" : "Failed" }); }}>
