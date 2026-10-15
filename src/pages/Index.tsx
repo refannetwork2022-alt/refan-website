@@ -366,7 +366,7 @@ const Index = () => {
           className="text-muted-foreground text-center mb-10"
           dangerouslySetInnerHTML={{ __html: home.testimonialsSubtitle || "Real stories from those whose lives have been transformed." }}
         />
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {newestFirst(home.testimonials).slice(0, HOME_VOICES_LIMIT).map(({ voice, index }) => (
             <VoiceCard key={index} voice={voice} index={index} highlight={highlightVoice === index} />
           ))}

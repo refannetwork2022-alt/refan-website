@@ -128,7 +128,7 @@ const Stories = () => {
         {filter === 'voices' && !voicesLoaded ? null : !hasContent ? (
           <p className="text-center text-muted-foreground py-20">{filter === 'voices' ? 'No testimonials yet. Check back soon!' : 'No stories yet. Check back soon!'}</p>
         ) : filter === 'voices' ? (
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
             {newestFirst(voices).map(({ voice, index }) => (
               <VoiceCard key={index} voice={voice} index={index} highlight={highlightVoice === index} />
             ))}

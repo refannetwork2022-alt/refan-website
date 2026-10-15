@@ -35,18 +35,18 @@ const VoiceCard = ({ voice: t, index: i, highlight }: { voice: Voice; index: num
   return (
     // With a photo the card shows it on top (like the announcement cards); without one it stays as before.
     <div id={`voice-${i}`} className={`bg-card rounded-2xl border border-border hover:border-primary/30 hover:shadow-card transition-all relative flex flex-col ${t.image ? "overflow-hidden" : "p-6 sm:p-8"} ${highlight ? "ring-2 ring-primary" : ""}`}>
-      {!t.image && <Quote className="h-8 w-8 text-primary/20 absolute top-6 right-6" />}
       {t.image && (
         <div className="aspect-[4/3] bg-muted overflow-hidden">
           <img src={t.image} alt={t.name} className="w-full h-full object-cover object-top" />
         </div>
       )}
       <div className={`relative flex flex-col flex-1 ${t.image ? "p-6 sm:p-8" : ""}`}>
-        {t.image && <Quote className="h-8 w-8 text-primary/20 absolute top-6 right-6" />}
-        <div className="mb-6 pr-8">
+        <Quote className="h-7 w-7 text-primary/25 mb-3 shrink-0" />
+        <div className="mb-6">
           <ReadMore
             html={t.quote}
             title={t.name || "Voices from ReFAN"}
+            paragraphs={5}
             className="text-muted-foreground leading-relaxed"
             header={t.image && <img src={t.image} alt={t.name} className="w-full max-h-[50vh] object-cover object-top" />}
             footer={t.role && <p className="text-sm text-muted-foreground border-t border-border pt-3">{t.role}</p>}
