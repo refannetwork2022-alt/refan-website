@@ -9,6 +9,7 @@ import AdminRoute from "@/components/AdminRoute";
 import { SHARED_KINDS, SHARED_ROUTES, getSharedId } from "@/lib/share";
 import Index from "./pages/Index";
 import About from "./pages/About";
+import Overview from "./pages/Overview";
 import Programs from "./pages/Programs";
 import Stories from "./pages/Stories";
 import Gallery from "./pages/Gallery";
@@ -65,6 +66,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/about" element={<About />} />
+            <Route path="/about/overview" element={<Overview />} />
             <Route path="/programs" element={<Programs />} />
             <Route path="/stories" element={<Stories />} />
             <Route path="/gallery" element={<Gallery />} />

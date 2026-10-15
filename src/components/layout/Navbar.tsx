@@ -17,6 +17,8 @@ const navLinks = [
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  // Sub-pages (e.g. /about/overview) keep their section highlighted.
+  const isActive = (path: string) => location.pathname === path || (path !== "/" && location.pathname.startsWith(path + "/"));
 
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-border">
@@ -35,7 +37,7 @@ const Navbar = () => {
               key={link.path}
               to={link.path}
               className={`text-sm font-semibold whitespace-nowrap transition-colors hover:text-primary ${
-                location.pathname === link.path ? "text-primary" : "text-foreground"
+                isActive(link.path) ? "text-primary" : "text-foreground"
               }`}
             >
               {link.label}
@@ -72,7 +74,7 @@ const Navbar = () => {
                 to={link.path}
                 onClick={() => setOpen(false)}
                 className={`px-4 py-3 text-sm font-medium rounded-md transition-colors ${
-                  location.pathname === link.path ? "bg-accent text-accent-foreground font-semibold" : "text-muted-foreground hover:bg-accent"
+                  isActive(link.path) ? "bg-accent text-accent-foreground font-semibold" : "text-muted-foreground hover:bg-accent"
                 }`}
               >
                 {link.label}

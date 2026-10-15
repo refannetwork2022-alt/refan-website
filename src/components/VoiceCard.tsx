@@ -1,6 +1,7 @@
 import { Quote, User, Share2 } from "lucide-react";
 import { buildShareUrl, shareLink } from "@/lib/share";
 import { useToast } from "@/hooks/use-toast";
+import ReadMore from "@/components/ReadMore";
 
 export type Voice = { quote: string; name: string; role: string; image?: string };
 
@@ -42,10 +43,15 @@ const VoiceCard = ({ voice: t, index: i, highlight }: { voice: Voice; index: num
       )}
       <div className={`relative flex flex-col flex-1 ${t.image ? "p-6 sm:p-8" : ""}`}>
         {t.image && <Quote className="h-8 w-8 text-primary/20 absolute top-6 right-6" />}
-        <div
-          className={`testimonial-content text-muted-foreground leading-relaxed mb-6 pr-8 break-words ${/<[a-z][\s\S]*>/i.test(t.quote) ? "" : "whitespace-pre-line"}`}
-          dangerouslySetInnerHTML={{ __html: t.quote }}
-        />
+        <div className="mb-6 pr-8">
+          <ReadMore
+            html={t.quote}
+            title={t.name || "Voices from ReFAN"}
+            className="text-muted-foreground leading-relaxed"
+            header={t.image && <img src={t.image} alt={t.name} className="w-full max-h-[50vh] object-cover object-top" />}
+            footer={t.role && <p className="text-sm text-muted-foreground border-t border-border pt-3">{t.role}</p>}
+          />
+        </div>
         <div className="flex items-center gap-3 border-t border-border pt-4 mt-auto">
           {!t.image && (
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">

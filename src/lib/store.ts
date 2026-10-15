@@ -174,6 +174,8 @@ export interface AboutSettings {
   leadersSubtitle: string;
   leaders: Array<{ name: string; title: string; quote: string; image: string; email: string }>;
   values: Array<{ title: string; description: string }>;
+  overviewTitle?: string;
+  overview?: string;
 }
 
 export interface ProgramsSettings {
@@ -192,6 +194,9 @@ export interface HomeSettings {
   ctaHeading: string;
   ctaBody: string;
   ctaImage: string;
+  // Message at the very top of the home page (wishes, memorials...). Empty = nothing is shown.
+  wishBanner?: string;
+  partners?: Array<{ name: string; logo: string; link: string }>;
 }
 
 export interface ContactPageSettings {

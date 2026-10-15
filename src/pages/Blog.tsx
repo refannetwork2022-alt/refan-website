@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { store, BlogPost } from "@/lib/store";
-import { Calendar, User, X, ChevronRight, Share2, Facebook, Twitter, Link2 } from "lucide-react";
+import { Calendar, User, X, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import ShareButtons from "@/components/ShareButtons";
+import { buildShareUrl, getSharedId, clearSharedId } from "@/lib/share";
 
 const getEmbedUrl = (url: string): string | null => {
   if (!url) return null;
@@ -84,20 +85,27 @@ const BLOG_DEFAULTS = {
 };
 
 const Blog = () => {
-  const { toast } = useToast();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [selected, setSelected] = useState<BlogPost | null>(null);
   const [pg, setPg] = useState(BLOG_DEFAULTS);
 
   useEffect(() => {
+    // A shared link (?blog=ID) opens that post once the posts have loaded.
+    const openShared = (list: BlogPost[]) => {
+      const id = getSharedId("blog");
+      if (id === null) return;
+      const post = list.find((p) => p.id === id);
+      if (post) setSelected(post);
+      clearSharedId();
+    };
     store.getBlogs().then((data) => {
-      setPosts(data.length > 0 ? data : sampleBlogPosts);
-    }).catch(() => setPosts(sampleBlogPosts));
+      const list = data.length > 0 ? data : sampleBlogPosts;
+      setPosts(list);
+      openShared(list);
+    }).catch(() => { setPosts(sampleBlogPosts); openShared(sampleBlogPosts); });
     store.getPageSettings<typeof BLOG_DEFAULTS>("blogpage").then((d) => { if (d) setPg({ ...BLOG_DEFAULTS, ...d }); });
   }, []);
 
-  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
-  const copyLink = () => { navigator.clipboard.writeText(shareUrl); toast({ title: "Link copied!" }); };
 
   return (
     <Layout>
@@ -209,12 +217,7 @@ const Blog = () => {
             </div>
             <div className="px-8 pb-6 flex items-center justify-between border-t border-border pt-4">
               <Button onClick={() => setSelected(null)} variant="outline" className="btn-hover">Close</Button>
-              <div className="flex items-center gap-1">
-                <Share2 className="h-4 w-4 text-muted-foreground mr-1" />
-                <button onClick={copyLink} className="p-2 rounded-lg hover:bg-muted transition-colors" title="Copy link"><Link2 className="h-4 w-4" /></button>
-                <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg hover:bg-muted transition-colors text-[#1877F2]"><Facebook className="h-4 w-4" /></a>
-                <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(selected.title)}&url=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg hover:bg-muted transition-colors text-[#1DA1F2]"><Twitter className="h-4 w-4" /></a>
-              </div>
+              <ShareButtons title={selected.title} url={buildShareUrl("blog", selected.id, `${selected.title}|${selected.image || ""}`)} />
             </div>
           </div>
         </div>

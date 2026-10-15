@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Link previews for shared items: /?voice=3, /?story=ID, /?announcement=ID, /?program=1 (and /share?...).
+// Link previews for shared items: /?voice=3, /?story=ID, /?announcement=ID, /?program=1, /?blog=ID (and /share?...).
 // WhatsApp, Facebook, LinkedIn... don't run the site's JavaScript, so they only see index.html's generic
 // title and no picture. vercel.json sends those URLs here; we serve the normal site page (index.html) with the
 // item's own title, text and photo in its Open Graph tags, so previews are right and visitors see the site as usual.
@@ -70,6 +70,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const story = one(q.story);
     const announcement = one(q.announcement);
     const program = one(q.program);
+    const blog = one(q.blog);
 
     if (voice !== undefined && /^\d+$/.test(voice)) {
       target = `/?voice=${voice}#/`;
@@ -104,6 +105,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         title = `${stripHtml(p.title)} — ReFAN Programs`;
         description = shorten(stripHtml(p.description)) || description;
         image = p.image || '';
+      }
+    } else if (blog && /^[\w-]{1,100}$/.test(blog)) {
+      target = `/?blog=${encodeURIComponent(blog)}#/blog`;
+      const b = await getDoc(`blog_posts/${blog}`);
+      if (b) {
+        title = stripHtml(b.title) || title;
+        description = shorten(stripHtml(b.excerpt || b.content)) || description;
+        image = b.image || '';
       }
     }
   } catch (error) {

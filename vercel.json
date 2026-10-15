@@ -8,6 +8,7 @@
     { "src": "/", "has": [{ "type": "query", "key": "story" }], "dest": "/api/share" },
     { "src": "/", "has": [{ "type": "query", "key": "announcement" }], "dest": "/api/share" },
     { "src": "/", "has": [{ "type": "query", "key": "program" }], "dest": "/api/share" },
+    { "src": "/", "has": [{ "type": "query", "key": "blog" }], "dest": "/api/share" },
     { "src": "/share", "dest": "/api/share" },
     { "handle": "filesystem" },
     { "src": "/api/(.*)", "dest": "/api/$1" }

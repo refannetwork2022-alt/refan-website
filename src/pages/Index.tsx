@@ -225,8 +225,20 @@ const Index = () => {
     return () => timers.forEach(clearTimeout);
   }, [homeLoaded]);
 
+  // Admin's message at the top (wishes, memorials). Cleared in the admin = nothing here at all.
+  const wishText = home.wishBanner ? stripHtml(home.wishBanner).trim() : "";
+  const partners = (home.partners || []).filter((p) => p.logo);
+
   return (
     <Layout>
+      {wishText && (
+        <section className="container pt-6">
+          <div className="rounded-2xl bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 border border-primary/20 px-5 py-4 sm:px-8 sm:py-5 text-center">
+            <div className="testimonial-content font-heading text-base sm:text-xl font-bold text-foreground break-words" dangerouslySetInnerHTML={{ __html: home.wishBanner! }} />
+          </div>
+        </section>
+      )}
+
       {/* Hero */}
       <section className="container py-8">
         <div className="relative rounded-2xl overflow-hidden min-h-[600px] shadow-elevated">
@@ -412,6 +424,29 @@ const Index = () => {
                 <img src={img.url} alt={img.title} className="w-full h-full object-cover" loading="lazy" />
               </div>
             ))}
+          </div>
+        </section>
+      )}
+
+      {/* Partners (logos + links, managed in the admin) */}
+      {partners.length > 0 && (
+        <section className="container py-12">
+          <h2 className="font-heading text-3xl font-extrabold tracking-tight text-center mb-3">Our <span className="text-primary">Partners</span></h2>
+          <p className="text-muted-foreground text-center mb-10">Organisations walking with us.</p>
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
+            {partners.map((p, i) => {
+              const logo = (
+                <div className="w-36 h-24 sm:w-44 sm:h-28 rounded-xl bg-white border border-border p-3 flex items-center justify-center hover:shadow-card hover:border-primary/40 transition-all">
+                  <img src={p.logo} alt={p.name || "Partner logo"} className="max-w-full max-h-full object-contain" loading="lazy" />
+                </div>
+              );
+              const link = /^https?:\/\//i.test(p.link) ? p.link : p.link ? `https://${p.link}` : "";
+              return link ? (
+                <a key={i} href={link} target="_blank" rel="noopener noreferrer" title={p.name}>{logo}</a>
+              ) : (
+                <div key={i} title={p.name}>{logo}</div>
+              );
+            })}
           </div>
         </section>
       )}

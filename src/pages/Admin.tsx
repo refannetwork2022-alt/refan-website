@@ -21,6 +21,7 @@ import MemberPaymentCell from "@/components/MemberPaymentCell";
 import RegistrationLinkShare from "@/components/RegistrationLinkShare";
 import { DEFAULT_DONATE_PAY_LINK, DEFAULT_MEMBERSHIP_FEES, type PaymentMethod, type MembershipSettings, type PaymentStatus, type VolunteerSubmission } from "@/lib/store";
 import RichTextEditor from "@/components/RichTextEditor";
+import { DEFAULT_OVERVIEW, DEFAULT_OVERVIEW_TITLE } from "@/lib/overview";
 import { PaymentInfo } from "@/components/PaymentMethods";
 
 type Tab = 'dashboard' | 'announcements' | 'stories' | 'blogs' | 'gallery' | 'volunteers' | 'sponsors' | 'donations' | 'subscribers' | 'messages' | 'members' | 'footer' | 'hero' | 'site' | 'pages' | 'admins' | 'chat';
@@ -1958,14 +1959,23 @@ const Admin = () => {
                   <RichTextEditor value={aboutForm.valuesHeading} onChange={(v) => setAboutForm({ ...aboutForm, valuesHeading: v })} rows={2} /></div>
                 <div><label className="text-xs font-semibold text-muted-foreground">Section Subtitle</label>
                   <RichTextEditor value={aboutForm.valuesSubtitle} onChange={(v) => setAboutForm({ ...aboutForm, valuesSubtitle: v })} rows={2} /></div>
+                <p className="text-xs text-muted-foreground">Long descriptions show their first lines on the page, with a "Read more" button that opens the whole text.</p>
                 {aboutForm.values.map((v, i) => (
-                  <div key={i} className="flex gap-2">
-                    <input placeholder="Title" value={v.title} onChange={(e) => { const arr = [...aboutForm.values]; arr[i] = { ...v, title: e.target.value }; setAboutForm({ ...aboutForm, values: arr }); }} className={inputClass} />
-                    <input placeholder="Description" value={v.description} onChange={(e) => { const arr = [...aboutForm.values]; arr[i] = { ...v, description: e.target.value }; setAboutForm({ ...aboutForm, values: arr }); }} className={inputClass} />
-                    {aboutForm.values.length > 1 && <Button variant="destructive" size="sm" onClick={() => setAboutForm({ ...aboutForm, values: aboutForm.values.filter((_, j) => j !== i) })}><Trash2 className="h-3 w-3" /></Button>}
+                  <div key={i} className="border border-border rounded-lg p-3 space-y-2">
+                    <div className="flex gap-2">
+                      <input placeholder="Title" value={v.title} onChange={(e) => { const title = e.target.value; setAboutForm(prev => { const arr = [...prev.values]; arr[i] = { ...arr[i], title }; return { ...prev, values: arr }; }); }} className={inputClass} />
+                      {aboutForm.values.length > 1 && <Button variant="destructive" size="sm" onClick={() => setAboutForm(prev => ({ ...prev, values: prev.values.filter((_, j) => j !== i) }))}><Trash2 className="h-3 w-3" /></Button>}
+                    </div>
+                    <RichTextEditor value={v.description} onChange={(val) => setAboutForm(prev => { const arr = [...prev.values]; arr[i] = { ...arr[i], description: val }; return { ...prev, values: arr }; })} placeholder="Description (bold, lists, new lines...)" rows={5} />
                   </div>
                 ))}
                 <Button variant="outline" size="sm" onClick={() => setAboutForm({ ...aboutForm, values: [...aboutForm.values, { title: "", description: "" }] })}><Plus className="h-3 w-3" /> Add Value</Button>
+                <h4 className="font-bold text-sm mt-4">Organisational Overview page</h4>
+                <p className="text-xs text-muted-foreground">Opens from the About page ("Read the overview"). Use the Heading button for section titles.</p>
+                <div><label className="text-xs font-semibold text-muted-foreground">Title</label>
+                  <input value={aboutForm.overviewTitle ?? DEFAULT_OVERVIEW_TITLE} onChange={(e) => setAboutForm({ ...aboutForm, overviewTitle: e.target.value })} className={inputClass} /></div>
+                <div><label className="text-xs font-semibold text-muted-foreground">Overview text</label>
+                  <RichTextEditor value={aboutForm.overview ?? DEFAULT_OVERVIEW} onChange={(v) => setAboutForm(prev => ({ ...prev, overview: v }))} rows={12} /></div>
                 <Button className="sticky bottom-20 md:bottom-4 z-20 shadow-lg" variant="default" size="sm" disabled={saving} onClick={async () => { setSaving(true); const ok = await store.savePageSettings("about", aboutForm); setSaving(false); toast({ title: ok ? "About page saved!" : "Failed" }); }}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save About Page
                 </Button>
@@ -2000,6 +2010,16 @@ const Admin = () => {
             {pageTab === 'home' && (
               <div className="bg-card rounded-xl p-6 shadow-soft space-y-4">
                 <h3 className="font-bold">Home Page Content</h3>
+                <div className="border border-primary/30 bg-primary/5 rounded-lg p-3 space-y-2">
+                  <h4 className="font-bold text-sm">Top message (wishes, memorials...)</h4>
+                  <p className="text-xs text-muted-foreground">Shown at the very top of the home page, e.g. "Eid Mubarak" or "In loving memory of ...". Remove it and nothing shows there until you add a new one.</p>
+                  <RichTextEditor value={homeForm.wishBanner || ""} onChange={(v) => setHomeForm(prev => ({ ...prev, wishBanner: v }))} placeholder="Leave empty to show nothing" rows={2} />
+                  {homeForm.wishBanner && (
+                    <Button variant="destructive" size="sm" disabled={saving} onClick={async () => { setSaving(true); const next = { ...homeForm, wishBanner: "" }; const ok = await store.savePageSettings("home", next); setSaving(false); if (ok) setHomeForm(next); toast({ title: ok ? "Top message removed from the website" : "Failed" }); }}>
+                      <Trash2 className="h-3 w-3" /> Remove message now
+                    </Button>
+                  )}
+                </div>
                 <h4 className="font-bold text-sm">Impact Stats</h4>
                 {homeForm.impactStats.map((s, i) => (
                   <div key={i} className="flex gap-2">
@@ -2050,6 +2070,20 @@ const Admin = () => {
                     <input placeholder="Description" value={v.desc} onChange={(e) => { const arr = [...homeForm.values]; arr[i] = { ...v, desc: e.target.value }; setHomeForm({ ...homeForm, values: arr }); }} className={inputClass} />
                   </div>
                 ))}
+                <h4 className="font-bold text-sm">Partners</h4>
+                <p className="text-xs text-muted-foreground">Partner logos on the home page (before the last section). Clicking a logo opens its link. No partners = the section is hidden.</p>
+                {(homeForm.partners || []).map((p, i) => (
+                  <div key={i} className="border border-border rounded-lg p-3 space-y-2">
+                    <div className="flex items-center gap-3">
+                      {p.logo ? <img src={p.logo} alt={p.name} className="w-20 h-14 object-contain rounded border border-border bg-white" /> : <div className="w-20 h-14 rounded border border-dashed border-border flex items-center justify-center text-[10px] text-muted-foreground">No logo</div>}
+                      <ImageUpload label={p.logo ? "Change logo" : "Upload logo"} onUploaded={(url) => setHomeForm(prev => { const arr = [...(prev.partners || [])]; arr[i] = { ...arr[i], logo: url }; return { ...prev, partners: arr }; })} />
+                    </div>
+                    <input placeholder="Partner name" value={p.name} onChange={(e) => { const name = e.target.value; setHomeForm(prev => { const arr = [...(prev.partners || [])]; arr[i] = { ...arr[i], name }; return { ...prev, partners: arr }; }); }} className={inputClass} />
+                    <input placeholder="Website link (https://...)" value={p.link} onChange={(e) => { const link = e.target.value; setHomeForm(prev => { const arr = [...(prev.partners || [])]; arr[i] = { ...arr[i], link }; return { ...prev, partners: arr }; }); }} className={inputClass} />
+                    <Button variant="destructive" size="sm" onClick={() => setHomeForm(prev => ({ ...prev, partners: (prev.partners || []).filter((_, j) => j !== i) }))}><Trash2 className="h-3 w-3" /> Remove partner</Button>
+                  </div>
+                ))}
+                <Button variant="outline" size="sm" onClick={() => setHomeForm(prev => ({ ...prev, partners: [...(prev.partners || []), { name: "", logo: "", link: "" }] }))}><Plus className="h-3 w-3" /> Add Partner</Button>
                 <h4 className="font-bold text-sm">CTA Section</h4>
                 <div><label className="text-xs font-semibold text-muted-foreground">CTA Heading</label>
                   <RichTextEditor value={homeForm.ctaHeading} onChange={(v) => setHomeForm({ ...homeForm, ctaHeading: v })} rows={2} /></div>

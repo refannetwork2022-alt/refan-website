@@ -1,8 +1,8 @@
-// Share links for single stories, announcements, programs and "Voices" testimonials.
+// Share links for single stories, announcements, programs, blog posts and "Voices" testimonials.
 // The id goes in the query string (before the #) because Facebook and other apps drop the "#/..." part
 // of HashRouter URLs; SharedLinkRedirect in App.tsx routes such links to the right page, which opens the item.
 
-export type SharedKind = "story" | "announcement" | "program" | "voice";
+export type SharedKind = "story" | "announcement" | "program" | "voice" | "blog";
 
 // Page that shows each kind of shared item.
 export const SHARED_ROUTES: Record<SharedKind, string> = {
@@ -10,6 +10,7 @@ export const SHARED_ROUTES: Record<SharedKind, string> = {
   announcement: "/stories",
   program: "/programs",
   voice: "/",
+  blog: "/blog",
 };
 
 export const SHARED_KINDS = Object.keys(SHARED_ROUTES) as SharedKind[];
@@ -32,7 +33,7 @@ const shortHash = (text: string): string => {
 export const getSharedId = (kind: SharedKind): string | null =>
   new URLSearchParams(window.location.search).get(kind);
 
-// Removes ?story= / ?announcement= / ?program= / ?voice= once the item has been shown, keeping the current page.
+// Removes ?story= / ?announcement= / ?program= / ?voice= / ?blog= once the item has been shown, keeping the current page.
 export const clearSharedId = () => {
   const params = new URLSearchParams(window.location.search);
   let changed = false;

@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { Heart, Users, Award, Globe, Mail } from "lucide-react";
+import { Heart, Users, Award, Globe, Mail, FileText, ArrowRight } from "lucide-react";
 import aboutTeam from "@/assets/about-team.jpg";
 import { store, AboutSettings } from "@/lib/store";
+import ReadMore from "@/components/ReadMore";
+import { DEFAULT_OVERVIEW_TITLE } from "@/lib/overview";
 
 const DEFAULTS: AboutSettings = {
   heroTitle: "Our Heart, Our Mission",
@@ -99,19 +101,33 @@ const About = () => {
         </div>
       </section>
 
+      <section className="container pt-8">
+        <Link to="/about/overview" className="group flex flex-col sm:flex-row sm:items-center gap-4 rounded-2xl border border-border bg-card p-6 sm:p-8 hover:border-primary/50 hover:shadow-card transition-all">
+          <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+            <FileText className="h-7 w-7 text-primary" />
+          </div>
+          <div className="flex-1">
+            <h2 className="font-heading text-xl md:text-2xl font-extrabold">{d.overviewTitle || DEFAULT_OVERVIEW_TITLE}</h2>
+            <p className="text-muted-foreground text-sm md:text-base">Who we are, what we do, our programs, values and objectives.</p>
+          </div>
+          <span className="inline-flex items-center gap-1 font-bold text-primary">Read the overview <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" /></span>
+        </Link>
+      </section>
+
       <section className="container py-16">
         <div className="text-center mb-16">
           <h2 className="font-heading text-3xl md:text-4xl font-extrabold mb-4" dangerouslySetInnerHTML={{ __html: d.valuesHeading }} />
           <p className="text-muted-foreground max-w-xl mx-auto" dangerouslySetInnerHTML={{ __html: d.valuesSubtitle }} />
         </div>
-        <div className="grid md:grid-cols-4 gap-8">
+        {/* Long value texts show their first lines; "Read more" opens the whole text. */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
           {d.values.map((v, i) => {
             const Icon = valueIcons[i % valueIcons.length];
             return (
-              <div key={i} className="p-8 rounded-xl bg-card border border-border hover:border-primary/50 transition-colors">
+              <div key={i} className="p-6 sm:p-8 rounded-xl bg-card border border-border hover:border-primary/50 transition-colors">
                 <Icon className="h-10 w-10 text-primary mb-4" />
                 <h3 className="font-heading text-xl font-bold mb-2">{v.title}</h3>
-                <p className="text-sm text-muted-foreground leading-normal">{v.description}</p>
+                <ReadMore html={v.description} title={v.title} maxHeightClass="max-h-48" className="text-sm text-muted-foreground leading-relaxed" />
               </div>
             );
           })}
