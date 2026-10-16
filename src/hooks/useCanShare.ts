@@ -6,16 +6,16 @@ import { store } from "@/lib/store";
 let allowSharingPromise: Promise<boolean> | null = null;
 const loadAllowSharing = () => {
   if (!allowSharingPromise) {
-    allowSharingPromise = store.getSiteSettings().then((s) => s?.allowSharing === true).catch(() => false);
+    allowSharingPromise = store.getSiteSettings().then((s) => s?.allowSharing !== false).catch(() => true);
   }
   return allowSharingPromise;
 };
 
-// Share buttons show to signed-in admins/sub-admins always, and to visitors only when Site Settings > "Visitors can
-// share" is on (off until the admin turns it on).
+// Share buttons show to signed-in admins/sub-admins always, and to visitors unless the admin has turned
+// Site Settings > "Visitors can share" off (on until then).
 export const useCanShare = (): boolean => {
   const { isAdmin, subAdminProfile } = useAuth();
-  const [allowVisitors, setAllowVisitors] = useState(false);
+  const [allowVisitors, setAllowVisitors] = useState(true);
 
   useEffect(() => {
     let active = true;

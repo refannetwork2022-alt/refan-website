@@ -1887,12 +1887,12 @@ const Admin = () => {
                 <button
                   type="button"
                   role="switch"
-                  aria-checked={!!siteForm.allowSharing}
+                  aria-checked={siteForm.allowSharing !== false}
                   aria-label="Visitors can share"
-                  onClick={() => setSiteForm({ ...siteForm, allowSharing: !siteForm.allowSharing })}
-                  className={`relative w-12 h-6 shrink-0 rounded-full transition-colors ${siteForm.allowSharing ? 'bg-green-500' : 'bg-gray-300'}`}
+                  onClick={() => setSiteForm({ ...siteForm, allowSharing: siteForm.allowSharing === false })}
+                  className={`relative w-12 h-6 shrink-0 rounded-full transition-colors ${siteForm.allowSharing !== false ? 'bg-green-500' : 'bg-gray-300'}`}
                 >
-                  <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${siteForm.allowSharing ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                  <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${siteForm.allowSharing !== false ? 'translate-x-6' : 'translate-x-0.5'}`} />
                 </button>
               </div>
               {siteForm.maintenanceMode && (
