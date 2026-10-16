@@ -1,6 +1,7 @@
 import { Share2, Facebook, Twitter, Link2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { copyText, shareLink } from "@/lib/share";
+import { useCanShare } from "@/hooks/useCanShare";
 
 interface ShareButtonsProps {
   title: string;
@@ -10,6 +11,7 @@ interface ShareButtonsProps {
 // Share / copy / Facebook / Twitter row used in the story and announcement pop-ups.
 const ShareButtons = ({ title, url }: ShareButtonsProps) => {
   const { toast } = useToast();
+  const canShare = useCanShare();
 
   const onShare = async () => {
     const result = await shareLink(title, url);
@@ -21,6 +23,8 @@ const ShareButtons = ({ title, url }: ShareButtonsProps) => {
     const ok = await copyText(url);
     toast(ok ? { title: "Link copied!" } : { title: "Could not copy the link.", variant: "destructive" });
   };
+
+  if (!canShare) return null;
 
   return (
     <div className="flex items-center gap-1">

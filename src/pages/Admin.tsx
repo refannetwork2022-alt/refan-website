@@ -1879,6 +1879,22 @@ const Admin = () => {
                   <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${siteForm.maintenanceMode ? 'translate-x-6' : 'translate-x-0.5'}`} />
                 </button>
               </div>
+              <div className="flex items-center justify-between gap-4 p-4 rounded-lg border border-border">
+                <div>
+                  <h3 className="font-bold text-sm">Visitors can share</h3>
+                  <p className="text-xs text-muted-foreground">On: everyone sees the Share buttons (stories, blog, voices, programs, announcements). Off: only signed-in admins see them and can share links. Press "Save Site Settings" after changing.</p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={!!siteForm.allowSharing}
+                  aria-label="Visitors can share"
+                  onClick={() => setSiteForm({ ...siteForm, allowSharing: !siteForm.allowSharing })}
+                  className={`relative w-12 h-6 shrink-0 rounded-full transition-colors ${siteForm.allowSharing ? 'bg-green-500' : 'bg-gray-300'}`}
+                >
+                  <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${siteForm.allowSharing ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                </button>
+              </div>
               {siteForm.maintenanceMode && (
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground">Maintenance Message (shown to visitors)</label>
@@ -2013,7 +2029,7 @@ const Admin = () => {
                 <div className="border border-primary/30 bg-primary/5 rounded-lg p-3 space-y-2">
                   <h4 className="font-bold text-sm">Top message (wishes, memorials...)</h4>
                   <p className="text-xs text-muted-foreground">Shown at the very top of the home page, e.g. "Eid Mubarak" or "In loving memory of ...". Remove it and nothing shows there until you add a new one.</p>
-                  <RichTextEditor value={homeForm.wishBanner || ""} onChange={(v) => setHomeForm(prev => ({ ...prev, wishBanner: v }))} placeholder="Leave empty to show nothing" rows={2} />
+                  <RichTextEditor value={homeForm.wishBanner || ""} onChange={(v) => setHomeForm(prev => ({ ...prev, wishBanner: v }))} placeholder="Leave empty to show nothing" rows={2} fonts />
                   <div className="flex items-center gap-3">
                     {homeForm.wishImage ? <img src={homeForm.wishImage} alt="" className="w-16 h-16 rounded-lg object-cover border border-border" /> : <div className="w-16 h-16 rounded-lg border border-dashed border-border flex items-center justify-center text-[10px] text-muted-foreground text-center">No picture</div>}
                     <div className="space-y-1">

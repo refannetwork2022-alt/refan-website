@@ -154,6 +154,7 @@ export interface HeroSettings {
 export interface SiteSettings {
   maintenanceMode: boolean;
   maintenanceMessage: string;
+  allowSharing?: boolean; // visitors see share buttons (admins always do)
 }
 
 export interface AboutSettings {

@@ -37,8 +37,8 @@ const cleanNode = (node: Node) => {
         if (kept) el.setAttribute("style", kept); else el.removeAttribute("style");
       } else if (el.tagName === "A" && (name === "href" || name === "target" || name === "rel")) {
         if (name === "href" && /^\s*javascript:/i.test(attr.value)) el.removeAttribute("href");
-      } else if (el.tagName === "FONT" && (name === "color" || name === "size")) {
-        // editor colour / size
+      } else if (el.tagName === "FONT" && (name === "color" || name === "size" || name === "face")) {
+        // editor colour / size / font
       } else {
         el.removeAttribute(attr.name); // class, id, data-*, on*...
       }

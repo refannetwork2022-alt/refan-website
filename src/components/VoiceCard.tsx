@@ -2,6 +2,7 @@ import { Quote, User, Share2 } from "lucide-react";
 import { buildShareUrl, shareLink } from "@/lib/share";
 import { useToast } from "@/hooks/use-toast";
 import ReadMore from "@/components/ReadMore";
+import { useCanShare } from "@/hooks/useCanShare";
 
 export type Voice = { quote: string; name: string; role: string; image?: string };
 
@@ -25,6 +26,7 @@ export const DEFAULT_VOICES: Voice[] = [
 // used for the share link (?voice=N) and the element id the shared link scrolls to.
 const VoiceCard = ({ voice: t, index: i, highlight }: { voice: Voice; index: number; highlight?: boolean }) => {
   const { toast } = useToast();
+  const canShare = useCanShare();
 
   const shareVoice = async () => {
     const result = await shareLink(`${t.name} — Voices from ReFAN`, buildShareUrl("voice", String(i), `${t.name}|${t.image || ""}`));
@@ -62,9 +64,9 @@ const VoiceCard = ({ voice: t, index: i, highlight }: { voice: Voice; index: num
             <p className="font-bold text-sm">{t.name}</p>
             <p className="text-xs text-muted-foreground">{t.role}</p>
           </div>
-          <button type="button" onClick={shareVoice} className="ml-auto p-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-primary transition-colors" title="Share this voice" aria-label={`Share ${t.name}'s voice`}>
+          {canShare && <button type="button" onClick={shareVoice} className="ml-auto p-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-primary transition-colors" title="Share this voice" aria-label={`Share ${t.name}'s voice`}>
             <Share2 className="h-4 w-4" />
-          </button>
+          </button>}
         </div>
       </div>
     </div>

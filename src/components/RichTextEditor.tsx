@@ -1,5 +1,6 @@
 import { useRef, useEffect } from "react";
 import { cleanHtml, hasPasteJunk } from "@/lib/cleanHtml";
+import { WISH_FONTS, loadFontsFor } from "@/lib/fonts";
 import { Button } from "@/components/ui/button";
 import { Bold, Italic, Underline, Heading2, Type, Palette, Highlighter, AlignLeft, AlignCenter, AlignRight, List, ListOrdered, Link2, Unlink } from "lucide-react";
 
@@ -8,6 +9,8 @@ interface RichTextEditorProps {
   onChange: (html: string) => void;
   placeholder?: string;
   rows?: number;
+  /** Shows a font picker (Times New Roman, handwriting...). Used for the home page top message. */
+  fonts?: boolean;
 }
 
 const COLORS = [
@@ -23,8 +26,10 @@ const HIGHLIGHTS = [
   "#dcedc8", "#d7ccc8", "#cfd8dc", "transparent",
 ];
 
-const RichTextEditor = ({ value, onChange, placeholder = "Write here...", rows = 4 }: RichTextEditorProps) => {
+const RichTextEditor = ({ value, onChange, placeholder = "Write here...", rows = 4, fonts = false }: RichTextEditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
+  // Last text selection in the editor, so picking a font from the list (which takes the focus) still applies to it.
+  const savedRange = useRef<Range | null>(null);
   const showColorRef = useRef(false);
   const colorPanelRef = useRef<HTMLDivElement>(null);
   const highlightPanelRef = useRef<HTMLDivElement>(null);
@@ -153,10 +158,52 @@ const RichTextEditor = ({ value, onChange, placeholder = "Write here...", rows =
     exec("fontSize", size);
   };
 
+  const saveSelection = () => {
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0 && editorRef.current?.contains(selection.anchorNode)) {
+      savedRange.current = selection.getRangeAt(0).cloneRange();
+    }
+  };
+
+  const applyFont = (font: string) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    editor.focus();
+    const selection = window.getSelection();
+    if (savedRange.current && selection) {
+      selection.removeAllRanges();
+      selection.addRange(savedRange.current);
+    }
+    // Nothing selected: the font applies to the whole message.
+    if (!selection || selection.isCollapsed) document.execCommand("selectAll");
+    document.execCommand("fontName", false, font || "inherit");
+    loadFontsFor(font);
+    onChange(editor.innerHTML);
+  };
+
+  useEffect(() => { if (fonts) loadFontsFor(value); }, [fonts, value]);
+
   return (
     <div className="border border-input rounded-lg overflow-hidden bg-background">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-1 p-2 border-b border-input bg-muted/30">
+        {fonts && (
+          <>
+            <select
+              aria-label="Font"
+              title="Font (select text first, or it applies to the whole message)"
+              className="h-8 rounded-md border border-input bg-background px-2 text-xs max-w-[11rem]"
+              value=""
+              onChange={(e) => applyFont(e.target.value)}
+            >
+              <option value="" disabled>Font…</option>
+              {WISH_FONTS.map((f) => (
+                <option key={f.label} value={f.value} style={{ fontFamily: f.value || undefined }}>{f.label}</option>
+              ))}
+            </select>
+            <div className="w-px h-6 bg-border mx-1" />
+          </>
+        )}
         <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0 font-bold" onClick={() => exec("bold")} title="Bold">
           <Bold className="h-4 w-4" />
         </Button>
@@ -249,6 +296,9 @@ const RichTextEditor = ({ value, onChange, placeholder = "Write here...", rows =
         onInput={handleInput}
         onPaste={handlePaste}
         onBlur={handleInput}
+        onKeyUp={saveSelection}
+        onMouseUp={saveSelection}
+        onTouchEnd={saveSelection}
         data-placeholder={placeholder}
       />
 

@@ -6,6 +6,7 @@ import { Heart, Users, BookOpen, ArrowRight, Target, Globe, Shield, Baby, User, 
 import ShareButtons from "@/components/ShareButtons";
 import { buildShareUrl, getSharedId, clearSharedId } from "@/lib/share";
 import { RichText } from "@/components/ReadMore";
+import { loadFontsFor } from "@/lib/fonts";
 import VoiceCard, { HOME_VOICES_LIMIT, newestFirst, isOnHomePage } from "@/components/VoiceCard";
 import { store, Announcement, HeroSettings, HomeSettings, GalleryItem } from "@/lib/store";
 const heroBg = "/holi.jpg";
@@ -229,6 +230,7 @@ const Index = () => {
   // Admin's message at the top (wishes, memorials). Cleared in the admin = nothing here at all.
   const wishText = home.wishBanner ? stripHtml(home.wishBanner).trim() : "";
   const wishImage = wishText ? home.wishImage : ""; // the picture only shows with a message
+  useEffect(() => { if (wishText) loadFontsFor(home.wishBanner || ""); }, [wishText, home.wishBanner]);
   const partners = (home.partners || []).filter((p) => p.logo);
 
   return (
