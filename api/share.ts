@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { moveImages } from './_lib/imageMoves.js';
 
 // Link previews for shared items: /?voice=3, /?story=ID, /?announcement=ID, /?program=1, /?blog=ID (and /share?...).
 // WhatsApp, Facebook, LinkedIn... don't run the site's JavaScript, so they only see index.html's generic
@@ -145,6 +146,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // Link previews need a full URL; site-relative images ("/photo.jpg") get the site address in front.
+  image = moveImages(image); // old ImgBB links -> their Cloudinary copies
   if (image && image.startsWith('/')) image = site + encodeURI(image);
   if (!/^https?:\/\//i.test(image)) image = `${site}/logo.png`;
   image = previewImage(image);

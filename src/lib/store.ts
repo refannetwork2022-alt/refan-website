@@ -1,4 +1,5 @@
 import { db } from "@/integrations/firebase/client";
+import { moveImages } from "@/lib/imageMoves";
 import {
   collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, setDoc, deleteField,
   query, orderBy, getCountFromServer, increment,
@@ -301,7 +302,7 @@ async function getAll<T>(col: string, orderField: string): Promise<T[]> {
 
 // ── Async store (Firestore) ─────────────────────────────────
 
-export const store = {
+const rawStore = {
   // ─── Stories ────────────────────────────────
   getStories: async (): Promise<Story[]> => {
     try {
@@ -776,3 +777,12 @@ export const store = {
     catch (e) { console.error("deleteAdminMessage:", e); return false; }
   },
 };
+
+// Everything read through store.get...() gets old ImgBB photo links swapped for their Cloudinary copies (see
+// imageMoves.ts), so pages and admin forms show the working links; saving a form stores the new link.
+export const store = Object.fromEntries(
+  Object.entries(rawStore).map(([name, fn]) => [
+    name,
+    name.startsWith("get") ? (...args: unknown[]) => (fn as (...a: unknown[]) => Promise<unknown>)(...args).then(moveImages) : fn,
+  ]),
+) as typeof rawStore;
