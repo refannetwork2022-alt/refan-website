@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { BookOpen, Users, Heart, X, ChevronRight } from "lucide-react";
 import ShareButtons from "@/components/ShareButtons";
+import { sized } from "@/lib/imageSize";
 import { buildShareUrl, getSharedId, clearSharedId } from "@/lib/share";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -74,7 +75,7 @@ const Programs = () => {
                 className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col sm:flex-row group hover:shadow-elevated transition-all cursor-pointer"
               >
                 <div className="w-full h-48 sm:w-48 sm:h-auto md:w-56 shrink-0 overflow-hidden">
-                  <img src={img} alt={prog.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <img src={sized(img, 640)} alt={prog.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async" />
                 </div>
                 <div className="p-5 flex flex-col flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
@@ -125,7 +126,7 @@ const Programs = () => {
             >
               <div className="h-2 rounded-t-2xl bg-gradient-to-r from-primary to-secondary" />
               <div className="w-full overflow-hidden">
-                <img src={img} alt={selected.title} className="w-full max-h-96 object-contain bg-muted" />
+                <img src={sized(img, 1200)} alt={selected.title} className="w-full max-h-96 object-contain bg-muted" />
               </div>
               <div className="sticky top-0 bg-card border-b border-border px-8 py-6 flex items-start justify-between">
                 <div>

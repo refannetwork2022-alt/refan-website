@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
+import { sized } from "@/lib/imageSize";
 import { store, GalleryItem } from "@/lib/store";
 import { Image, Video, X, ChevronLeft, ChevronRight } from "lucide-react";
 import educationImg from "@/assets/programs-education.jpg";
@@ -71,7 +72,7 @@ const Gallery = () => {
                 className="group relative aspect-square rounded-2xl overflow-hidden hover:scale-[1.02] transition-transform shadow-soft cursor-pointer"
               >
                 <img
-                  src={getImageUrl(item, idx)}
+                  src={sized(getImageUrl(item, idx), 640)}
                   alt={item.title}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   loading="lazy"
@@ -125,7 +126,7 @@ const Gallery = () => {
             {/* Image */}
             <img
               key={selectedIdx}
-              src={getImageUrl(items[selectedIdx], selectedIdx)}
+              src={sized(getImageUrl(items[selectedIdx], selectedIdx), 1600)}
               alt={items[selectedIdx].title}
               className="max-w-full max-h-[calc(100vh-140px)] object-contain rounded-lg animate-scale-in"
               onError={(e) => handleImgError(e, selectedIdx)}
@@ -150,7 +151,7 @@ const Gallery = () => {
                   idx === selectedIdx ? 'ring-2 ring-primary scale-110' : 'opacity-50 hover:opacity-80'
                 }`}
               >
-                <img src={getImageUrl(item, idx)} alt={item.title} className="w-full h-full object-cover" onError={(e) => handleImgError(e, idx)} />
+                <img src={sized(getImageUrl(item, idx), 200)} alt={item.title} className="w-full h-full object-cover" loading="lazy" decoding="async" onError={(e) => handleImgError(e, idx)} />
               </button>
             ))}
           </div>

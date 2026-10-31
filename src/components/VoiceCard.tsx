@@ -2,6 +2,7 @@ import { Quote, User, Share2 } from "lucide-react";
 import { buildShareUrl, shareLink } from "@/lib/share";
 import { useToast } from "@/hooks/use-toast";
 import ReadMore from "@/components/ReadMore";
+import { sized } from "@/lib/imageSize";
 import { useCanShare } from "@/hooks/useCanShare";
 
 export type Voice = { quote: string; name: string; role: string; image?: string };
@@ -39,7 +40,7 @@ const VoiceCard = ({ voice: t, index: i, highlight }: { voice: Voice; index: num
     <div id={`voice-${i}`} className={`bg-card rounded-2xl border border-border hover:border-primary/30 hover:shadow-card transition-all relative flex flex-col ${t.image ? "overflow-hidden" : "p-6 sm:p-8"} ${highlight ? "ring-2 ring-primary" : ""}`}>
       {t.image && (
         <div className="aspect-[4/3] bg-muted overflow-hidden">
-          <img src={t.image} alt={t.name} className="w-full h-full object-cover object-top" />
+          <img src={sized(t.image, 640)} alt={t.name} className="w-full h-full object-cover object-top" loading="lazy" decoding="async" />
         </div>
       )}
       <div className={`relative flex flex-col flex-1 ${t.image ? "p-6 sm:p-8" : ""}`}>
@@ -50,7 +51,7 @@ const VoiceCard = ({ voice: t, index: i, highlight }: { voice: Voice; index: num
             title={t.name || "Voices from ReFAN"}
             paragraphs={5}
             className="text-muted-foreground leading-relaxed"
-            header={t.image && <img src={t.image} alt={t.name} className="w-full max-h-[50vh] object-cover object-top" />}
+            header={t.image && <img src={sized(t.image, 1200)} alt={t.name} className="w-full max-h-[50vh] object-cover object-top" />}
             footer={t.role && <p className="text-sm text-muted-foreground border-t border-border pt-3">{t.role}</p>}
           />
         </div>

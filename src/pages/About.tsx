@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Heart, Users, Award, Globe, Mail, FileText, ArrowRight } from "lucide-react";
 import aboutTeam from "@/assets/about-team.jpg";
 import { store, AboutSettings } from "@/lib/store";
+import { sized } from "@/lib/imageSize";
 import ReadMore, { RichText } from "@/components/ReadMore";
 import { DEFAULT_OVERVIEW_TITLE } from "@/lib/overview";
 
@@ -79,14 +80,14 @@ const About = () => {
           <div className="space-y-4">
             <div className="relative">
               <div className="aspect-[4/3] rounded-xl bg-cover bg-center shadow-elevated overflow-hidden">
-                <img src={img1} alt="ReFAN team" className="w-full h-full object-cover" />
+                <img src={sized(img1, 1000)} alt="ReFAN team" className="w-full h-full object-cover" loading="lazy" decoding="async" />
               </div>
               <div className="absolute -bottom-6 -left-6 bg-card p-6 rounded-lg shadow-elevated hidden lg:block border border-border">
                 <p className="italic text-primary font-medium">"Restoring hope, one family at a time."</p>
               </div>
             </div>
             <div className="aspect-[3/2] rounded-xl overflow-hidden shadow-elevated border-4 border-primary/20">
-              <img src={img2} alt="Founder & Chairman" className="w-full h-full object-cover" />
+              <img src={sized(img2, 1000)} alt="Founder & Chairman" className="w-full h-full object-cover" loading="lazy" decoding="async" />
             </div>
           </div>
         </div>
@@ -143,7 +144,7 @@ const About = () => {
           {d.leaders.map((leader, i) => (
             <div key={i} className="flex flex-col items-center text-center">
               <div className="w-64 h-64 rounded-2xl overflow-hidden mb-6 shadow-elevated border-4 border-white">
-                <img src={leader.image} alt={`${leader.title} ${leader.name}`} className="w-full h-full object-cover" />
+                <img src={sized(leader.image, 600)} alt={`${leader.title} ${leader.name}`} className="w-full h-full object-cover" loading="lazy" decoding="async" />
               </div>
               <h3 className="font-heading text-2xl font-bold">{leader.name}</h3>
               <p className="text-primary font-bold mb-4 uppercase tracking-widest text-xs">{leader.title}</p>

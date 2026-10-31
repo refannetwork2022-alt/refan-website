@@ -4,6 +4,7 @@ import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Heart, Users, BookOpen, ArrowRight, Target, Globe, Shield, Baby, User, Home, Grid3X3, Megaphone, X } from "lucide-react";
 import ShareButtons from "@/components/ShareButtons";
+import { sized } from "@/lib/imageSize";
 import { buildShareUrl, getSharedId, clearSharedId } from "@/lib/share";
 import { RichText } from "@/components/ReadMore";
 import { loadFontsFor } from "@/lib/fonts";
@@ -239,7 +240,7 @@ const Index = () => {
         <section className="container pt-6">
           <div className={`rounded-2xl bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 border border-primary/20 px-5 py-4 sm:px-8 sm:py-5 ${wishImage ? "flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-center sm:text-left" : "text-center"}`}>
             {/* Fixed size and cropped, so any photo (tall, wide, big) keeps the banner tidy. */}
-            {wishImage && <img src={wishImage} alt="" className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover shadow-sm border-2 border-white shrink-0" />}
+            {wishImage && <img src={sized(wishImage, 240)} alt="" className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover shadow-sm border-2 border-white shrink-0" />}
             <div className="testimonial-content flex-1 min-w-0 font-heading text-base sm:text-xl font-bold text-foreground break-words" dangerouslySetInnerHTML={{ __html: home.wishBanner! }} />
           </div>
         </section>
@@ -249,7 +250,7 @@ const Index = () => {
       <section className="container py-8">
         <div className="relative rounded-2xl overflow-hidden min-h-[600px] shadow-elevated">
           <div className="absolute inset-0">
-            <img src={hero.heroImage} alt="ReFAN Community" className="w-full h-full object-cover" />
+            <img src={sized(hero.heroImage, 1600)} alt="ReFAN Community" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/60" />
           </div>
           {/* Tagline - full width horizontal across the top */}
@@ -300,7 +301,7 @@ const Index = () => {
             <div key={item.id} onClick={() => setSelectedAnnouncement(item)} className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col sm:flex-row group hover:shadow-elevated transition-all cursor-pointer">
               {item.image && (
                 <div className="w-full sm:w-48 md:w-56 shrink-0 overflow-hidden bg-muted">
-                  <img src={item.image} alt={item.title} className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-500" />
+                  <img src={sized(item.image, 480)} alt={item.title} className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async" />
                 </div>
               )}
               <div className="p-5 flex flex-col flex-1 min-w-0">
@@ -345,7 +346,7 @@ const Index = () => {
             return (
               <div key={i} className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col group hover:shadow-elevated transition-all">
                 <div className="aspect-[3/4] overflow-hidden">
-                  <img src={img} alt={prog.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <img src={sized(img, 640)} alt={prog.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async" />
                 </div>
                 <div className="p-6 flex flex-col flex-1">
                   <div className="flex items-center gap-2 mb-3">
@@ -427,7 +428,7 @@ const Index = () => {
                 key={img.id}
                 className="aspect-[4/3] rounded-2xl overflow-hidden hover:scale-[1.02] transition-transform shadow-soft"
               >
-                <img src={img.url} alt={img.title} className="w-full h-full object-cover" loading="lazy" />
+                <img src={sized(img.url, 800)} alt={img.title} className="w-full h-full object-cover" loading="lazy" decoding="async" />
               </div>
             ))}
           </div>
@@ -443,7 +444,7 @@ const Index = () => {
             {partners.map((p, i) => {
               const logo = (
                 <div className="w-36 h-24 sm:w-44 sm:h-28 rounded-xl bg-white border border-border p-3 flex items-center justify-center hover:shadow-card hover:border-primary/40 transition-all">
-                  <img src={p.logo} alt={p.name || "Partner logo"} className="max-w-full max-h-full object-contain" loading="lazy" />
+                  <img src={sized(p.logo, 400)} alt={p.name || "Partner logo"} className="max-w-full max-h-full object-contain" loading="lazy" decoding="async" />
                 </div>
               );
               const link = /^https?:\/\//i.test(p.link) ? p.link : p.link ? `https://${p.link}` : "";
@@ -461,7 +462,7 @@ const Index = () => {
       <section className="container py-12 pb-20">
         <div className="relative rounded-[2rem] overflow-hidden p-12 lg:p-20 text-center text-white shadow-elevated">
           <div className="absolute inset-0">
-            <img src={home.ctaImage} alt="ReFAN Teaching" className="w-full h-full object-cover" />
+            <img src={sized(home.ctaImage, 1600)} alt="ReFAN Teaching" className="w-full h-full object-cover" loading="lazy" decoding="async" />
             <div className="absolute inset-0 bg-black/50" />
           </div>
           <div className="relative z-10 max-w-2xl mx-auto flex flex-col items-center gap-6">
@@ -488,7 +489,7 @@ const Index = () => {
             <div className="h-2 rounded-t-2xl bg-gradient-to-r from-primary to-secondary" />
             {selectedAnnouncement.image && (
               <div className="w-full h-64 md:h-80 overflow-hidden">
-                <img src={selectedAnnouncement.image} alt={selectedAnnouncement.title} className="w-full h-full object-cover" />
+                <img src={sized(selectedAnnouncement.image, 1200)} alt={selectedAnnouncement.title} className="w-full h-full object-cover" />
               </div>
             )}
             <div className="sticky top-0 bg-card border-b border-border px-8 py-6 flex items-start justify-between">

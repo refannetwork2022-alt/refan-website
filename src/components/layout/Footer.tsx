@@ -41,7 +41,7 @@ const Footer = () => {
           <div className="lg:col-span-4 flex flex-col items-center text-center lg:items-start lg:text-left">
             {/* Emblem in white (one colour) so it shows on the navy background */}
             <Link to="/" aria-label="ReFAN home" className="mb-5 opacity-95 hover:opacity-100 transition-opacity">
-              <img src="/ReFAN Hands Logo_ReFAN.png" alt="ReFAN" className="w-28 lg:w-32 h-auto object-contain brightness-0 invert" loading="lazy" />
+              <img src="/refan-emblem-400.png" alt="ReFAN" className="w-28 lg:w-32 h-auto object-contain brightness-0 invert" loading="lazy" />
             </Link>
             <div className="text-white/60 text-sm leading-relaxed max-w-sm" dangerouslySetInnerHTML={{ __html: info.description }} />
             <div className="flex gap-3 mt-6">

@@ -4,6 +4,7 @@ import { store, BlogPost } from "@/lib/store";
 import { Calendar, User, X, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ShareButtons from "@/components/ShareButtons";
+import { sized } from "@/lib/imageSize";
 import { buildShareUrl, getSharedId, clearSharedId } from "@/lib/share";
 
 const getEmbedUrl = (url: string): string | null => {
@@ -137,7 +138,7 @@ const Blog = () => {
                 className="bg-card rounded-2xl overflow-hidden border border-border hover:border-secondary/50 hover:shadow-elevated transition-all cursor-pointer group"
               >
                 {post.image ? (
-                  <img src={post.image} alt={post.title} className="w-full aspect-video object-contain bg-muted" />
+                  <img src={sized(post.image, 800)} alt={post.title} className="w-full aspect-video object-contain bg-muted" loading="lazy" decoding="async" />
                 ) : (
                   <div className="h-2 bg-gradient-to-r from-primary to-secondary" />
                 )}
@@ -173,7 +174,7 @@ const Blog = () => {
             onClick={(e) => e.stopPropagation()}
           >
             {selected.image ? (
-              <img src={selected.image} alt={selected.title} className="w-full aspect-video object-contain bg-muted rounded-t-2xl" />
+              <img src={sized(selected.image, 1600)} alt={selected.title} className="w-full aspect-video object-contain bg-muted rounded-t-2xl" />
             ) : (
               <div className="h-2 rounded-t-2xl bg-gradient-to-r from-primary to-secondary" />
             )}
@@ -205,7 +206,7 @@ const Blog = () => {
                         {blocks.map((block: any, idx: number) =>
                           block.type === 'image' ? (
                             <figure key={idx} className="space-y-2">
-                              <img src={block.url} alt={block.caption || ''} className="w-full rounded-xl object-cover max-h-[500px]" />
+                              <img src={sized(block.url, 1200)} alt={block.caption || ''} className="w-full rounded-xl object-cover max-h-[500px]" loading="lazy" decoding="async" />
                               {block.caption && <figcaption className="text-sm text-muted-foreground text-center italic">{block.caption}</figcaption>}
                             </figure>
                           ) : block.type === 'video' && getEmbedUrl(block.url) ? (

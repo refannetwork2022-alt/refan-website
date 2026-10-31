@@ -5,6 +5,7 @@ import { store, Story, Announcement, HomeSettings } from "@/lib/store";
 import VoiceCard, { Voice, DEFAULT_VOICES, newestFirst } from "@/components/VoiceCard";
 import { Calendar, X, ChevronRight, Heart } from "lucide-react";
 import ShareButtons from "@/components/ShareButtons";
+import { sized } from "@/lib/imageSize";
 import { buildShareUrl, getSharedId, clearSharedId } from "@/lib/share";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -152,7 +153,7 @@ const Stories = () => {
                     >
                       {item.image && (
                         <div className="w-full sm:w-48 md:w-56 shrink-0 overflow-hidden bg-muted">
-                          <img src={item.image} alt={item.title} className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-500" />
+                          <img src={sized(item.image, 640)} alt={item.title} className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async" />
                         </div>
                       )}
                       <div className="p-5 flex flex-col flex-1 min-w-0">
@@ -197,7 +198,7 @@ const Stories = () => {
                     >
                       {story.image && (
                         <div className="w-full sm:w-48 md:w-56 shrink-0 overflow-hidden bg-muted">
-                          <img src={story.image} alt={story.title} className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-500" />
+                          <img src={sized(story.image, 640)} alt={story.title} className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-500" loading="lazy" decoding="async" />
                         </div>
                       )}
                       <div className="p-5 flex flex-col flex-1 min-w-0">
@@ -238,7 +239,7 @@ const Stories = () => {
             <div className={`h-2 rounded-t-2xl ${selectedStory.category === 'story' ? 'bg-secondary' : 'bg-primary'}`} />
             {selectedStory.image && (
               <div className="w-full overflow-hidden">
-                <img src={selectedStory.image} alt={selectedStory.title} className="w-full max-h-96 object-contain bg-muted" />
+                <img src={sized(selectedStory.image, 1200)} alt={selectedStory.title} className="w-full max-h-96 object-contain bg-muted" />
               </div>
             )}
             {selectedStory.video && getEmbedUrl(selectedStory.video) && (
@@ -292,7 +293,7 @@ const Stories = () => {
             <div className="h-2 rounded-t-2xl bg-gradient-to-r from-primary to-secondary" />
             {selectedAnnouncement.image && (
               <div className="w-full overflow-hidden">
-                <img src={selectedAnnouncement.image} alt={selectedAnnouncement.title} className="w-full max-h-96 object-contain bg-muted" />
+                <img src={sized(selectedAnnouncement.image, 1200)} alt={selectedAnnouncement.title} className="w-full max-h-96 object-contain bg-muted" />
               </div>
             )}
             {selectedAnnouncement.video && getEmbedUrl(selectedAnnouncement.video) && (
