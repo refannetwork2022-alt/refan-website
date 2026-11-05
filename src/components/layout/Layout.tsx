@@ -26,23 +26,35 @@ const ScrollToTop = () => {
   );
 };
 
+// Site settings (maintenance mode) are read once per visit and remembered on the phone, so pages show straight away
+// instead of a white screen while the database answers (that wait happened on every page change).
+const SETTINGS_KEY = "refan_site_settings";
+let cachedSettings: SiteSettings | null = (() => {
+  try { return JSON.parse(localStorage.getItem(SETTINGS_KEY) || "null"); } catch { return null; }
+})();
+let settingsRequest: Promise<SiteSettings | null> | null = null;
+const loadSiteSettings = () => {
+  if (!settingsRequest) {
+    settingsRequest = store.getSiteSettings().then((data) => {
+      cachedSettings = data;
+      try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(data)); } catch { /* private mode */ }
+      return data;
+    });
+  }
+  return settingsRequest;
+};
+
 const Layout = ({ children }: { children: ReactNode }) => {
-  const [maintenance, setMaintenance] = useState<SiteSettings | null>(null);
+  const [maintenance, setMaintenance] = useState<SiteSettings | null>(cachedSettings);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    store.getSiteSettings().then((data) => {
-      setMaintenance(data);
-      setChecked(true);
-    });
+    loadSiteSettings().then(setMaintenance);
     const unsub = onAuthStateChanged(auth, (user) => {
       setIsAdmin(!!user);
     });
     return () => unsub();
   }, []);
-
-  if (!checked) return null;
 
   if (maintenance?.maintenanceMode && !isAdmin) {
     return <MaintenancePage message={maintenance.maintenanceMessage} />;

@@ -20,7 +20,14 @@
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Shown until the site's code has loaded (slow mobile connections), then replaced by the page. -->
+      <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#fff;font-family:system-ui,sans-serif">
+        <img src="/logo.png" alt="ReFAN" width="72" height="72" style="border-radius:12px" />
+        <div style="width:36px;height:36px;border:3px solid #f3e1c7;border-top-color:#c47a12;border-radius:50%;animation:refan-spin .8s linear infinite"></div>
+        <style>@keyframes refan-spin{to{transform:rotate(360deg)}}</style>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

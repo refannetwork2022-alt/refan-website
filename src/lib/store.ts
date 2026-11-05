@@ -783,6 +783,12 @@ const rawStore = {
 export const store = Object.fromEntries(
   Object.entries(rawStore).map(([name, fn]) => [
     name,
-    name.startsWith("get") ? (...args: unknown[]) => (fn as (...a: unknown[]) => Promise<unknown>)(...args).then(moveImages) : fn,
+    // Some getters answer straight away (e.g. getSecurityQuestion), others return a Promise: handle both.
+    name.startsWith("get")
+      ? (...args: unknown[]) => {
+          const result = (fn as (...a: unknown[]) => unknown)(...args);
+          return result instanceof Promise ? result.then(moveImages) : moveImages(result);
+        }
+      : fn,
   ]),
 ) as typeof rawStore;
