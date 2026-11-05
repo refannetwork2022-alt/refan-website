@@ -21,10 +21,14 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ["react", "react-dom", "react-router-dom"],
-          firebase: ["firebase/app", "firebase/auth", "firebase/firestore"],
-          ui: ["lucide-react", "recharts"],
+        // Every file of a library goes into its chunk (a list of entry names left some React files in the main
+        // chunk, so react-dom could run before React and the page stayed blank once pages were loaded on demand).
+        manualChunks(id: string) {
+          if (!id.includes("node_modules")) return undefined;
+          if (/[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|@remix-run[\\/]router|scheduler)[\\/]/.test(id)) return "vendor";
+          if (/[\\/]node_modules[\\/](firebase|@firebase)[\\/]/.test(id)) return "firebase";
+          if (/[\\/]node_modules[\\/](lucide-react|recharts)[\\/]/.test(id)) return "ui";
+          return undefined;
         },
       },
     },

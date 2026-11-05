@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Routes, Route, useLocation, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { AuthProvider } from "@/hooks/useAuth";
 import AdminRoute from "@/components/AdminRoute";
 import { SHARED_KINDS, SHARED_ROUTES, getSharedId } from "@/lib/share";
@@ -17,11 +17,34 @@ import Blog from "./pages/Blog";
 import Donate from "./pages/Donate";
 import GetInvolved from "./pages/GetInvolved";
 import Contact from "./pages/Contact";
-import Admin from "./pages/Admin";
-import AdminLogin from "./pages/AdminLogin";
-import Register from "./pages/Register";
-import SubAdminAccess from "./pages/SubAdminAccess";
 import NotFound from "./pages/NotFound";
+
+// Big pages most visitors never open: downloaded only when someone goes there, so the site opens faster on phones.
+// A visitor still on an older version after a new deploy would ask for files that no longer exist; then the page
+// reloads once (getting the new version) instead of staying blank.
+const lazyPage = <T extends React.ComponentType>(load: () => Promise<{ default: T }>) =>
+  lazy(() =>
+    load()
+      .then((page) => { sessionStorage.removeItem("refan_reloaded_for_update"); return page; })
+      .catch((error) => {
+        if (!sessionStorage.getItem("refan_reloaded_for_update")) {
+          sessionStorage.setItem("refan_reloaded_for_update", "1");
+          window.location.reload();
+          return new Promise<{ default: T }>(() => {});
+        }
+        throw error;
+      }),
+  );
+const Admin = lazyPage(() => import("./pages/Admin"));
+const AdminLogin = lazyPage(() => import("./pages/AdminLogin"));
+const Register = lazyPage(() => import("./pages/Register"));
+const SubAdminAccess = lazyPage(() => import("./pages/SubAdminAccess"));
+
+const PageLoading = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="h-9 w-9 rounded-full border-[3px] border-primary/20 border-t-primary animate-spin" aria-label="Loading" />
+  </div>
+);
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -63,6 +86,7 @@ const App = () => (
         <AuthProvider>
           <ScrollToTop />
           <SharedLinkRedirect />
+          <Suspense fallback={<PageLoading />}>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/about" element={<About />} />
@@ -80,6 +104,7 @@ const App = () => (
             <Route path="/admin-access/:token" element={<SubAdminAccess />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
         </AuthProvider>
       </HashRouter>
     </TooltipProvider>
